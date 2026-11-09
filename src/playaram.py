@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Lấy và cache dữ liệu lõi (augment) theo tướng từ playaram.gg.
 
 Không dùng /api/ của trang (robots.txt chặn). Chỉ đọc HTML trang tướng công khai,

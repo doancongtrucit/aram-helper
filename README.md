@@ -55,4 +55,16 @@ ARAM Helper **chỉ đọc** (Live Client API trên máy + ảnh chụp màn hì
 không gửi phím/chuột vào game, không tự chọn lõi. Dùng công cụ bên thứ ba do bạn tự cân nhắc theo chính sách
 hiện hành của Riot.
 
-Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg). ARAM Helper không liên kết với Riot Games.
+## Bản quyền
+
+© 2026 [doancongtrucit](https://github.com/doancongtrucit) · [doancongtrucit@gmail.com](mailto:doancongtrucit@gmail.com). All rights reserved.
+
+Bạn được tải và dùng bản phát hành chính thức cho mục đích cá nhân, phi thương mại. Mã nguồn công khai để tham khảo;
+sao chép, sửa đổi hay phát hành lại cần được tác giả đồng ý bằng văn bản – xem [LICENSE](LICENSE).
+Các thư viện mã nguồn mở đi kèm giữ giấy phép riêng – xem [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Nguồn dữ liệu: [playaram.gg](https://playaram.gg) (thống kê), Riot Data Dragon và CommunityDragon (tên, icon).
+
+<sub>ARAM Helper isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone
+officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are
+trademarks or registered trademarks of Riot Games, Inc.</sub>

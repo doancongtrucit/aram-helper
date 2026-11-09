@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Đọc Live Client Data API mà client LoL mở trên máy khi đang trong trận.
 
 https://127.0.0.1:2999/liveclientdata/... — chứng chỉ tự ký của Riot nên tắt kiểm tra SSL

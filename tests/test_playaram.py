@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 import sys
 import unittest
 from pathlib import Path

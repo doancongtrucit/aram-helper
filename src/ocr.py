@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """OCR có sẵn của Windows (Windows.Media.Ocr) để đọc tên lõi, phân xử khi nhiều lõi dùng chung icon.
 
 Máy chỉ có OCR tiếng Anh vẫn dùng được: chữ tiếng Việt bị đọc sai dấu, nên so khớp sau khi bỏ dấu

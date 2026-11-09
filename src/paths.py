@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Nơi app lưu dữ liệu (cache, icon, hiệu chỉnh, cài đặt, log).
 
 - Chạy từ mã nguồn (python app.py): thư mục data/ cạnh code, như trước.

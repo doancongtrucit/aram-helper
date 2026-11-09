@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Build bản app để chia sẻ.
 
     python tools/build.py            # Windows: dist/ARAM-Helper-<ver>-win64-portable.zip (+ Setup.exe nếu có Inno Setup)
@@ -42,7 +43,8 @@ def version_info():
       StringStruct('OriginalFilename', 'ARAM Helper.exe'),
       StringStruct('ProductName', 'ARAM Helper'),
       StringStruct('ProductVersion', '{__version__}'),
-      StringStruct('LegalCopyright', 'github.com/doancongtrucit/aram-helper')])]),
+      StringStruct('LegalCopyright', '© 2026 doancongtrucit. All rights reserved.'),
+      StringStruct('Comments', 'https://github.com/doancongtrucit/aram-helper')])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
 )
@@ -55,6 +57,10 @@ def pyinstaller():
     subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--clean",
                     "--distpath", str(DIST), "--workpath", str(BUILD / "pyinstaller"),
                     str(ROOT / "packaging" / "aram_helper.spec")], check=True, cwd=ROOT)
+    # Giấy phép + ghi công đặt cạnh exe (cả bản cài lẫn bản portable)
+    if APP.exists():
+        shutil.copyfile(ROOT / "LICENSE", APP / "LICENSE.txt")
+        shutil.copyfile(ROOT / "THIRD_PARTY_NOTICES.md", APP / "THIRD_PARTY_NOTICES.md")
 
 
 def zip_dir(src: Path, out: Path, extra: dict[str, str] | None = None):

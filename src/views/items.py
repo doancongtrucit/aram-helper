@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Cột trang bị: đồ theo đội địch, lối lên đồ, trang bị khác, giày, phép."""
 from __future__ import annotations
 

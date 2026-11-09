@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Vùng màn hình của cửa sổ game (Windows): bộ quét và overlay bám theo game, kể cả khi game ở màn hình phụ.
 
 Toạ độ trả về là điểm ảnh thật trên màn hình ảo (có thể âm nếu màn hình phụ nằm bên trái màn hình chính).

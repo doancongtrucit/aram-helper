@@ -1,9 +1,11 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Hộp thoại Cài đặt: 3 thẻ Chung / Overlay / ESP32. Mọi thay đổi áp dụng ngay (settings.set → các phần đăng ký tự cập nhật)."""
 from __future__ import annotations
 
 import sys
 import tkinter as tk
 
+import about
 import paths
 import settings
 from i18n import T
@@ -74,7 +76,7 @@ class SettingsDialog:
         pages = [("general", T("Chung")), ("overlay", T("Overlay"))]
         if sys.platform == "win32":
             pages.append(("hotkeys", T("Phím tắt")))
-        for key, text in pages + [("esp32", T("ESP32"))]:
+        for key, text in pages + [("esp32", T("ESP32")), ("about", T("Giới thiệu"))]:
             on = key == self.page
             t = tk.Label(tabs, text=text, fg=d.TEXT if on else d.MUTED, bg=d.BG, font=a.f(10, True),
                          padx=a.S(10), pady=a.S(4), cursor="hand2")
@@ -94,8 +96,9 @@ class SettingsDialog:
             tk.Label(foot, image=d.app_logo(a.root, a.S(20)), bg=d.BG).pack(side="left", padx=(0, a.S(6)))
         except Exception:
             pass
-        a.label(foot, f"ARAM Helper {__version__}", 8, d.MUTED).pack(side="left")
-        a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
+        a.label(foot, f"ARAM Helper {__version__}  ·  {about.COPYRIGHT}", 8, d.MUTED).pack(side="left")
+        if self.page != "about":
+            a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
         self.center()
 
     def _go(self, key):
@@ -103,8 +106,8 @@ class SettingsDialog:
         self._build()
 
     def _defaults(self):
-        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates"],
-                "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k == "overlay"],
+        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates", "auto_pick"],
+                "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k in ("overlay", "reroll_hint")],
                 "hotkeys": ["hk_" + k for k, _ in HOTKEYS],
                 "esp32": ["esp32"]}[self.page]
         settings.reset(keys)
@@ -202,6 +205,8 @@ class SettingsDialog:
         self._check("app_follow_offer", T("Cửa sổ chính phản ứng khi đang chọn lõi (tô sáng, ô Nên chọn)"))
         self._note(T("Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
+        if sys.platform == "win32":
+            self._check("auto_pick", T("Tự ghi nhận lõi đã chọn (theo cú bấm chuột lên thẻ khi chọn lõi)"))
         self._check("check_updates", T("Báo khi có bản mới (tự kiểm tra trên GitHub)"))
         row = self._row(T("Thư mục dữ liệu"))
         a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")
@@ -229,6 +234,7 @@ class SettingsDialog:
         tk.Frame(self.body, bg=d.PANEL, height=a.S(6)).pack()
         self._check("ov_badges", T("Nhãn ★ / #2 / #3 trên thẻ lõi"))
         self._check("ov_only_offer", T("Chỉ hiện khung khi đang chọn lõi"))
+        self._check("reroll_hint", T("Gợi ý thẻ nên đổi lõi (↻) khi cả 3 lõi không tốt"))
         row = self._row(T("Mục hiển thị"))
         for key, text in SECTIONS:
             self._check("ov_show_" + key, T(text), parent=row)
@@ -310,6 +316,74 @@ class SettingsDialog:
         self._hk_refresh()
         self.win.after(1200, self._hk_refresh)    # chờ luồng phím tắt đăng ký lại xong
         return "break"
+
+    def _page_about(self):
+        """Giới thiệu: phiên bản, bản quyền, developer, nguồn dữ liệu, giấy phép."""
+        import webbrowser
+        from version import __version__
+        d, a = self.d, self.app
+        head = tk.Frame(self.body, bg=d.PANEL)
+        head.pack(fill="x")
+        try:
+            tk.Label(head, image=d.app_logo(a.root, a.S(64)), bg=d.PANEL).pack(side="left", padx=(0, a.S(12)))
+        except Exception:
+            pass
+        box = tk.Frame(head, bg=d.PANEL)
+        box.pack(side="left")
+        a.label(box, about.APP_NAME, 16, d.TEXT, True).pack(anchor="w")
+        a.label(box, T("Phiên bản {v}", v=__version__) + "  ·  " + T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn"),
+                9, d.MUTED).pack(anchor="w")
+        a.label(box, about.COPYRIGHT, 9, d.TEXT).pack(anchor="w", pady=(a.S(4), 0))
+
+        row = self._row(T("Developer"))
+        link = a.label(row, about.DEVELOPER, 9, d.ACCENT, cursor="hand2")
+        link.pack(side="left")
+        link.bind("<Button-1>", lambda e: webbrowser.open(about.DEVELOPER_URL))
+        row = self._row(T("Email"))
+        mail = a.label(row, about.EMAIL, 9, d.ACCENT, cursor="hand2")
+        mail.pack(side="left")
+        mail.bind("<Button-1>", lambda e: webbrowser.open("mailto:" + about.EMAIL))
+        row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(4))
+        row.pack(fill="x")
+        for text, fn in ((T("Trang dự án"), lambda: webbrowser.open(about.REPO_URL)),
+                         (T("Báo lỗi / góp ý"), lambda: webbrowser.open(about.ISSUES_URL)),
+                         (T("Giấy phép"), lambda: self._show_file("LICENSE", T("Giấy phép"))),
+                         (T("Thành phần mã nguồn mở"),
+                          lambda: self._show_file("THIRD_PARTY_NOTICES.md", T("Thành phần mã nguồn mở")))):
+            a.button(row, text, fn, 8).pack(side="left", padx=(0, a.S(6)))
+
+        a.label(self.body, T("Nguồn dữ liệu"), 9, d.TEXT, True).pack(anchor="w", pady=(a.S(10), a.S(2)))
+        for name, url, what in about.DATA_SOURCES:
+            line = tk.Frame(self.body, bg=d.PANEL)
+            line.pack(anchor="w")
+            link = a.label(line, name, 9, d.ACCENT, cursor="hand2")
+            link.pack(side="left")
+            link.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
+            a.label(line, " – " + T(what), 9, d.MUTED).pack(side="left")
+        a.label(self.body, about.RIOT_DISCLAIMER, 7, d.MUTED, wraplength=a.S(470), justify="left").pack(
+            anchor="w", pady=(a.S(10), 0))
+
+    def _show_file(self, name, title):
+        """Xem LICENSE / THIRD_PARTY_NOTICES ngay trong app (file đi kèm bản cài)."""
+        d, a = self.d, self.app
+        try:
+            text = (paths.RES / name).read_text(encoding="utf-8")
+        except OSError:
+            text = f"{name}: {about.REPO_URL}"
+        w = tk.Toplevel(self.win)
+        w.title(f"{about.APP_NAME} – {title}")
+        w.configure(bg=d.BG)
+        w.transient(self.win)
+        t = tk.Text(w, bg=d.PANEL, fg=d.TEXT, font=a.f(9, mono=True), wrap="word", relief="flat",
+                    padx=a.S(12), pady=a.S(10), width=96, height=30, highlightthickness=0)
+        t.insert("1.0", text)
+        t.configure(state="disabled")
+        t.pack(fill="both", expand=True, padx=a.S(8), pady=a.S(8))
+        a.button(w, T("Đóng"), w.destroy, 9, primary=True).pack(side="right", padx=a.S(8), pady=(0, a.S(8)))
+        w.update_idletasks()
+        x = self.win.winfo_rootx() + (self.win.winfo_width() - w.winfo_reqwidth()) // 2
+        w.geometry(f"+{max(0, x)}+{max(0, self.win.winfo_rooty() - a.S(40))}")
+        return w
 
     def _page_esp32(self):
         import esp32_link

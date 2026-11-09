@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tạo ảnh minh hoạ cho docs/USER_GUIDE.md (Windows).
 
 Dùng dữ liệu mẫu (tests/fixture_*.html) và một màn chọn lõi giả lập – không chụp màn hình thật của máy.
@@ -130,6 +131,9 @@ class Hub(FakeHub):
     def state(self):
         s = super().state()
         s["advice"] = advice.rank_offer(OFFER, CHAMP, CATALOG, set(self.owned)) if self.offer else None
+        hint = advice.reroll_hint(s["advice"], CHAMP, [True, True, True]) if s["advice"] else None
+        for r in s["advice"] or []:
+            r["reroll"] = r["slot"] == hint                      # minh hoạ gợi ý đổi lõi (↻)
         s["scan"] = {"status": "Đã thấy bảng chọn lõi.", "calibrated": True, "offer": {"visible": self.offer},
                      "calibration": self.calib}
         s["counter"] = COUNTER
@@ -168,7 +172,7 @@ def main_window_shots(root):
     section = first_card.master.master
     more_btn = [w for w in section.winfo_children()[0].winfo_children() if w.cget("text").startswith("Xem thêm")][0]
     items_head = app._right.inner.winfo_children()[1 if COUNTER else 0]
-    settings_btn = [w for w in app.search.master.winfo_children() if isinstance(w, tk.Label) and "Cài đặt" in w.cget("text")][0]
+    settings_btn = app.settings_btn
     R = 20
 
     def after(w):          # ngay sau nội dung (theo bề rộng nội dung, không theo khung giãn)
@@ -183,12 +187,14 @@ def main_window_shots(root):
         x, y, ww, hh = rel(w, img)
         return x + ww - R - 6, y + int(hh * frac)
 
-    pts = [(1, *after(app.status)), (2, *inside_right(app.search)), (3, *before(settings_btn)),
+    def below(w):          # ngay dưới phần tử (thanh trên chật, không đặt số đè lên nút)
+        x, y, ww, hh = rel(w, img)
+        return x + ww // 2, y + hh + R + 2
+
+    pts = [(1, *below(app.chip)), (2, *inside_right(app.search_box)), (3, *below(settings_btn)),
            (4, *after(app.scan_lbl)), (5, *after(app.head.winfo_children()[1])), (6, *before(app.tabs)),
            (7, *after(app.owned_bar)), (8, *before(more_btn)), (9, *rel(first_card, img)[:2]),
            (10, *after(items_head))]
-    bx, by, _, bh = rel(settings_btn, img)
-    pts[2] = (3, bx - 3, by + bh + R - 2)            # ngay dưới, giữa nút Tự động và Cài đặt
     save(annotate(img, pts, 1.1), "main-window.png")
 
     # 2) Tab Combo lõi

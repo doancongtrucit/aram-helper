@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Dữ liệu tướng / trang bị chính thức của Riot (Data Dragon, bản tiếng Việt), rút gọn chỉ giữ trường cần dùng.
 
 Cache ở data/ddragon.json, kiểm tra phiên bản mới mỗi 24 giờ. Mạng lỗi thì dùng bản đã lưu.

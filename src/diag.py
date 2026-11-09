@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Chẩn đoán bộ quét lõi: ghi log có thời gian và lưu ảnh vùng quét vào data/debug/ (chỉ trên máy, không gửi đi).
 
 Ảnh chẩn đoán giúp chỉnh bộ nhận diện theo giao diện game thật. Giữ tối đa MAX_FILES ảnh mới nhất.
@@ -15,7 +16,11 @@ MAX_FILES = 30
 
 
 def log(msg: str):
-    print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
+    line = f"[{time.strftime('%H:%M:%S')}] {msg}"
+    try:
+        print(line, flush=True)
+    except UnicodeEncodeError:          # cửa sổ dòng lệnh không phải UTF-8: thay ký tự lạ, không làm hỏng luồng quét
+        print(line.encode("ascii", "replace").decode(), flush=True)
 
 
 def save(img_bgr, info: dict, tag: str) -> Path:

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tab Combo lõi: lối chơi, combo kèm lý do, đồ khuyên dùng, mẹo."""
 from __future__ import annotations
 

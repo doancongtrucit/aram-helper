@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Kiểm tra cửa sổ chính dựng được giao diện từ dữ liệu mẫu (không cần mạng, không cần game)."""
 import os
 import sys
@@ -169,6 +170,16 @@ class DesktopUI(unittest.TestCase):
         self.tick()
         self.assertEqual(len(self.app.cards), 48)
 
+    def test_back_to_game_button_only_when_viewing_other_champion(self):
+        self.assertEqual(self.app.back_btn.winfo_manager(), "")
+        orig = self.hub.state
+        self.hub.state = lambda: {**orig(), "focus": "yone"}
+        self.tick()
+        self.assertEqual(self.app.back_btn.winfo_manager(), "pack")
+        self.hub.state = orig
+        self.tick()
+        self.assertEqual(self.app.back_btn.winfo_manager(), "")
+
     def test_combo_tab(self):
         self.app._set_tab("combo")
         self.tick()
@@ -211,10 +222,31 @@ class DesktopUI(unittest.TestCase):
         self.assertEqual(settings.get("hk_pick1"), "ctrl+alt+1")
         dlg.close()
 
+    def test_about_page_and_license_viewer(self):
+        import about
+        self.app.open_settings("about")
+        dlg = self.app._settings_dlg
+        self.root.update()
+        self.assertEqual(dlg.page, "about")
+
+        def texts(w):
+            out = [w.cget("text")] if isinstance(w, tk.Label) else []
+            for ch in w.winfo_children():
+                out += texts(ch)
+            return out
+        shown = texts(dlg.win)
+        self.assertIn(about.COPYRIGHT, shown)
+        self.assertIn(about.DEVELOPER, shown)
+        viewer = dlg._show_file("LICENSE", "License")
+        body = [c for c in viewer.winfo_children() if isinstance(c, tk.Text)][0].get("1.0", "end")
+        self.assertIn("All rights reserved", body)
+        viewer.destroy()
+        dlg.close()
+
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg
-        for page in ("overlay", "hotkeys", "esp32", "general"):
+        for page in ("overlay", "hotkeys", "esp32", "about", "general"):
             dlg._go(page)
             self.root.update()
         settings.set("lang", "en")                  # hộp thoại dựng lại theo ngôn ngữ mới

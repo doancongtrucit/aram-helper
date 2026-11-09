@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Luồng nền: khi đang trong trận, chụp vùng 3 thẻ lõi để đọc các lõi đang được đưa ra.
 
 Vị trí bảng lõi: chưa có thì ước tính theo độ phân giải của cửa sổ game và tự lưu lại ở lượt chọn lõi đầu tiên
@@ -11,6 +12,8 @@ import time
 import traceback
 
 import diag
+import game_window
+import pick_watch
 import live_client
 import playaram
 import screen_scan as ss
@@ -48,6 +51,10 @@ class Scanner:
         self._last_wide = 0.0
         self._last_seen = 0.0        # lần cuối thấy / gần thấy bảng chọn lõi
         self._est = None             # vị trí ước tính theo độ phân giải (khi chưa định vị)
+        self.clicks = pick_watch.ClickWatcher()
+        self._session_at = 0.0       # lúc bảng chọn lõi hiện ra (đổi lõi trong cùng lượt vẫn giữ)
+        self.picked = None           # {"id", "slot", "slots"} – lõi tự ghi nhận theo cú bấm chuột
+        self._pick_id = 0
 
     # ---------- public ----------
     def snapshot(self) -> dict:
@@ -62,6 +69,7 @@ class Scanner:
                 "ocr": _ocr_available(),
                 "calibrating_in": max(0, round(self.calibrating_at - time.time(), 1)) if self.calibrating_at else None,
                 "offer": self.offer,
+                "picked": self.picked,
             }
 
     def request_calibration(self, delay: float = 0.0):
@@ -132,15 +140,32 @@ class Scanner:
         self._publish(res)
         del img
 
-    def _publish(self, res):
+    def _publish(self, res, rerolls=None):
         slots = [{"candidates": r["candidates"], "score": round(r["score"], 3)} for r in res]
         with self.lock:
+            if not (self.offer and self.offer.get("visible")):
+                self._session_at = time.time()
             same = self.offer and [s["candidates"] for s in self.offer["slots"]] == [s["candidates"] for s in slots]
             if same:
                 if not self.offer.get("done"):     # đã bấm chọn lõi thì không hiện lại offer cũ
                     self.offer["visible"] = True
             else:
                 self.offer = {"slots": slots, "at": time.time(), "visible": True}
+            if rerolls is not None:
+                self.offer["rerolls"] = rerolls
+
+    def _offer_closed(self):
+        """Bảng chọn vừa đóng: nếu người chơi đã bấm vào 1 thẻ (và chưa tự đánh dấu) → ghi nhận lõi ở thẻ đó."""
+        self.clicks.stop()
+        slot = self.clicks.take(self._session_at)
+        with self.lock:
+            offer = self.offer
+            if offer is None or offer.get("done") or slot is None or slot >= len(offer["slots"]):
+                return
+            offer["done"] = True
+            self._pick_id += 1
+            self.picked = {"id": self._pick_id, "slot": slot, "slots": [s["candidates"] for s in offer["slots"]]}
+        diag.log(f"tự ghi nhận lõi đã chọn: thẻ {slot + 1}")
 
     def _active_calib(self, full) -> ss.Calibration:
         """Vị trí đã định vị (nếu cùng tỉ lệ khung hình với vùng game), không thì ước tính theo độ phân giải."""
@@ -178,20 +203,26 @@ class Scanner:
             diag.log(f"tự định vị bảng lõi {calib.__dict__}")
             self._set(calib=calib)
         self._diagnose(res, img, (x0, y0), calib)
+        rerolls = ss.rerolls_left(img, res, (x0, y0)) if ss.confident(res) else None
         del img
         if ss.confident(res) or max(r["score"] for r in res) >= ss.NEAR_MIN:
             self._last_seen = time.time()
         if ss.confident(res):
             self._misses = 0
-            self._publish(res)
+            self._publish(res, rerolls)
+            gx, gy = game_window.rect()[:2] if not ss.FAKE_SCREEN else (0, 0)
+            self.clicks.watch(ss.card_rects(calib, full, (gx, gy)))
             self._set(status="Đã thấy bảng chọn lõi.")
         else:
             self._misses += 1
             if self._misses >= MISS_TO_HIDE:
                 self._ocr_cache.clear()
                 with self.lock:
+                    was_visible = bool(self.offer and self.offer.get("visible"))
                     if self.offer:
                         self.offer["visible"] = False
+                if was_visible:
+                    self._offer_closed()
                 best = max(r["score"] for r in res)
                 self._set(status=f"Đang quét… (chưa thấy bảng chọn lõi · khớp tốt nhất {best:.2f})")
 

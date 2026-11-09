@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Đổi dữ liệu tướng (lấy từ trang tiếng Việt – bản đầy đủ nhất, có combo) sang tiếng Anh theo id.
 
 - Tên lõi: tier list tiếng Anh của trang nguồn (cùng id lõi).

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Overlay: vẽ được, bấm chọn lõi, thu gọn, kéo khung và nhớ vị trí (dữ liệu mẫu, không cần game)."""
 import os
 import sys
@@ -18,6 +19,7 @@ CALIB = {"width": 1920, "height": 1080, "size": 128, "centers": [[660, 432], [96
 
 class Hub(FakeHub):
     offer = True
+    reroll = None           # thẻ được gợi ý đổi lõi (giả lập)
 
     def slug(self):
         return "yasuo"
@@ -25,6 +27,8 @@ class Hub(FakeHub):
     def state(self):
         s = super().state()
         s["advice"] = advice.rank_offer([[1018], [3048], [1134]], CHAMP, CATALOG, set(self.owned)) if self.offer else None
+        for r in s["advice"] or []:
+            r["reroll"] = r["slot"] == self.reroll
         s["scan"] = {"status": "ok", "calibrated": True, "calibration": CALIB}
         return s
 
@@ -65,6 +69,15 @@ class OverlayUI(unittest.TestCase):
         self.assertEqual(self.ov.bwin.state(), "normal")
         tags = {t for i in self.ov.bcv.find_all() for t in self.ov.bcv.gettags(i)}
         self.assertEqual({t for t in tags if t.startswith("badge")}, {"badge0", "badge1", "badge2"})
+
+    def test_reroll_hint_drawn_on_row_and_badge(self):
+        import i18n
+        self.hub.reroll = 0
+        self.tick()
+        texts = [self.ov.pcv.itemcget(i, "text") for i in self.ov.pcv.find_all() if self.ov.pcv.type(i) == "text"]
+        badge = [self.ov.bcv.itemcget(i, "text") for i in self.ov.bcv.find_all() if self.ov.bcv.type(i) == "text"]
+        self.assertIn(i18n.T("↻ nên đổi"), texts)
+        self.assertTrue(any(i18n.T("↻ nên đổi thẻ này") in t for t in badge))
 
     def test_pick_marks_owned_and_hides_offer(self):
         self.ov._pick(3048)

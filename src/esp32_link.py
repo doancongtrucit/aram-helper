@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Đẩy tóm tắt trận ARAM lên màn ESP32 (PC Control Deck, màn hình "ARAM") qua Wi-Fi UDP.
 
 Dùng chung kênh UDP + token với thông báo PC của PC Control Deck. Cấu hình ở data/esp32.json (không commit):

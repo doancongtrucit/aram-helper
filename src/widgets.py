@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Widget dùng chung: tải ảnh nền (cache đĩa + RAM), vùng cuộn, tooltip."""
 from __future__ import annotations
 
@@ -152,6 +153,7 @@ class Tooltip:
         self.hide()
         w = tk.Toplevel(self.app.root)
         w.overrideredirect(True)
+        w.title("ARAM Helper tooltip")
         w.attributes("-topmost", True)
         tk.Label(w, text=text, bg=PANEL2, fg=TEXT, font=self.app.f(9), padx=6, pady=2,
                  highlightthickness=1, highlightbackground=LINE).pack()

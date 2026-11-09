@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Phím tắt: đọc tổ hợp, kiểm tra hợp lệ, thứ tự phím người dùng chọn + phím dự phòng."""
 import sys
 import unittest

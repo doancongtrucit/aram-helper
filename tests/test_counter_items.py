@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Phân tích đội hình địch → gợi ý trang bị (dữ liệu tự dựng, không cần mạng)."""
 import sys
 import unittest

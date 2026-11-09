@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tuỳ chọn (settings.json) và chuỗi Anh / Việt."""
 import sys
 import tempfile

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Đo độ chính xác nhận diện trên ảnh giả lập. Chạy: python tests/bench_scan.py [số_lượt]"""
 import random
 import sys

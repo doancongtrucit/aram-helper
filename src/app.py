@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """ARAM Helper – ứng dụng máy tính gợi ý lõi ARAM Hỗn Loạn (Windows; macOS chỉ có cửa sổ chính).
 
 Chạy từ mã nguồn: python app.py   (người dùng cài bản exe / .app từ GitHub Releases)
@@ -21,6 +22,7 @@ import threading  # noqa: E402
 import time  # noqa: E402
 
 import advice  # noqa: E402
+import diag  # noqa: E402
 import counter_items  # noqa: E402
 import ddragon  # noqa: E402
 import hotkeys  # noqa: E402
@@ -52,7 +54,7 @@ class Hub:
         self.lock = threading.Lock()
         self.game = {"in_game": False}
         self.champion = None
-        self.focus_slug = None          # tướng chọn tay (ưu tiên hơn tướng trong trận cho tới khi bấm "Tự động")
+        self.focus_slug = None          # tướng chọn tay (ưu tiên hơn tướng trong trận cho tới khi bấm "↩ Tướng trong trận")
         self.error = None
         self.owned: dict[str, list[int]] = {}
         self._catalog: dict[int, dict] | None = None
@@ -63,6 +65,7 @@ class Hub:
         self._counter: list[dict] = []
         self._loc_key = None
         self._loc_champ = None
+        self._pick_seen = None
         settings.on_change(lambda ch: self._wake.set() if "lang" in ch else None)   # đổi ngôn ngữ: tải ngay
 
     # ----- dữ liệu -----
@@ -188,10 +191,31 @@ class Hub:
         if not offer or not offer.get("slots") or not self.champion:
             return None
         slots = [s["candidates"] for s in offer["slots"]]
-        return advice.rank_offer(slots, self.champion_view(), self.catalog(), set(self.owned_ids()))
+        ranked = advice.rank_offer(slots, self.champion_view(), self.catalog(), set(self.owned_ids()))
+        hint = advice.reroll_hint(ranked, self.champion_view(), offer.get("rerolls"))             if settings.get("reroll_hint") else None
+        for r in ranked:
+            r["reroll"] = r["slot"] == hint
+        return ranked
+
+    def _consume_pick(self, scan: dict):
+        """Bộ quét ghi nhận người chơi bấm vào thẻ nào khi bảng chọn đóng → đánh dấu lõi đó đã chọn."""
+        p = scan.get("picked")
+        if not p or p["id"] == self._pick_seen:
+            return
+        self._pick_seen = p["id"]
+        slug = self.slug()
+        if not settings.get("auto_pick") or not slug or not self.champion:
+            return
+        ranked = {r["slot"]: r for r in advice.rank_offer(p["slots"], self.champion_view(), self.catalog(),
+                                                          set(self.owned_ids()))}
+        if p["slot"] in ranked:
+            best = ranked[p["slot"]]["best"]
+            self.update_owned(slug, add=best["id"])
+            diag.log(f"tự ghi nhận lõi đã chọn: {best['name']}")
 
     def state(self) -> dict:
         scan = self.scanner.snapshot() if self.scanner else {"error": SCANNER_ERROR}
+        self._consume_pick(scan)
         with self.lock:
             out = {"game": self.game, "champion": self.champion_view(), "error": self.error,
                    "owned": self.owned_ids(), "focus": self.focus_slug, "scan": scan}

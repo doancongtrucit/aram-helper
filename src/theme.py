@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Màu, font, hằng số bố cục và logo dùng chung cho cửa sổ chính, hộp Cài đặt, overlay."""
 from __future__ import annotations
 

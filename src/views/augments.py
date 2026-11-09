@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Bảng lõi 3 bậc, thẻ lõi, tô sáng khi tìm / khi đang chọn lõi, ô Nên chọn."""
 from __future__ import annotations
 
@@ -203,7 +204,9 @@ class AugmentsMixin:
             wr = (T("chưa có số liệu") if b["winrate"] is None
                   else f"{b['winrate']}%" + (T(" (chung, mọi tướng)") if b["source"] == "chung" else ""))
             extra = T("  ·  +{b} hợp combo {t}", b=advice.TIER_BONUS[b["fit"]], t=b["fit"]) if b.get("fit") else ""
-            self.label(mid, T("Thắng {wr}{extra}", wr=wr, extra=extra), 8, MUTED).pack(anchor="w")
+            if r.get("reroll"):
+                extra += T(" · ↻ nên đổi")
+            self.label(mid, T("Thắng {wr}{extra}", wr=wr, extra=extra), 8, OKC if r.get("reroll") else MUTED).pack(anchor="w")
             if len(r["candidates"]) == 1:
                 self.button(row, T("Đã chọn"), lambda i=b["id"]: self._pick_aug(i, source), 8,
                             primary=r["rank"] == 1).pack(side="right")

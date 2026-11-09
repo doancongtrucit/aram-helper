@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Xuất icon app từ assets/icon.svg: assets/icon.png (512 px) + assets/icon.ico (16–256 px).
 
 SVG có hiệu ứng (đổ bóng, phát sáng) nên vẽ bằng Edge / Chrome chạy ẩn để giữ đúng hình, rồi thu nhỏ bằng Pillow.

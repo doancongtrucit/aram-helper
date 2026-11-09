@@ -2,6 +2,10 @@
 
 Tài liệu cho người sửa mã nguồn. Người dùng cuối chỉ cần [hướng dẫn sử dụng](docs/USER_GUIDE.md).
 
+> Mã nguồn © 2026 doancongtrucit, **All rights reserved** ([LICENSE](LICENSE)). Muốn dùng, sửa hay phát hành lại
+> ngoài phạm vi LICENSE, hoặc muốn đóng góp code, hãy mở issue trao đổi trước. File mới thêm dòng bản quyền ở đầu:
+> `# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.` – thông tin chung nằm ở `src/about.py`.
+
 ## Môi trường
 
 Python 3.10+ (CI dùng 3.13), Windows để chạy đủ tính năng (macOS chỉ có cửa sổ chính).

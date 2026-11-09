@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Kiểm tra bản mới trên GitHub Releases (tối đa 1 lần / ngày). Chỉ báo + mở trang tải, không tự tải hay cài."""
 from __future__ import annotations
 

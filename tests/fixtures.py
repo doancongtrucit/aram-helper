@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Trang HTML mẫu của trang nguồn dữ liệu, dùng cho test.
 
 Các file tests/fixture_*.html không nằm trong repo. Tải về máy để chạy test:  python tests/fetch_fixtures.py

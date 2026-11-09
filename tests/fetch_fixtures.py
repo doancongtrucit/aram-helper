@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tải trang mẫu của trang nguồn dữ liệu về tests/ để chạy test (chỉ dùng trên máy, không commit)."""
 import sys
 from pathlib import Path

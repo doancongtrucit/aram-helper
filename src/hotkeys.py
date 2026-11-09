@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Phím tắt toàn cục trên Windows (RegisterHotKey) – hoạt động cả khi game đang được chọn.
 
     hotkeys.start({"calibrate": (["ctrl+alt+a", "ctrl+alt+k"], fn), ...})

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Nhận diện 3 lõi đang được đưa ra trên màn hình bằng so khớp icon.
 
 Hai bước:
@@ -43,6 +44,8 @@ MATCH_MIN = 0.55      # điểm tối thiểu để coi là khớp
 MARGIN_MIN = 0.02     # cách biệt tối thiểu với icon khác (ngoài nhóm dễ nhầm)
 EST_SIZE, EST_Y, EST_GAP = 0.1493, 0.2889, 2.27   # icon / chiều cao, tâm y / chiều cao, khoảng cách thẻ / icon
 NAME_MIN = 0.75       # độ giống tên (OCR) tối thiểu khi nhận lõi chỉ bằng tên
+REROLL_Y = 2.85              # tâm nút đổi lõi: dưới tâm icon 2,85 × cỡ icon (đo trên game thật)
+REROLL_SAT_MIN = 110         # độ bão hoà: nút còn lượt ~145, nút đã dùng (xám) ~75
 GAP_MIN, GAP_MAX = 1.8, 3.0   # khoảng cách tâm 2 thẻ lõi kề nhau / cỡ icon (trong game ~2.3)
 CLOSE_DELTA = 0.045   # icon có điểm cách icon tốt nhất ≤ mức này được coi là dễ nhầm → ứng viên (OCR phân xử)
 CLOSE_MAX = 6
@@ -355,8 +358,36 @@ def scan_region(calib: Calibration, full: tuple[int, int]) -> tuple[int, int, in
     xs = [cx * sx for cx, _ in calib.centers]
     ys = [cy * sy for _, cy in calib.centers]
     x0, x1 = max(0, int(min(xs) - 1.5 * s)), min(W, int(max(xs) + 1.5 * s))
-    y0, y1 = max(0, int(min(ys) - 1.4 * s)), min(H, int(max(ys) + 2.5 * s))
+    y0, y1 = max(0, int(min(ys) - 1.4 * s)), min(H, int(max(ys) + REROLL_Y * s + 0.25 * s))   # gồm cả nút đổi lõi
     return x0, y0, x1, y1
+
+
+def card_rects(calib: Calibration, full: tuple[int, int], offset: tuple[int, int] = (0, 0)):
+    """Khung 3 thẻ lõi (x0, y0, x1, y1) theo toạ độ màn hình – không gồm nút đổi lõi bên dưới."""
+    W, H = full
+    sx, sy = W / calib.width, H / calib.height
+    s = calib.size * sx
+    ox, oy = offset
+    return [(round(ox + cx * sx - 1.05 * s), round(oy + cy * sy - 1.3 * s),
+             round(ox + cx * sx + 1.05 * s), round(oy + cy * sy + 2.35 * s)) for cx, cy in calib.centers]
+
+
+def rerolls_left(screen_bgr: np.ndarray, results: list[dict], origin: tuple[int, int] = (0, 0)) -> list[bool | None]:
+    """Nút đổi lõi (↻) dưới từng thẻ còn dùng được không: còn lượt thì nút màu đồng (bão hoà cao),
+    đã dùng thì xám. None = không thấy nút (ngoài vùng chụp)."""
+    hsv = cv2.cvtColor(screen_bgr, cv2.COLOR_BGR2HSV)
+    ox, oy = origin
+    out = []
+    for r in results:
+        if not r.get("center"):
+            out.append(None)
+            continue
+        (cx, cy), s = r["center"], r["size"]
+        y, h, w = int(cy + REROLL_Y * s) - oy, int(0.12 * s), int(0.2 * s)
+        x = int(cx) - ox
+        crop = hsv[max(0, y - h):y + h, max(0, x - w):x + w]
+        out.append(None if crop.size == 0 else bool(crop[..., 1].mean() >= REROLL_SAT_MIN))
+    return out
 
 
 def detect(screen_bgr: np.ndarray, calib: Calibration, bank: Bank,

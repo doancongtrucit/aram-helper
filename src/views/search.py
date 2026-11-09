@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Ô tìm kiếm: lọc nhanh tướng (danh sách chọn ↑ ↓ Enter)."""
 from __future__ import annotations
 

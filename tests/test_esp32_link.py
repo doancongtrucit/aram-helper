@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Gói ARAM gửi lên ESP32: lọc ký tự, dựng nội dung, giới hạn kích thước, gửi UDP thật tới cổng cục bộ."""
 import json
 import socket

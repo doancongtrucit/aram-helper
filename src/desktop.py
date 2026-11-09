@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Cửa sổ chính ARAM Helper (tkinter – có sẵn trong Python, nhẹ RAM).
 
 Tab "Lõi & trang bị": cửa sổ rộng → 2 cột (lõi bên trái, trang bị bên phải), mỗi cột cuộn riêng; "Tự vừa cửa sổ"
@@ -14,6 +15,7 @@ import time
 import tkinter as tk
 from tkinter import ttk
 
+import about
 import i18n
 import paths
 import settings
@@ -197,47 +199,87 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
 
     # ----- khung cố định -----
     def _build(self):
-        top = tk.Frame(self.root, bg=BG, padx=self.S(12), pady=self.S(6))
+        """Bố cục kiểu app gaming: thanh trên (logo · tìm kiếm · trạng thái · công tắc · cài đặt),
+        thanh trạng thái mảnh ở đáy (bộ quét · Định vị lõi · phiên bản)."""
+        S = self.S
+        top = tk.Frame(self.root, bg=PANEL, padx=S(14), pady=S(8))
         top.pack(fill="x")
-        self.dot = tk.Canvas(top, width=self.S(12), height=self.S(12), bg=BG, highlightthickness=0)
-        self.dot.pack(side="left")
-        self._dot = self.dot.create_oval(1, 1, self.S(11), self.S(11), fill=MUTED, outline="")
-        self.status = self.label(top, T("Đang chờ trận…"), 10, TEXT, True)
-        self.status.pack(side="left", padx=(self.S(6), self.S(12)))
+        tk.Frame(self.root, bg=LINE, height=1).pack(fill="x")
 
+        # trái: thương hiệu
+        brand = tk.Frame(top, bg=PANEL)
+        brand.pack(side="left")
+        try:
+            tk.Label(brand, image=app_logo(self.root, S(26)), bg=PANEL).pack(side="left")
+        except Exception:
+            pass
+        self.label(brand, "ARAM Helper", 12, TEXT, True).pack(side="left", padx=(S(8), 0))
+
+        # phải (xếp từ mép phải vào): cài đặt · overlay · trạng thái trận · quay lại tướng trong trận · cập nhật
+        self.settings_btn = self._icon_button(top, "⚙", self.open_settings, T("Cài đặt"))
+        self.settings_btn.pack(side="right")
+        if self.overlay:
+            self.ov_var = tk.BooleanVar(value=self.overlay.visible)
+            self.ov_toggle = self._toggle(top, "Overlay", self.ov_var, self._toggle_overlay)
+            self.ov_toggle.pack(side="right", padx=(0, S(10)))
+        chip = tk.Frame(top, bg=PANEL2, padx=S(10), pady=S(5), highlightthickness=1, highlightbackground=LINE)
+        chip.pack(side="right", padx=(0, S(10)))
+        self.chip = chip
+        self.dot = tk.Canvas(chip, width=S(10), height=S(10), bg=PANEL2, highlightthickness=0)
+        self.dot.pack(side="left")
+        self._dot = self.dot.create_oval(1, 1, S(9), S(9), fill=MUTED, outline="")
+        self.status = self.label(chip, T("Đang chờ trận…"), 9, TEXT, True)
+        self.status.pack(side="left", padx=(S(6), 0))
+        self.back_btn = self.button(top, "↩ " + T("Tướng trong trận"), self._auto, 9)
+        self.tooltip.bind(self.back_btn, T("Bỏ tướng đang xem, quay lại tướng bạn đang chơi"))
+        self.update_slot = tk.Frame(top, bg=PANEL)
+        self.update_slot.pack(side="right", padx=(0, S(10)))
+        if self._update_info:
+            self.root.after(0, self._show_update, self._update_info)
+
+        # giữa: tìm kiếm có biểu tượng kính lúp
+        box = tk.Frame(top, bg=BG, highlightthickness=1, highlightbackground=LINE, highlightcolor=ACCENT,
+                       padx=S(8))
+        box.pack(side="left", fill="x", expand=True, padx=(S(24), S(16)))
+        self.search_box = box
+        glass = tk.Canvas(box, width=S(16), height=S(16), bg=BG, highlightthickness=0)
+        glass.create_oval(S(2), S(2), S(11), S(11), outline=MUTED, width=max(1, S(2)))
+        glass.create_line(S(10), S(10), S(14), S(14), fill=MUTED, width=max(1, S(2)), capstyle="round")
+        glass.pack(side="left")
         self.search_var = tk.StringVar()
-        self.search = tk.Entry(top, textvariable=self.search_var, bg=PANEL, fg=TEXT, insertbackground=TEXT,
-                               relief="flat", font=self.f(10), highlightthickness=1, highlightbackground=LINE,
-                               highlightcolor=ACCENT)
-        self.search.pack(side="left", fill="x", expand=True, ipady=self.S(3))
-        self._placeholder(self.search, self.search_var,
-                          T("Tìm tướng hoặc lõi (không cần dấu, nhiều lõi cách nhau dấu phẩy)…"))
+        self.search = tk.Entry(box, textvariable=self.search_var, bg=BG, fg=TEXT, insertbackground=TEXT,
+                               relief="flat", font=self.f(10), highlightthickness=0)
+        self.search.pack(side="left", fill="x", expand=True, ipady=S(5), padx=(S(8), 0))
+        self._placeholder(self.search, self.search_var, T("Tìm tướng hoặc lõi…"))
+        self.tooltip.bind(self.search, T("Gõ tên tướng để chuyển nhanh (↑ ↓ Enter), hoặc tên lõi – nhiều lõi cách nhau dấu phẩy, không cần dấu."))
+        self.search.bind("<FocusIn>", lambda e: box.configure(highlightbackground=ACCENT), add="+")
+        self.search.bind("<FocusOut>", lambda e: box.configure(highlightbackground=LINE), add="+")
         self.search_var.trace_add("write", lambda *_: self.root.after(80, self._on_search))
         self.search.bind("<Down>", lambda e: self._popup_move(1))
         self.search.bind("<Up>", lambda e: self._popup_move(-1))
         self.search.bind("<Return>", lambda e: self._popup_pick())
         self.search.bind("<FocusOut>", lambda e: self.root.after(200, self._hide_popup), add="+")
+        for w in (box, glass):
+            w.bind("<Button-1>", lambda e: self.search.focus_set())
 
-        self.update_slot = tk.Frame(top, bg=BG)
-        self.update_slot.pack(side="left", padx=(self.S(8), 0))
-        if self._update_info:
-            self.root.after(0, self._show_update, self._update_info)
-        self.button(top, T("Tự động"), self._auto).pack(side="left", padx=(self.S(8), self.S(4)))
-        self.button(top, "⚙ " + T("Cài đặt"), self.open_settings).pack(side="left", padx=self.S(4))
-        if self.overlay:
-            self.ov_var = tk.BooleanVar(value=self.overlay.visible)
-            tk.Checkbutton(top, text="Overlay", variable=self.ov_var, command=self._toggle_overlay,
-                           bg=BG, fg=TEXT, selectcolor=PANEL, activebackground=BG, activeforeground=TEXT,
-                           font=self.f(10)).pack(side="left", padx=self.S(4))
-
-        bar2 = tk.Frame(self.root, bg=BG, padx=self.S(12))
-        bar2.pack(fill="x")
-        self.scan_lbl = self.label(bar2, "", 9, MUTED, anchor="w")
-        self.scan_lbl.pack(side="left", fill="x", expand=True)
+        # đáy: thanh trạng thái
+        from version import __version__
+        bar = tk.Frame(self.root, bg=PANEL, padx=S(12), pady=S(3))
+        bar.pack(side="bottom", fill="x")
+        tk.Frame(self.root, bg=LINE, height=1).pack(side="bottom", fill="x")
+        self.scan_dot = tk.Canvas(bar, width=S(8), height=S(8), bg=PANEL, highlightthickness=0)
+        self.scan_dot.pack(side="left")
+        self._scan_dot = self.scan_dot.create_oval(1, 1, S(7), S(7), fill=MUTED, outline="")
+        self.scan_lbl = self.label(bar, "", 8, MUTED, anchor="w")
+        self.scan_lbl.pack(side="left", fill="x", expand=True, padx=(S(6), 0))
+        self.label(bar, f"v{__version__}", 8, DIMTEXT).pack(side="right")
         if self.scanner:
-            b = self.button(bar2, "⌖ " + T("Định vị lõi"), lambda: self.scanner.request_calibration(5), 9)
-            b.pack(side="right")
-            self.tooltip.bind(b, T("Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai."))
+            loc = self.label(bar, "⌖ " + T("Định vị lõi"), 8, ACCENT, cursor="hand2")
+            loc.pack(side="right", padx=(0, S(14)))
+            loc.bind("<Button-1>", lambda e: self.scanner.request_calibration(5))
+            loc.bind("<Enter>", lambda e: loc.configure(fg=TEXT))
+            loc.bind("<Leave>", lambda e: loc.configure(fg=ACCENT))
+            self.tooltip.bind(loc, T("Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai."))
 
         headrow = tk.Frame(self.root, bg=BG, padx=self.S(12), pady=self.S(4))
         headrow.pack(fill="x")
@@ -275,6 +317,48 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.overlay.set_visible(self.ov_var.get())
         settings.set("overlay", bool(self.ov_var.get()))
 
+    # ----- nút kiểu app gaming -----
+    def _icon_button(self, parent, glyph, cmd, tip):
+        """Nút vuông chỉ có biểu tượng (kèm chú thích khi rê chuột)."""
+        bg = parent["bg"]
+        b = tk.Label(parent, text=glyph, fg=MUTED, bg=bg, font=self.f(14), width=2, cursor="hand2")
+        b.bind("<Button-1>", lambda e: cmd())
+        b.bind("<Enter>", lambda e: b.configure(fg=TEXT, bg=PANEL2))
+        b.bind("<Leave>", lambda e: b.configure(fg=MUTED, bg=bg))
+        self.tooltip.bind(b, tip)
+        return b
+
+    def _toggle(self, parent, text, var, on_change):
+        """Công tắc gạt: chữ + rãnh bo tròn, bật = xanh."""
+        S, bg = self.S, parent["bg"]
+        f = tk.Frame(parent, bg=bg, cursor="hand2")
+        lb = self.label(f, text, 9, TEXT, bg=bg)
+        lb.pack(side="left", padx=(0, S(6)))
+        w, h = S(30), S(16)
+        cv = tk.Canvas(f, width=w, height=h, bg=bg, highlightthickness=0, cursor="hand2")
+        cv.pack(side="left")
+
+        def draw():
+            cv.delete("all")
+            on = bool(var.get())
+            col = GOOD if on else LINE
+            r = h / 2
+            cv.create_oval(0, 0, h, h, fill=col, outline="")
+            cv.create_oval(w - h, 0, w, h, fill=col, outline="")
+            cv.create_rectangle(r, 0, w - r, h, fill=col, outline="")
+            kx = w - h + S(2) if on else S(2)
+            cv.create_oval(kx, S(2), kx + h - S(4), h - S(2), fill="#ffffff" if on else MUTED, outline="")
+
+        def flip(_e=None):
+            var.set(not var.get())
+            draw()
+            on_change()
+        for w_ in (f, lb, cv):
+            w_.bind("<Button-1>", flip)
+        f.redraw = draw
+        draw()
+        return f
+
     # ----- vòng cập nhật -----
     def _on_root_configure(self, e):
         if e.widget is not self.root:
@@ -305,10 +389,17 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         game, scan = st.get("game", {}), st.get("scan") or {}
         if self.overlay and self.ov_var.get() != self.overlay.visible:   # bật/tắt bằng phím tắt
             self.ov_var.set(self.overlay.visible)
-        self.dot.itemconfigure(self._dot, fill=GOOD if game.get("in_game") else MUTED)
+            self.ov_toggle.redraw()
+        in_game = bool(game.get("in_game"))
+        self.dot.itemconfigure(self._dot, fill=GOOD if in_game else ACCENT if st.get("focus") else MUTED)
+        self.chip.configure(highlightbackground=GOOD if in_game and not st.get("focus") else LINE)
+        if st.get("focus") and not self.back_btn.winfo_manager():      # đang xem tướng khác → nút quay lại
+            self.back_btn.pack(side="right", padx=(0, self.S(10)), before=self.update_slot)
+        elif not st.get("focus") and self.back_btn.winfo_manager():
+            self.back_btn.pack_forget()
         champ = st.get("champion") or {}
         if game.get("in_game"):
-            txt = T("Trong trận: {name}", name=champ.get("name") or game.get("champion_name") or "?")
+            txt = T("Trong trận: {name}", name=game.get("champion_name") or champ.get("name") or "?")
         elif st.get("focus"):
             txt = T("Đang xem: {name}", name=champ.get("name") or st["focus"])
         else:
@@ -324,6 +415,7 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             s = scan.get("status", "")
             col = GOOD if (scan.get("offer") or {}).get("visible") else MUTED if scan.get("calibrated") else OKC
         self.scan_lbl.configure(text=T("Quét màn hình: {s}", s=i18n.status(s)) if s else "", fg=col)
+        self.scan_dot.itemconfigure(self._scan_dot, fill=col)
 
     # ----- vẽ lại toàn bộ (đổi tướng / tab / lõi đã chọn / kích thước / ngôn ngữ) -----
     def _render(self, st):
@@ -407,6 +499,9 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.label(box, T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn") + f"  ·  v{__version__}", 10, MUTED).pack()
         self.label(box, msg, 11, OKC if self._st.get("error") else TEXT, wraplength=self.S(620),
                    justify="center").pack(pady=(self.S(18), 0))
+        foot = self.label(self.body, about.COPYRIGHT + "  ·  " + T("Giới thiệu"), 8, DIMTEXT, cursor="hand2")
+        foot.place(relx=0.5, rely=1.0, y=-self.S(10), anchor="s")
+        foot.bind("<Button-1>", lambda e: self.open_settings("about"))
 
     def _render_head(self, c):
         self.icon(self.head, c.get("icon"), 40).pack(side="left", padx=(0, self.S(10)))
@@ -506,11 +601,15 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self._toast_w = lb
 
     # ----- Cài đặt -----
-    def open_settings(self):
+    def open_settings(self, page=None):
         if self._settings_dlg is not None and self._settings_dlg.win.winfo_exists():
+            if page:
+                self._settings_dlg._go(page)
             self._settings_dlg.center()
             self._settings_dlg.win.lift()
             self._settings_dlg.win.focus_force()
             return
         import settings_ui
         self._settings_dlg = settings_ui.SettingsDialog(self)
+        if page:
+            self._settings_dlg._go(page)

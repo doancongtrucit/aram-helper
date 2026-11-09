@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tạo ảnh màn hình giả lập bảng chọn 3 lõi để thử bộ nhận diện (khi chưa có ảnh game thật).
 
 Ảnh giả lập: nền tối có nhiễu, 3 thẻ lõi màu theo độ hiếm, icon dán bằng alpha, chữ mô tả bên dưới,

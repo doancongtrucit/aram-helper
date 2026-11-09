@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Kiểm tra bản mới: so số phiên bản, đọc GitHub (giả lập), nhớ kết quả 1 ngày."""
 import io
 import json

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 # PyInstaller: đóng gói ARAM Helper thành thư mục app (onedir – mở nhanh, ít bị diệt virus báo nhầm hơn onefile).
 # Không chạy trực tiếp: dùng  python tools/build.py  (tạo file thông tin phiên bản rồi gọi PyInstaller với spec này).
 import sys
@@ -7,8 +8,8 @@ ROOT = Path(SPECPATH).parent          # noqa: F821 – SPECPATH do PyInstaller c
 WIN = sys.platform == "win32"
 
 # Các module nạp muộn (import trong hàm) – liệt kê để chắc chắn được đóng gói
-hidden = ["desktop", "theme", "widgets", "views.search", "views.augments", "views.items", "views.combos", "settings_ui", "overlay", "scanner", "screen_scan", "ocr", "hotkeys", "esp32_link",
-          "ddragon", "counter_items", "localize", "updater", "diag"]
+hidden = ["about", "desktop", "theme", "widgets", "views.search", "views.augments", "views.items", "views.combos", "settings_ui", "overlay", "scanner", "screen_scan", "ocr", "hotkeys", "esp32_link",
+          "ddragon", "counter_items", "localize", "updater", "diag", "game_window", "pick_watch"]
 if WIN:
     hidden += ["winrt.windows.media.ocr", "winrt.windows.graphics.imaging", "winrt.windows.storage.streams",
                "winrt.windows.foundation", "winrt.windows.foundation.collections", "winrt.windows.globalization"]
@@ -16,7 +17,8 @@ if WIN:
 a = Analysis(
     [str(ROOT / "src" / "app.py")],
     pathex=[str(ROOT / "src")],
-    datas=[(str(ROOT / "assets" / "icon.png"), "assets"), (str(ROOT / "assets" / "icon.ico"), "assets")],
+    datas=[(str(ROOT / "assets" / "icon.png"), "assets"), (str(ROOT / "assets" / "icon.ico"), "assets"),
+           (str(ROOT / "LICENSE"), "."), (str(ROOT / "THIRD_PARTY_NOTICES.md"), ".")],
     hiddenimports=hidden,
     excludes=["matplotlib", "pandas", "scipy", "IPython", "pytest", "PyQt5", "PySide6", "tests"],
     noarchive=False,
@@ -40,4 +42,5 @@ coll = COLLECT(exe, a.binaries, a.datas, name="ARAM Helper", upx=False)
 
 if sys.platform == "darwin":
     app = BUNDLE(coll, name="ARAM Helper.app", icon=str(ROOT / "assets" / "icon.png"), bundle_identifier="io.github.doancongtrucit.aramhelper",
-                 info_plist={"NSHighResolutionCapable": True, "LSApplicationCategoryType": "public.app-category.games"})
+                 info_plist={"NSHighResolutionCapable": True, "LSApplicationCategoryType": "public.app-category.games",
+                             "NSHumanReadableCopyright": "© 2026 doancongtrucit. All rights reserved."})

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Phân tích đội hình + trang bị đội địch → 2 gợi ý trang bị ngắn gọn.
 
 Luật kinh nghiệm (không phải thống kê theo đội hình):

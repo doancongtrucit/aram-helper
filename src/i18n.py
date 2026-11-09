@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Giao diện Anh / Việt. Chuỗi tiếng Việt là khoá; T("Thắng {wr}", wr=...) trả bản theo ngôn ngữ đang chọn."""
 from __future__ import annotations
 
@@ -8,9 +9,11 @@ EN = {
     "Đang chờ trận…": "Waiting for a game…",
     "Trong trận: {name}": "In game: {name}",
     "Đang xem: {name}": "Viewing: {name}",
-    "Tìm tướng hoặc lõi (không cần dấu, nhiều lõi cách nhau dấu phẩy)…":
-        "Search champion or augment (several augments separated by commas)…",
-    "Tự động": "Auto",
+    "Tìm tướng hoặc lõi…": "Search champion or augment…",
+    "Gõ tên tướng để chuyển nhanh (↑ ↓ Enter), hoặc tên lõi – nhiều lõi cách nhau dấu phẩy, không cần dấu.":
+        "Type a champion to switch (↑ ↓ Enter), or augment names – several separated by commas.",
+    "Tướng trong trận": "Back to my champion",
+    "Bỏ tướng đang xem, quay lại tướng bạn đang chơi": "Stop viewing this champion and go back to the one you play",
     "Định vị lõi": "Locate augments",
     "Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai.":
         "Find the 3 augment cards on screen. The app usually does this on the first pick – only needed if it misreads.",
@@ -110,6 +113,16 @@ EN = {
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
     "Phím tắt": "Hotkeys",
+    "Giới thiệu": "About", "Email": "Email", "Phiên bản {v}": "Version {v}", "Developer": "Developer",
+    "Trang dự án": "Project page", "Báo lỗi / góp ý": "Report an issue", "Giấy phép": "License",
+    "Thành phần mã nguồn mở": "Open-source components", "Nguồn dữ liệu": "Data sources",
+    "thống kê lõi, combo, lối lên đồ": "augment, combo and build statistics",
+    "tên, icon tướng / trang bị / phép": "champion / item / spell names and icons",
+    "icon lõi": "augment icons",
+    "↻ nên đổi": "↻ reroll", "↻ nên đổi thẻ này": "↻ reroll this card", " · ↻ nên đổi": " · ↻ reroll",
+    "Tự ghi nhận lõi đã chọn (theo cú bấm chuột lên thẻ khi chọn lõi)":
+        "Record the augment you pick automatically (from your click on the card)",
+    "Gợi ý thẻ nên đổi lõi (↻) khi cả 3 lõi không tốt": "Suggest which card to reroll (↻) when the offer is weak",
     "Đánh dấu lõi ở thẻ 1": "Mark card 1 as taken", "Đánh dấu lõi ở thẻ 2": "Mark card 2 as taken",
     "Đánh dấu lõi ở thẻ 3": "Mark card 3 as taken",
     "Ẩn / hiện overlay": "Show / hide overlay", "Lưu ảnh chẩn đoán": "Save diagnostic image",

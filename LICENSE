@@ -1,0 +1,40 @@
+ARAM Helper
+Copyright (c) 2026 doancongtrucit. All rights reserved.
+
+This software, including its source code, compiled builds, documentation, images and icons
+(together, the "Software"), is the property of doancongtrucit and is protected by copyright law.
+
+1. Permitted use
+   You may download the official builds published at
+   https://github.com/doancongtrucit/aram-helper/releases and use them for personal, non-commercial
+   purposes. You may view the source code on GitHub for reference.
+
+2. Restrictions
+   Without prior written permission from the copyright holder you may not:
+   a) copy, modify, adapt, translate or create derivative works of the Software or any part of it;
+   b) distribute, publish, sublicense, sell, rent or otherwise make the Software or any part of it
+      available to others, whether in source or compiled form, except by linking to the official
+      releases page above;
+   c) remove or alter any copyright, trademark or attribution notice in the Software.
+
+3. Third-party components and data
+   The compiled builds include open-source components that remain under their own licenses
+   (see THIRD_PARTY_NOTICES.md). Game statistics are retrieved from playaram.gg; champion, item
+   and augment names and icons are retrieved from Riot Games' Data Dragon and CommunityDragon.
+   Those materials belong to their respective owners and are not covered by this license.
+
+   ARAM Helper isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games
+   or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all
+   associated properties are trademarks or registered trademarks of Riot Games, Inc.
+
+4. No warranty
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT
+   NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+   NON-INFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   LIABILITY, INCLUDING ANY ACCOUNT ACTION TAKEN BY A GAME PUBLISHER, ARISING FROM, OUT OF OR IN
+   CONNECTION WITH THE SOFTWARE OR THE USE OF IT. You use third-party tools with online games at your
+   own discretion and in accordance with the game publisher's current policies.
+
+Developer: doancongtrucit <doancongtrucit@gmail.com>
+For permission requests, email doancongtrucit@gmail.com or open an issue at
+https://github.com/doancongtrucit/aram-helper/issues.

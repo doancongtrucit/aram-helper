@@ -21,6 +21,7 @@ Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg) · Dữ li�
 9. [Màn ARAM trên ESP32 (tuỳ chọn)](#9-màn-aram-trên-esp32-tuỳ-chọn)
 10. [Xử lý sự cố](#10-xử-lý-sự-cố)
 11. [Quyền riêng tư và an toàn](#11-quyền-riêng-tư-và-an-toàn)
+12. [Bản quyền](#12-bản-quyền)
 
 ---
 
@@ -97,8 +98,8 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 2. Khi vào trận, chấm tròn góc trên chuyển **xanh** và app tự hiện dữ liệu tướng bạn đang chơi.
 3. (Windows) Mỗi lần bảng chọn lõi hiện ra, overlay tự gợi ý lõi nên chọn – **không cần cài đặt gì thêm**:
    lượt chọn đầu tiên app tự xác định vị trí 3 thẻ lõi và nhớ lại cho các trận sau.
-4. Sau khi chọn lõi trong game, bấm vào dòng gợi ý trên overlay (hoặc **Ctrl+Alt+1 / 2 / 3**) để app biết bạn
-   đã lấy lõi nào – các lượt sau sẽ ưu tiên lõi hợp combo.
+4. Chọn lõi trong game như bình thường – app tự ghi nhận lõi bạn lấy để các lượt sau ưu tiên lõi hợp combo.
+   Thẻ yếu còn lượt đổi sẽ có gợi ý **↻ nên đổi**.
 
 ---
 
@@ -108,10 +109,10 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 
 | # | Phần | Công dụng |
 |:-:|---|---|
-| 1 | Trạng thái | Chấm **xanh** = đang trong trận, app tự nhận tướng |
+| 1 | Trạng thái trận | Chấm **xanh** = đang trong trận, app tự nhận tướng; chấm **xanh dương** = đang xem tướng khác |
 | 2 | Ô tìm kiếm | Gõ tên **tướng** → danh sách chọn nhanh; gõ tên **lõi** (nhiều lõi cách nhau dấu phẩy) → tô sáng và xếp hạng |
-| 3 | **Tự động** · **⚙ Cài đặt** | **Tự động** quay lại tướng trong trận; **Cài đặt** mở các tuỳ chọn (mục 7) |
-| 4 | Quét màn hình · **⌖ Định vị lõi** | (Windows) trạng thái đọc bảng chọn lõi; nút tìm lại vị trí 3 thẻ lõi khi app đọc sai |
+| 3 | **Overlay** · **⚙** | Công tắc bật/tắt overlay; bánh răng mở **Cài đặt** (mục 7). Khi đang xem tướng khác có thêm nút **↩ Tướng trong trận** |
+| 4 | Thanh trạng thái (đáy) | (Windows) trạng thái đọc bảng chọn lõi · **⌖ Định vị lõi** để tìm lại vị trí 3 thẻ lõi khi app đọc sai · phiên bản |
 | 5 | Tướng | Hạng tướng, tỉ lệ thắng, số trận, phiên bản dữ liệu |
 | 6 | Tab | **Lõi & trang bị** · **Combo lõi** |
 | 7 | Lõi đã chọn | Lõi bạn đã lấy trong trận; bấm ✕ để bỏ |
@@ -141,7 +142,7 @@ kèm "đã có 1/3". Hạng combo là đánh giá của biên tập viên nguồ
 ### 4.3. Xem tướng khác
 
 Gõ vài chữ tên tướng vào ô tìm kiếm (không cần dấu: `ms`, `master` hay `yi` đều được) → chọn trong danh sách
-bằng chuột hoặc **↑ ↓ Enter**, **Esc** để huỷ. Bấm **Tự động** để quay lại tướng trong trận.
+bằng chuột hoặc **↑ ↓ Enter**, **Esc** để huỷ. Bấm **↩ Tướng trong trận** để quay lại tướng bạn đang chơi.
 
 ![Tìm tướng nhanh](images/search-champion.png)
 
@@ -173,8 +174,14 @@ Khi đang chọn lõi trong game, cửa sổ chính **giữ nguyên** để bạ
    chạy ở màn hình phụ vẫn đọc được.
 3. Chỉ khi app vẫn đọc sai: lúc bảng chọn 3 lõi **đang hiện**, bấm **Ctrl+Alt+A** (hoặc nút **⌖ Định vị lõi** trong
    app rồi quay lại game trong 5 giây) để app tìm lại vị trí thẻ lõi – mất khoảng 10 giây.
-4. Sau khi chọn lõi trong game, bấm vào dòng gợi ý / nhãn trên overlay, hoặc **Ctrl+Alt+1 / 2 / 3**
-   (thẻ thứ 1 / 2 / 3 từ trái sang).
+4. **Lõi đã chọn được ghi nhận tự động:** khi bảng chọn đang hiện, app để ý cú bấm chuột của bạn rơi vào thẻ nào;
+   bảng chọn đóng lại thì lõi ở thẻ đó được đánh dấu đã chọn – không cần bấm thêm gì. Có thể đánh dấu tay bằng cách
+   bấm vào dòng gợi ý / nhãn trên overlay, hoặc **Ctrl+Alt+1 / 2 / 3** (thẻ 1 / 2 / 3 từ trái sang).
+   App chỉ đọc vị trí con trỏ và trạng thái nút chuột của Windows, không đọc hay gửi gì vào game.
+   Tắt trong **Cài đặt → Chung** nếu không muốn.
+5. **Gợi ý đổi lõi (↻):** khi một thẻ yếu hơn hẳn mức trung bình của tướng và nút đổi lõi bên dưới thẻ đó còn lượt,
+   overlay ghi **↻ nên đổi** ở thẻ đó (nhãn viền cam). App nhận ra nút đã dùng (chuyển xám) và không gợi ý đổi thẻ
+   đó nữa. Tắt trong **Cài đặt → Overlay**.
 
 Để nhẹ máy, app chỉ chụp vùng quanh 3 thẻ lõi và quét thưa hơn khi lâu không có lượt chọn lõi, nhanh hơn khi
 bảng chọn đang hiện.
@@ -197,7 +204,7 @@ trên thẻ bằng OCR có sẵn của Windows – game để tiếng Việt hay
 | 1 | Thanh tiêu đề | **Kéo** để di chuyển (app nhớ vị trí). Chấm xanh = đang thấy bảng chọn lõi, cam = bộ quét báo lỗi |
 | 2 | Gợi ý | 3 lõi xếp hạng, ★ = nên chọn. **Bấm vào dòng** = đánh dấu đã chọn lõi đó |
 | 3 | Nhãn trên thẻ lõi | `★ 71.0%` lõi nên chọn, `#2`, `#3` lõi còn lại; bấm vào nhãn cũng đánh dấu đã chọn |
-| 4 | **▾ / ▸** · **✕** | Thu gọn còn 1 dòng / ẩn overlay (hiện lại: **Ctrl+Alt+O** hoặc ô **Overlay** trong app) |
+| 4 | **▾ / ▸** · **✕** | Thu gọn còn 1 dòng / ẩn overlay (hiện lại: **Ctrl+Alt+O** hoặc công tắc **Overlay** trong app) |
 
 Các phần bên dưới gợi ý (bật/tắt từng phần trong **Cài đặt → Overlay**):
 
@@ -220,7 +227,7 @@ Overlay bấm được mà **không làm game mất focus**, và không xuất h
 
 ## 7. Cài đặt app
 
-Bấm **⚙ Cài đặt** ở thanh trên. Thay đổi áp dụng ngay và được ghi nhớ; **Mặc định** đưa thẻ đang mở về ban đầu.
+Bấm **⚙** (bánh răng) ở góc phải thanh trên. Thay đổi áp dụng ngay và được ghi nhớ; **Mặc định** đưa thẻ đang mở về ban đầu.
 
 ![Cài đặt – Chung](images/settings.png)
 
@@ -230,6 +237,7 @@ Bấm **⚙ Cài đặt** ở thanh trên. Thay đổi áp dụng ngay và đư�
 | **Overlay** | Bật/tắt · Độ đậm khung và nhãn trên thẻ lõi · Cỡ overlay · Bề rộng khung · Vị trí (kéo thả hoặc 4 góc, **Đặt lại vị trí**) · Nhãn ★ trên thẻ lõi · Chỉ hiện khi đang chọn lõi · Mục hiển thị · Số lối lên đồ 1–3 |
 | **Phím tắt** | Đổi phím cho Định vị lõi, đánh dấu lõi ở thẻ 1 / 2 / 3, ẩn / hiện overlay, lưu ảnh chẩn đoán (mục 8) |
 | **ESP32** | Bật/tắt gửi màn ARAM lên ESP32 (mục 9) |
+| **Giới thiệu** | Phiên bản, bản quyền, developer, nguồn dữ liệu, giấy phép, thành phần mã nguồn mở |
 
 ![Cài đặt – Overlay](images/settings-overlay.png)
 
@@ -288,7 +296,7 @@ Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>
 | Bảng chọn lõi hiện mà overlay không gợi ý | Xem dòng **Quét màn hình** trong app. App tự dò lại khi thẻ lõi xê dịch; vẫn không được thì bấm **Ctrl+Alt+A** (Định vị lõi) khi bảng chọn đang hiện. |
 | Định vị lõi báo không tìm thấy bảng lõi | Bấm khi bảng chọn lõi đang hiện rõ, không bị che. Cần ít nhất 2 trong 3 thẻ là lõi thường (không phải lõi kỹ năng tướng). |
 | Đọc sai lõi | Khi bảng chọn lõi **đang hiện**, bấm **Ctrl+Alt+D** → app lưu ảnh + kết quả quét vào thư mục `debug` trong thư mục dữ liệu. Gửi các file đó kèm `app.log` khi báo lỗi. |
-| Overlay không hiện | Overlay chỉ hiện khi đang trong trận; kiểm tra ô **Overlay** trong app và chế độ hiển thị Không viền của game. |
+| Overlay không hiện | Overlay chỉ hiện khi đang trong trận; kiểm tra công tắc **Overlay** trong app và chế độ hiển thị Không viền của game. |
 | Phím tắt không hoạt động | Xem **Cài đặt → Phím tắt** (có thể đã đổi sang phím dự phòng) hoặc đổi sang tổ hợp khác. |
 | Windows chặn khi mở app | App chưa có chữ ký số: **More info → Run anyway**. |
 
@@ -305,3 +313,15 @@ Log của app: `app.log` trong thư mục dữ liệu (mục 2.6). Báo lỗi t�
 - Ảnh chụp màn hình chỉ được xử lý trên máy; ảnh chẩn đoán chỉ lưu khi cần (giữ tối đa 30 ảnh) và không gửi đi đâu.
 - App chỉ kết nối tới: playaram.gg (thống kê), Riot Data Dragon và CommunityDragon (tên, icon tướng / trang bị / lõi),
   GitHub (kiểm tra bản mới – tắt được trong Cài đặt), và thiết bị ESP32 của bạn nếu có cấu hình.
+
+---
+
+## 12. Bản quyền
+
+ARAM Helper © 2026 [doancongtrucit](https://github.com/doancongtrucit). All rights reserved – xem [LICENSE](../LICENSE).
+Liên hệ developer (xin phép sử dụng, góp ý): [doancongtrucit@gmail.com](mailto:doancongtrucit@gmail.com).
+Xem nhanh trong app: **⚙ Cài đặt → Giới thiệu** (phiên bản, developer, nguồn dữ liệu, giấy phép, thành phần mã nguồn mở).
+
+ARAM Helper isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially
+involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or
+registered trademarks of Riot Games, Inc.

@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Overlay trên game: gọn, nền mờ, bấm được mà không cướp focus của game.
 
 - Khung nhỏ (mặc định góc phải trên, kéo thanh tiêu đề để di chuyển – app nhớ vị trí):
@@ -493,9 +494,12 @@ class Overlay:
         self._text(cv, S(56), y + h / 2, self._fit(nm, W - S(142 if not compact else 152), 10, top), 10,
                    GOOD if top else TEXT, top, anchor="w", tags=(tag,))
         wr = "?" if b.get("winrate") is None else f"{b['winrate']:.1f}%" + ("*" if b.get("source") == "chung" else "")
-        self._text(cv, W - S(12), y + h / 2 - (S(6) if b.get("fit") else 0), wr, 9, TEXT if not top else GOOD, True,
+        second = b.get("fit") or a.get("reroll")
+        self._text(cv, W - S(12), y + h / 2 - (S(6) if second else 0), wr, 9, TEXT if not top else GOOD, True,
                    anchor="e", tags=(tag,))
-        if b.get("fit"):
+        if a.get("reroll"):                       # thẻ yếu còn lượt đổi → gợi ý bấm ↻ dưới thẻ
+            self._text(cv, W - S(12), y + h / 2 + S(7), T("↻ nên đổi"), 7, OK, True, anchor="e", tags=(tag,))
+        elif b.get("fit"):
             self._text(cv, W - S(12), y + h / 2 + S(7), f"+{TIER_BONUS[b['fit']]} combo {b['fit']}", 7,
                        TIER_COLOR.get(b["fit"], MUTED), anchor="e", tags=(tag,))
         self._hover(cv, tag, r, normal, BG_HOVER)
@@ -520,6 +524,8 @@ class Overlay:
             sub = f"+{TIER_BONUS[b['fit']]} combo {b['fit']}" if b.get("fit") else ""
             if len(a["candidates"]) > 1:
                 sub = (sub + " · " if sub else "") + T("1 trong {n}", n=len(a["candidates"]))
+            if a.get("reroll"):
+                sub = T("↻ nên đổi thẻ này") + (" · " + sub if sub else "")
             w = max(S(96), self._font(11, True).measure(txt) + S(24), self._font(8).measure(sub) + S(20))
             h = S(40) if sub else S(26)
             bottom = cy - size * 0.68                 # ngay trên icon, ngoài vùng bộ quét đọc
@@ -529,7 +535,7 @@ class Overlay:
             tag = f"badge{i}"
             fill = GOOD if top else BG
             rect = self._round_rect(cv, cx - w / 2, y0, cx + w / 2, bottom, S(9), fill=fill,
-                                    outline=GOOD if top else LINE, width=1, tags=(tag,))
+                                    outline=GOOD if top else OK if a.get("reroll") else LINE, width=1, tags=(tag,))
             fg = "#05261a" if top else TEXT
             self._text(cv, cx, y0 + S(4), txt, 11, fg, True, anchor="n", tags=(tag,))
             if sub:

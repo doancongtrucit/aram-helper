@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Tuỳ chọn của app (data/settings.json). Đổi ở hộp Settings → áp dụng ngay, các phần đăng ký on_change được báo."""
 from __future__ import annotations
 
@@ -16,6 +17,7 @@ DEFAULTS = {
     "top_n": 6,                   # số lõi mỗi bậc (bấm "Xem thêm" để mở đủ); 0 = tự vừa cửa sổ
     "app_follow_offer": False,    # cửa sổ chính phản ứng khi bảng chọn lõi hiện ra (tô sáng + ô Nên chọn)
     "always_on_top": False,
+    "auto_pick": True,            # tự ghi nhận lõi đã chọn theo cú bấm chuột lên thẻ khi bảng chọn đóng
     # Overlay
     "overlay": True,
     "ov_opacity": 0.74,
@@ -30,6 +32,7 @@ DEFAULTS = {
     "ov_show_build": True,
     "ov_show_counter": True,
     "ov_builds": 3,
+    "reroll_hint": True,          # gợi ý thẻ nên bấm đổi lõi (↻)
     "ov_corner": "custom",        # top-right | top-left | bottom-right | bottom-left | custom (kéo thả)
     # ESP32 (PC Control Deck)
     "esp32": True,

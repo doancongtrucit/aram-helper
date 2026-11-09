@@ -1,3 +1,4 @@
+# Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Chấm điểm lõi và xếp hạng gợi ý (dùng chung cho cửa sổ chính và overlay).
 
 Điểm = tỉ lệ thắng của lõi với tướng này
@@ -89,3 +90,19 @@ def rank_offer(slots: list[list[int]], champion: dict, catalog: dict[int, dict],
     for r, item in enumerate(sorted(out, key=lambda o: -o["best"]["score"]), start=1):
         item["rank"] = r
     return out
+
+
+REROLL_MARGIN = 1.0     # điểm dưới tỉ lệ thắng chung của tướng bao nhiêu thì đáng đổi lõi
+
+
+def reroll_hint(ranked: list[dict], champion: dict, rerolls: list | None) -> int | None:
+    """Thẻ nên bấm đổi lõi (↻): thẻ yếu nhất còn lượt đổi, không phải lõi nên chọn, và điểm thấp hơn
+    tỉ lệ thắng chung của tướng ít nhất REROLL_MARGIN. Không có thì None."""
+    if not ranked or not rerolls:
+        return None
+    base = champion.get("winrate") or 50.0
+    pool = [r for r in ranked if r["rank"] != 1 and r["slot"] < len(rerolls) and rerolls[r["slot"]]]
+    if not pool:
+        return None
+    worst = min(pool, key=lambda r: r["best"]["score"])
+    return worst["slot"] if worst["best"]["score"] < base - REROLL_MARGIN else None
