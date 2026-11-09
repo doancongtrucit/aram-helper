@@ -3,19 +3,19 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
-## [Chưa phát hành]
+## [1.4.1] – 2026-11-09
 
 ### Thêm
 - **Tạo gói báo lỗi** (Cài đặt → Giới thiệu): file zip gồm log, ảnh chẩn đoán, vị trí bảng lõi, cài đặt, thông tin hệ
   thống – tự che đường dẫn thư mục người dùng và địa chỉ IP, không gồm cấu hình ESP32. Kèm mẫu báo lỗi trên GitHub.
-
 - Link tải **luôn trỏ tới bản mới nhất** (`…/releases/latest/download/ARAM-Helper-Setup.exe`) trong README và hướng dẫn;
   mỗi bản phát hành có thêm file tên cố định bên cạnh file kèm số phiên bản. Huy hiệu phiên bản mới nhất / test.
 
 ### Phát triển
 - Test dùng trang mẫu dựng từ `tests/sample_data.json` (số liệu tự đặt) thay cho trang thật không commit được:
-  87/89 test chạy được trên GitHub Actions (trước chỉ ~60%). Thêm workflow chạy test ở mỗi push / pull request;
+  89/91 test chạy được trên GitHub Actions (trước chỉ ~60%). Thêm workflow chạy test ở mỗi push / pull request;
   bước test báo lỗi nếu quá 2 test bị bỏ qua.
+- Phát hành: job macOS có giới hạn thời gian; macOS lỗi / hết máy không còn chặn bản Windows.
 
 ## [1.4.0] – 2026-11-09
 
@@ -81,6 +81,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.4.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.1.1...v1.2.0
