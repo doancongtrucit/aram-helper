@@ -1,4 +1,4 @@
-"""Tải trang mẫu của playaram.gg về tests/ để chạy test (chỉ dùng trên máy, không commit)."""
+"""Tải trang mẫu của trang nguồn dữ liệu về tests/ để chạy test (chỉ dùng trên máy, không commit)."""
 import sys
 from pathlib import Path
 

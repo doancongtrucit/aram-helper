@@ -1,7 +1,7 @@
 # Hướng dẫn sử dụng ARAM Helper
 
 ARAM Helper gợi ý **lõi (augment)** và **trang bị** cho tướng bạn đang chơi trong chế độ **ARAM Hỗn Loạn**
-của Liên Minh Huyền Thoại. Dữ liệu thống kê lấy từ [playaram.gg](https://playaram.gg).
+của Liên Minh Huyền Thoại. Nguồn dữ liệu: [playaram.gg](https://playaram.gg).
 
 | Tính năng | Windows | macOS |
 |---|:-:|:-:|
@@ -41,6 +41,21 @@ Gỡ cài đặt: `bash uninstall-macos.sh`.
 
 ## 2. Dùng hằng ngày
 
+![Cửa sổ chính – tab Lõi & trang bị](docs/images/main-window.png)
+
+| # | Phần | Dùng để |
+|:-:|---|---|
+| 1 | Trạng thái | Chấm **xanh** = đang trong trận, app tự nhận tướng |
+| 2 | Ô tìm lõi | Gõ tên lõi không dấu, nhiều lõi cách nhau dấu phẩy |
+| 3 | Chọn tướng + **Tự động** | Xem tướng khác; **Tự động** quay lại tướng trong trận |
+| 4 | Trạng thái quét màn hình + **Hiệu chỉnh** | (Windows) app có đang đọc được bảng chọn lõi không |
+| 5 | Tướng | Hạng tướng, tỉ lệ thắng, số trận, phiên bản |
+| 6 | Tab | **Lõi & trang bị** / **Combo lõi** |
+| 7 | Lõi đã chọn | Lõi bạn đã lấy trong trận này, bấm ✕ để bỏ |
+| 8 | **Nên chọn** | 3 lõi đang được đưa ra, xếp hạng; bấm **Đã chọn** ở lõi bạn lấy |
+| 9 | **Xem thêm** | Mở đủ 16 lõi của bậc đó |
+| 10 | Thẻ lõi | Bấm để đánh dấu đã chọn; viền xanh = đang được gợi ý, nền xanh dương = đã chọn |
+
 1. Mở ARAM Helper **trước hoặc trong lúc** vào trận ARAM Hỗn Loạn.
 2. Khi vào trận, chấm tròn góc trên chuyển **xanh** và app tự hiện dữ liệu tướng bạn đang chơi.
    Muốn xem tướng khác (vd. lúc chọn tướng): gõ tên vào ô chọn tướng góc phải trên; bấm **Tự động** để quay lại.
@@ -50,11 +65,20 @@ Gỡ cài đặt: `bash uninstall-macos.sh`.
      Dấu `*` sau tỉ lệ chọn = ít trận, số liệu dễ ảo.
    - Nhãn `combo S/A/B` = lõi nằm trong combo được gợi ý.
    - Phía dưới: **Trang bị gợi ý** – 3 bộ đồ 6 món (2 món viền xanh là cốt lõi), giày, phép bổ trợ.
-4. Tab **Combo lõi**: các lối chơi, combo lõi và lý do, đồ khuyên dùng, mẹo.
+
+   ![Trang bị gợi ý](docs/images/items.png)
+
+4. Tab **Combo lõi**: các lối chơi, combo lõi và lý do, đồ khuyên dùng, mẹo. Combo có lõi bạn đã chọn
+   được tô xanh kèm "đã có 1/3".
+
+   ![Tab Combo lõi](docs/images/combo.png)
+
 5. **Đánh dấu lõi đã chọn**: bấm vào thẻ lõi. Các lõi hợp combo với lõi đã có sẽ hiện nhãn xanh
    `hợp combo …` và được cộng điểm ở lượt chọn sau. Lõi đã chọn tự xoá khi vào trận mới.
 6. **Tìm lõi bằng tay**: gõ tên lõi (không cần dấu, nhiều lõi cách nhau dấu phẩy), vd. `bay ong, vu luc, nhanh`
    → ô **Nên chọn** xếp hạng các lõi đó.
+
+   ![Tìm lõi bằng tay](docs/images/search.png)
 
 **Điểm gợi ý** = tỉ lệ thắng của lõi với tướng này + thưởng nếu hợp combo với lõi đã chọn
 (S +4, A +3, B +2, C +1). Lõi không có trong top 16 của tướng dùng tỉ lệ thắng chung (ghi "chung").
@@ -78,9 +102,20 @@ Một số lõi dùng chung một icon; app đọc thêm tên lõi bằng OCR c�
 
 ## 4. Overlay trên game (Windows)
 
-- Khung nhỏ, nền mờ, mặc định ở góc phải trên. **Kéo thanh tiêu đề** để di chuyển (app nhớ vị trí).
-- **▾ / ▸** thu gọn còn 1 dòng, **✕** ẩn overlay (hiện lại: Ctrl+Alt+O hoặc ô **Overlay** trong app).
-- Khi bảng chọn lõi hiện ra: nhãn `★ 71.0%` (nên chọn) và `#2`, `#3` ngay trên từng thẻ lõi.
+![Overlay khi bảng chọn lõi hiện ra (màn chọn lõi minh hoạ)](docs/images/overlay-ingame.png)
+
+| # | Phần | Dùng để |
+|:-:|---|---|
+| 1 | Thanh tiêu đề | **Kéo** để di chuyển khung (app nhớ vị trí). Chấm xanh = đang thấy bảng chọn lõi, cam = chưa hiệu chỉnh |
+| 2 | Gợi ý | 3 lõi xếp hạng, ★ = nên chọn. **Bấm vào dòng** = đánh dấu đã chọn lõi đó |
+| 3 | Nhãn trên thẻ lõi | `★ 71.0%` lõi nên chọn, `#2`, `#3` lõi còn lại; bấm vào nhãn cũng đánh dấu đã chọn |
+| 4 | **▾ / ▸** và **✕** | Thu gọn còn 1 dòng / ẩn overlay (hiện lại: Ctrl+Alt+O hoặc ô **Overlay** trong app) |
+
+Bên dưới khung: lõi đã chọn và build đồ chính (2 món viền xanh là cốt lõi). Khi thu gọn, khung chỉ còn lõi nên chọn:
+
+![Overlay thu gọn](docs/images/overlay-collapsed.png)
+
+- Nền khung hơi trong suốt để vẫn nhìn được game phía sau.
 - Bấm vào overlay **không làm game mất focus**.
 
 ### Phím tắt
@@ -115,6 +150,4 @@ Nếu tổ hợp phím đã bị app khác dùng, ARAM Helper tự đổi sang p
 - ARAM Helper **chỉ đọc**: Live Client API chính thức của Riot (cổng 2999 trên máy) và ảnh chụp màn hình.
   App **không** đọc/ghi bộ nhớ game, **không** gửi phím/chuột vào game, **không** tự chọn lõi.
   Dù vậy, dùng công cụ bên thứ ba luôn do bạn tự cân nhắc theo chính sách hiện hành của Riot.
-- Dữ liệu thống kê thuộc **playaram.gg**. App lưu tạm trên máy (12 giờ) và giãn cách khi tải; chỉ dùng cá nhân,
-  không đăng lại dữ liệu.
 - Dữ liệu của app nằm trong thư mục `data/` (cache, icon, hiệu chỉnh, vị trí overlay, log) – xoá được bất cứ lúc nào.

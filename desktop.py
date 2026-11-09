@@ -15,7 +15,6 @@ import time
 import tkinter as tk
 import unicodedata
 import urllib.request
-import webbrowser
 from tkinter import ttk
 
 import advice
@@ -45,7 +44,7 @@ def fold(s: str) -> str:
 
 # ---------- ảnh (tải nền, cache đĩa + RAM) ----------
 class Images:
-    """Icon lõi lấy từ data/icons/<id>.png; icon trang bị / tướng / phép tải 1 lần từ playaram.gg rồi cache."""
+    """Icon lõi lấy từ data/icons/<id>.png; icon trang bị / tướng / phép tải 1 lần từ nguồn dữ liệu rồi cache."""
 
     def __init__(self, root: tk.Tk, scale: float):
         self.root, self.scale = root, scale
@@ -742,9 +741,9 @@ class App:
         owned = set(st.get("owned", []))
         styles = c.get("playstyles") or []
         if not styles:
-            self.label(root, "playaram.gg chưa có lối chơi / combo cho tướng này.", 11, MUTED).pack(pady=self.S(40))
+            self.label(root, "Chưa có lối chơi / combo cho tướng này.", 11, MUTED).pack(pady=self.S(40))
             return
-        self.label(root, "Hạng combo do biên tập viên playaram.gg đánh giá, không phải tỉ lệ thắng. "
+        self.label(root, "Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng. "
                    "Bấm vào lõi để đánh dấu đã chọn; combo chứa lõi đã chọn được tô xanh.", 9, MUTED,
                    wraplength=self.S(900), justify="left").pack(anchor="w", pady=(self.S(4), self.S(10)))
         wrap = max(self.S(400), (self._width or self.S(1000)) - self.S(80))
@@ -797,7 +796,3 @@ class App:
                 for t in s["tips"]:
                     self.label(tips, f"•  {t['title']}. {t['text']}", 9, "#c9cddb", wraplength=wrap,
                                justify="left").pack(anchor="w", pady=self.S(1))
-            if s.get("url"):
-                link = self.label(card, "Xem chi tiết trên playaram.gg ↗", 9, ACCENT, cursor="hand2", padx=self.S(12))
-                link.pack(anchor="w", pady=(0, self.S(8)))
-                link.bind("<Button-1>", lambda e, u=s["url"]: webbrowser.open(u))

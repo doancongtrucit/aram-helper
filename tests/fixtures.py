@@ -1,7 +1,6 @@
-"""Trang HTML mẫu của playaram.gg dùng cho test.
+"""Trang HTML mẫu của trang nguồn dữ liệu, dùng cho test.
 
-Các file tests/fixture_*.html KHÔNG nằm trong repo (nội dung thuộc playaram.gg, không đăng lại).
-Tải về máy để chạy test:  python tests/fetch_fixtures.py
+Các file tests/fixture_*.html không nằm trong repo. Tải về máy để chạy test:  python tests/fetch_fixtures.py
 
 Test kiểm tra giá trị cụ thể (tỉ lệ thắng, id lõi trong combo của Yasuo...) được viết theo bản chụp ngày
 2026-11-09; tải bản mới thì một số test giá trị có thể lệch vì dữ liệu trên trang đã đổi – phần kiểm tra

@@ -5,7 +5,7 @@
 python -m venv .venv
 .venv\Scripts\activate            # macOS: source .venv/bin/activate
 pip install -r requirements.txt
-python tests/fetch_fixtures.py    # tải trang mẫu playaram.gg cho test (không commit)
+python tests/fetch_fixtures.py    # tải trang mẫu cho test (không commit)
 python -m unittest discover -s tests -v
 python app.py --champion yasuo    # chạy có log trong Terminal
 ```
@@ -17,17 +17,18 @@ python app.py --champion yasuo    # chạy có log trong Terminal
 | `desktop.py` | Cửa sổ chính (tkinter) |
 | `overlay.py` | Overlay trên game (Windows) |
 | `advice.py` | Công thức chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý |
-| `playaram.py` | Tải + tách dữ liệu playaram.gg, cache `data/` |
+| `playaram.py` | Tải + tách dữ liệu từ trang nguồn, cache `data/` |
 | `live_client.py` | Đọc Live Client Data API của Riot |
 | `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR, luồng quét nền (Windows) |
 | `hotkeys.py` | Phím tắt toàn cục (Windows) |
 | `tests/` | Unit test + `synthetic.py`/`bench_scan.py` (ảnh giả lập để đo độ chính xác nhận diện) |
+| `tools/make_screenshots.py` | Tạo lại ảnh trong `docs/images/` từ dữ liệu mẫu + màn chọn lõi giả lập (không chụp màn hình thật) |
 
 ## Quy tắc
 1. **Chỉ đọc, không can thiệp game**: không đọc/ghi bộ nhớ game, không gửi phím/chuột vào game, không tự chọn lõi.
    Chỉ dùng Live Client API chính thức và ảnh chụp màn hình.
-2. **Tôn trọng playaram.gg**: chỉ đọc trang HTML công khai, **không** gọi `/api/` (robots.txt chặn);
-   giữ cache và giãn cách request (`playaram.MIN_INTERVAL`); không commit/đăng lại dữ liệu hay trang HTML của họ
+2. **Tải dữ liệu nhẹ nhàng**: chỉ đọc trang HTML công khai, **không** gọi `/api/` (robots.txt chặn);
+   giữ cache và giãn cách request (`playaram.MIN_INTERVAL`); không commit dữ liệu hay trang HTML đã tải
    (`data/`, `tests/fixture_*.html` đã nằm trong `.gitignore`).
 3. **Nhẹ**: app chạy song song với game. Giữ numpy 1 luồng (`OPENBLAS_NUM_THREADS=1`), không quét khi không
    trong trận, không thêm thư viện nặng (Qt/Electron/trình duyệt) cho giao diện. Đo lại RAM/CPU khi đổi phần quét.
@@ -41,6 +42,6 @@ python app.py --champion yasuo    # chạy có log trong Terminal
 7. Giao diện, thông báo và comment viết **tiếng Việt**; tên biến/hàm tiếng Anh.
 
 ## Thêm / sửa
-- playaram.gg đổi giao diện → sửa hàm `parse_*` trong `playaram.py`, chạy lại `fetch_fixtures.py` và test.
+- Trang nguồn đổi giao diện → sửa hàm `parse_*` trong `playaram.py`, chạy lại `fetch_fixtures.py` và test.
 - Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính và overlay cùng dùng), cập nhật `tests/test_advice.py`.
 - Phím tắt mới → thêm vào `keys` trong `app.main()` kèm phím dự phòng.
