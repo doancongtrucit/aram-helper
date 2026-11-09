@@ -17,7 +17,8 @@ DEFAULTS = {
     "top_n": 6,                   # số lõi mỗi bậc (bấm "Xem thêm" để mở đủ); 0 = tự vừa cửa sổ
     "app_follow_offer": False,    # cửa sổ chính phản ứng khi bảng chọn lõi hiện ra (tô sáng + ô Nên chọn)
     "always_on_top": False,
-    "auto_pick": True,            # tự ghi nhận lõi đã chọn theo cú bấm chuột lên thẻ khi bảng chọn đóng
+    "auto_pick": True,
+    "focus_guard": True,          # app vô tình lấy focus khi đang chơi → tự trả focus về game            # tự ghi nhận lõi đã chọn theo cú bấm chuột lên thẻ khi bảng chọn đóng
     # Overlay
     "overlay": True,
     "ov_opacity": 0.74,

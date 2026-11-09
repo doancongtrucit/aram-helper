@@ -9,7 +9,7 @@ WIN = sys.platform == "win32"
 
 # Các module nạp muộn (import trong hàm) – liệt kê để chắc chắn được đóng gói
 hidden = ["about", "report", "desktop", "theme", "widgets", "views.search", "views.augments", "views.items", "views.combos", "settings_ui", "overlay", "scanner", "screen_scan", "ocr", "hotkeys", "esp32_link",
-          "ddragon", "counter_items", "localize", "updater", "diag", "game_window", "pick_watch"]
+          "ddragon", "counter_items", "localize", "updater", "diag", "game_window", "pick_watch", "focus_guard"]
 if WIN:
     hidden += ["winrt.windows.media.ocr", "winrt.windows.graphics.imaging", "winrt.windows.storage.streams",
                "winrt.windows.foundation", "winrt.windows.foundation.collections", "winrt.windows.globalization"]

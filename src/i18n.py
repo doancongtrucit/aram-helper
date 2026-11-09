@@ -110,6 +110,8 @@ EN = {
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
     "Phím tắt": "Hotkeys",
+    "Giữ focus cho game: app vô tình lấy focus khi đang chơi thì trả lại ngay":
+        "Keep focus on the game: if the app accidentally takes focus while playing, give it back",
     "Giới thiệu": "About", "Email": "Email",
     "Tạo gói báo lỗi": "Create bug report",
     "Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi": "Bundle logs + diagnostic images into a zip to attach to an issue",

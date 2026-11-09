@@ -306,6 +306,7 @@ Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>
 | Đọc sai lõi | Khi bảng chọn lõi **đang hiện**, bấm **Ctrl+Alt+D** → app lưu ảnh + kết quả quét. Sau trận: **⚙ → Giới thiệu → Tạo gói báo lỗi** rồi đính kèm file zip khi báo lỗi. |
 | Overlay không hiện | Overlay chỉ hiện khi đang trong trận; kiểm tra công tắc **Overlay** trong app và chế độ hiển thị Không viền của game. |
 | Phím tắt không hoạt động | Xem **Cài đặt → Phím tắt** (có thể đã đổi sang phím dự phòng) hoặc đổi sang tổ hợp khác. |
+| Bị đẩy ra khỏi game khi đang chơi | Để game ở chế độ **Không viền (Borderless)** – chế độ Toàn màn hình rất dễ bị đẩy ra. Bật **Cài đặt → Chung → Giữ focus cho game**. Vẫn bị: tạo gói báo lỗi – log ghi rõ cửa sổ nào đã lấy focus. |
 | Windows chặn khi mở app | App chưa có chữ ký số: **More info → Run anyway**. |
 
 **Báo lỗi:** **⚙ → Giới thiệu → Tạo gói báo lỗi** tạo file `ARAM-Helper-bug-report-….zip` ra Desktop (log, tối đa 12 ảnh

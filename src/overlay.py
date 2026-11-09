@@ -62,6 +62,8 @@ def _win32():
         from ctypes import wintypes as wt
         u.GetParent.restype = wt.HWND
         u.GetParent.argtypes = [wt.HWND]
+        u.GetForegroundWindow.restype = wt.HWND
+        u.SetForegroundWindow.argtypes = [wt.HWND]
         u.ShowWindow.argtypes = [wt.HWND, ctypes.c_int]
         u.SetWindowPos.argtypes = [wt.HWND, wt.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wt.UINT]
         _win32_ready = True
@@ -107,6 +109,7 @@ class Overlay:
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
         self._shown: dict = {}
+        prev_fg = _win32().GetForegroundWindow()     # vd. game, nếu app mở khi đang chơi
         for alpha in (settings.get("ov_opacity"), settings.get("ov_badge_opacity")):
             win = tk.Toplevel(root)
             win.title("ARAM Helper overlay")
@@ -121,6 +124,9 @@ class Overlay:
             self._set_shown(win, False)        # ẩn bằng Win32; tkinter vẫn coi là đang hiện (không bao giờ deiconify)
             self.layers.append((win, cv))
         (self.panel, self.pcv), (self.bwin, self.bcv) = self.layers
+        # Tạo cửa sổ (tkinter hiện ra) có thể lấy focus 1 lần: trả focus lại cho cửa sổ trước đó (vd. game)
+        if prev_fg and _win32().GetForegroundWindow() != prev_fg and prev_fg not in {_hwnd(w) for w, _ in self.layers}:
+            _win32().SetForegroundWindow(prev_fg)
         settings.on_change(lambda ch: root.after(0, self._on_settings, ch))
 
     # ---------- cài đặt ----------

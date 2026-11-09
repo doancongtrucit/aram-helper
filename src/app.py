@@ -298,6 +298,11 @@ def main():
         print(f"Phím tắt: {hotkeys.label('calibrate')} định vị lõi · {hotkeys.label('pick1')}/2/3 đánh dấu lõi đã chọn · "
               f"{hotkeys.label('overlay')} ẩn/hiện overlay")
 
+    if IS_WINDOWS:                              # app vô tình lấy focus của game → trả lại + ghi log
+        import focus_guard
+        focus_guard.FocusGuard(lambda: HUB.game.get("in_game", False), log=diag.log,
+                               enabled_fn=lambda: settings.get("focus_guard")).start()
+
     import esp32_link
     if esp32_link.Esp32Link.enabled():          # data/esp32.json có thì đẩy màn ARAM lên ESP32 (bật/tắt trong Cài đặt)
         esp32_link.Esp32Link(HUB.state, log=print).start()

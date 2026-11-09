@@ -106,7 +106,7 @@ class SettingsDialog:
         self._build()
 
     def _defaults(self):
-        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates", "auto_pick"],
+        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates", "auto_pick", "focus_guard"],
                 "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k in ("overlay", "reroll_hint")],
                 "hotkeys": ["hk_" + k for k, _ in HOTKEYS],
                 "esp32": ["esp32"]}[self.page]
@@ -207,6 +207,7 @@ class SettingsDialog:
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
         if sys.platform == "win32":
             self._check("auto_pick", T("Tự ghi nhận lõi đã chọn (theo cú bấm chuột lên thẻ khi chọn lõi)"))
+            self._check("focus_guard", T("Giữ focus cho game: app vô tình lấy focus khi đang chơi thì trả lại ngay"))
         self._check("check_updates", T("Báo khi có bản mới (tự kiểm tra trên GitHub)"))
         row = self._row(T("Thư mục dữ liệu"))
         a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")

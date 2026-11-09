@@ -3,6 +3,16 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.5.0] – 2026-11-09
+
+### Thêm
+- **Giữ focus cho game**: nếu một cửa sổ ARAM Helper vô tình lấy focus khỏi game khi đang chơi, app trả focus về
+  game ngay (~¼ giây) và ghi vào `app.log` cửa sổ nào đã lấy – gói báo lỗi sẽ chỉ ra nguyên nhân. Người chơi chủ động
+  chuyển sang app (Alt+Tab, bấm vào app) thì không bị trả về. Bật / tắt trong Cài đặt → Chung.
+
+### Đã sửa
+- Mở app khi game đang chạy làm game mất focus một lần (lúc tạo cửa sổ overlay): giờ trả focus lại ngay.
+
 ## [1.4.3] – 2026-11-09
 
 ### Đã sửa
@@ -102,6 +112,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.5.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.0...v1.4.1
