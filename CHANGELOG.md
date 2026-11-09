@@ -3,7 +3,7 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
-## [Chưa phát hành]
+## [1.3.0] – 2026-11-09
 
 ### Thêm
 - **Tự định vị bảng lõi**: không cần bấm phím lần đầu – app ước tính vị trí 3 thẻ lõi theo độ phân giải và tự lưu
@@ -49,6 +49,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.3.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/doancongtrucit/aram-helper/releases/tag/v1.1.1
 [1.1.0]: https://github.com/doancongtrucit/aram-helper/commits/v1.1.0
