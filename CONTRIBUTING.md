@@ -1,72 +1,96 @@
-# Guideline phát triển
+# Phát triển ARAM Helper
+
+Tài liệu cho người sửa mã nguồn. Người dùng cuối chỉ cần [hướng dẫn sử dụng](docs/USER_GUIDE.md).
 
 ## Môi trường
+
+Python 3.10+ (CI dùng 3.13), Windows để chạy đủ tính năng (macOS chỉ có cửa sổ chính).
+
 ```
 python -m venv .venv
-.venv\Scripts\activate            # macOS: source .venv/bin/activate
+.venv\Scripts\activate                      # macOS: source .venv/bin/activate
 pip install -r requirements.txt
-python tests/fetch_fixtures.py    # tải trang mẫu cho test (không commit)
+python tests/fetch_fixtures.py              # tải trang mẫu cho test (không commit)
 python -m unittest discover -s tests -v
-python app.py --champion yasuo    # chạy có log trong Terminal
+python src/app.py --champion yasuo          # chạy từ mã nguồn, log in ra Terminal
 ```
 
-## Cấu trúc
-| File | Vai trò |
-|---|---|
-| `app.py` | Khởi động, `Hub` (trạng thái dùng chung: trận, tướng, lõi đã chọn), phím tắt |
-| `desktop.py` | Cửa sổ chính (tkinter): 2 cột lõi \| trang bị, tự vừa cửa sổ, zoom, tìm tướng nhanh |
-| `settings.py`, `settings_ui.py` | Tuỳ chọn (`data/settings.json`, `on_change` báo các phần đang chạy) + hộp thoại Cài đặt |
-| `i18n.py`, `localize.py` | Chuỗi giao diện Anh / Việt (`T("chuỗi tiếng Việt")`) + đổi tên lõi / đồ / tướng theo ngôn ngữ |
-| `overlay.py` | Overlay trên game (Windows) |
-| `advice.py` | Công thức chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý lõi |
-| `counter_items.py` | Phân tích đội hình + trang bị địch → 2 dòng gợi ý đồ (luật + danh sách tướng hồi máu / khống chế) |
-| `esp32_link.py` | Đẩy tóm tắt trận lên màn ARAM của PC Control Deck (ESP32) qua Wi-Fi UDP; cấu hình `data/esp32.json` |
-| `ddragon.py` | Dữ liệu tướng / trang bị / phép chính thức của Riot (Data Dragon vi_VN, en_US), rút gọn, cache `data/ddragon*.json` |
-| `playaram.py` | Tải + tách dữ liệu từ trang nguồn, cache `data/` |
-| `live_client.py` | Đọc Live Client Data API của Riot |
-| `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR, luồng quét nền (Windows) |
-| `hotkeys.py` | Phím tắt toàn cục (Windows) |
-| `diag.py` | Log chẩn đoán bộ quét + ảnh vùng quét khi gần khớp / hiệu chỉnh lỗi / Ctrl+Alt+D (`data/debug/`, giữ 30 ảnh) |
-| `tests/` | Unit test + `synthetic.py`/`bench_scan.py` (ảnh giả lập để đo độ chính xác nhận diện) |
-| `paths.py`, `version.py`, `updater.py` | Thư mục dữ liệu (mã nguồn: `data/`, bản cài: `%LOCALAPPDATA%\ARAM Helper`), số phiên bản, báo bản mới |
-| `packaging/`, `tools/build.py`, `.github/workflows/release.yml` | Đóng gói PyInstaller + bộ cài Inno Setup, build tự động khi tạo tag |
-| `tools/make_screenshots.py` | Tạo lại ảnh trong `docs/images/` từ dữ liệu mẫu + màn chọn lõi giả lập (không chụp màn hình thật) |
+Tuỳ chọn khi chạy: `--champion <slug>` mở thẳng 1 tướng, `--no-overlay` tắt overlay.
+Chạy từ mã nguồn thì dữ liệu nằm ở `data/` trong repo; đặt `ARAM_HELPER_DATA=<thư mục>` để dùng thư mục khác.
 
-## Quy tắc
+## Cấu trúc thư mục
+
+```
+aram-helper/
+├── src/                 mã nguồn (import phẳng: import advice, import settings…)
+├── tests/               unit test, ảnh giả lập (synthetic.py), đo độ chính xác (bench_scan.py)
+├── tools/               build.py (đóng gói), make_screenshots.py (ảnh tài liệu), make_icon.py (SVG → PNG / ICO)
+├── packaging/           PyInstaller spec, bộ cài Inno Setup
+├── assets/              icon app (icon.svg là bản gốc; icon.png / icon.ico xuất bằng tools/make_icon.py)
+├── docs/                hướng dẫn sử dụng + ảnh minh hoạ
+└── .github/workflows/   build và phát hành tự động
+```
+
+| Module (`src/`) | Vai trò |
+|---|---|
+| `app.py` | Điểm vào, `Hub` (trạng thái dùng chung: trận, tướng, lõi đã chọn), phím tắt |
+| `desktop.py` | Cửa sổ chính (tkinter): lõi \| trang bị, zoom, tìm tướng nhanh |
+| `overlay.py` | Overlay trên game (Windows) |
+| `settings.py`, `settings_ui.py` | Tuỳ chọn (`settings.json`, `on_change`) + hộp thoại Cài đặt |
+| `i18n.py`, `localize.py` | Chuỗi giao diện Anh / Việt (`T("chuỗi tiếng Việt")`), đổi tên lõi / đồ / tướng theo ngôn ngữ |
+| `advice.py` | Chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý lõi |
+| `counter_items.py` | Phân tích đội hình + trang bị địch → 2 dòng gợi ý đồ |
+| `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR tên lõi, luồng quét nền (Windows) |
+| `playaram.py`, `ddragon.py`, `live_client.py` | Nguồn dữ liệu: playaram.gg, Riot Data Dragon, Live Client Data API |
+| `esp32_link.py` | Gửi tóm tắt trận lên màn ARAM của PC Control Deck (UDP) |
+| `paths.py`, `version.py`, `updater.py` | Thư mục dữ liệu, số phiên bản, kiểm tra bản mới |
+| `hotkeys.py`, `diag.py` | Phím tắt toàn cục (Windows), log + ảnh chẩn đoán bộ quét |
+
+## Quy ước
+
+- **Tên file, thư mục, nhánh, commit: tiếng Anh.** Commit theo [Conventional Commits](https://www.conventionalcommits.org/):
+  `feat: …`, `fix: …`, `docs: …`, `refactor: …`, `build: …`, `ci: …`, `test: …`, `chore: …`.
+- Tên biến / hàm tiếng Anh. Giao diện và tài liệu người dùng viết tiếng Việt; chuỗi hiện lên giao diện bọc trong
+  `T("…")` và thêm bản tiếng Anh vào `i18n.EN`.
+- Code chỉ chạy trên Windows (`ctypes.windll`, WinRT, overlay, phím tắt) phải chặn bằng `sys.platform == "win32"`;
+  cửa sổ chính phải chạy được trên macOS. Gói chỉ Windows ghi marker trong `requirements.txt`.
+
+## Nguyên tắc
+
 1. **Chỉ đọc, không can thiệp game**: không đọc/ghi bộ nhớ game, không gửi phím/chuột vào game, không tự chọn lõi.
    Chỉ dùng Live Client API chính thức và ảnh chụp màn hình.
-2. **Tải dữ liệu nhẹ nhàng**: chỉ đọc trang HTML công khai, **không** gọi `/api/` (robots.txt chặn);
-   giữ cache và giãn cách request (`playaram.MIN_INTERVAL`); không commit dữ liệu hay trang HTML đã tải
-   (`data/`, `tests/fixture_*.html` đã nằm trong `.gitignore`).
-3. **Nhẹ**: app chạy song song với game. Giữ numpy 1 luồng (`OPENBLAS_NUM_THREADS=1`), không quét khi không
-   trong trận, không thêm thư viện nặng (Qt/Electron/trình duyệt) cho giao diện. Đo lại RAM/CPU khi đổi phần quét.
-4. **Đa nền tảng**: code chỉ chạy trên Windows (`ctypes.windll`, WinRT, overlay, phím tắt) phải được chặn bằng
-   `sys.platform == "win32"`; cửa sổ chính phải chạy được trên macOS. Gói chỉ Windows ghi marker trong
-   `requirements.txt`.
-5. **Không đưa dữ liệu cá nhân vào repo**: không commit `data/`, log, ảnh chụp màn hình thật, đường dẫn máy,
-   email, IP... Commit bằng email noreply của GitHub.
-6. **Test trước khi commit**: `python -m unittest discover -s tests`. Đổi phần nhận diện thì chạy thêm
+2. **Tải dữ liệu nhẹ nhàng**: chỉ đọc trang HTML công khai, **không** gọi `/api/` (robots.txt chặn); giữ cache và
+   giãn cách request (`playaram.MIN_INTERVAL`).
+3. **Nhẹ**: app chạy song song với game. Giữ numpy 1 luồng, không quét khi không trong trận, không thêm thư viện
+   giao diện nặng. Đo lại RAM / CPU khi đổi phần quét.
+4. **Không đưa dữ liệu cá nhân vào repo**: không commit `data/`, log, ảnh chụp màn hình thật, đường dẫn máy,
+   email, IP… Commit bằng email noreply của GitHub.
+5. **Test trước khi commit**: `python -m unittest discover -s tests`. Đổi phần nhận diện thì chạy thêm
    `python tests/bench_scan.py 40` và so độ chính xác với trước.
-7. Giao diện, thông báo và comment viết **tiếng Việt**; tên biến/hàm tiếng Anh. Chuỗi hiện lên giao diện bọc
-   trong `T("…")` và thêm bản tiếng Anh vào `i18n.EN` (test `test_settings_i18n` + kiểm tra đủ khoá).
 
-## Thêm / sửa
+## Sửa thường gặp
+
 - Trang nguồn đổi giao diện → sửa hàm `parse_*` trong `playaram.py`, chạy lại `fetch_fixtures.py` và test.
-- Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính và overlay cùng dùng), cập nhật `tests/test_advice.py`.
+- Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính, overlay, ESP32 cùng dùng), cập nhật `tests/test_advice.py`.
 - Phím tắt mới → thêm vào `keys` trong `app.main()` kèm phím dự phòng.
-- Tuỳ chọn mới → thêm khoá vào `settings.DEFAULTS`, ô điều khiển trong `settings_ui.py`, phần dùng nó đọc
-  `settings.get()` (đổi ngay thì đăng ký `settings.on_change`).
+- Tuỳ chọn mới → thêm khoá vào `settings.DEFAULTS`, ô điều khiển trong `settings_ui.py`; phần dùng nó đọc
+  `settings.get()` (cần đổi ngay thì đăng ký `settings.on_change`). File cài đặt chỉ lưu giá trị khác mặc định;
+  đổi mặc định cần áp lại cho người dùng cũ thì tăng `settings.VERSION` và xử lý trong `_load()`.
+- Ảnh tài liệu → `python tools/make_screenshots.py` (dữ liệu mẫu + màn chọn lõi giả lập, không chụp màn hình thật).
 
-## Phát hành bản mới
-1. Tăng `__version__` trong `version.py` (vd. `1.2.0`), cập nhật tài liệu nếu cần, commit.
-2. Tạo tag cùng số và push: `git tag v1.2.0 && git push origin main v1.2.0`.
-3. GitHub Actions (`release.yml`) chạy test, build `Setup.exe` + bản portable (Windows) + `.app` (macOS),
-   rồi tạo Release kèm các file. App của người dùng sẽ hiện nút **Có bản mới** trong vòng 1 ngày.
+## Build và phát hành
 
-Build thử trên máy (Windows):
+Build thử trên máy (Windows; có Inno Setup 6 thì tạo thêm `Setup.exe`):
+
 ```
 python -m venv build/venv
-buildenv\Scripts\python -m pip install -r requirements.txt pyinstaller
-buildenv\Scripts\python tools/build.py        # → dist/ (có Inno Setup 6 thì thêm Setup.exe)
+build\venv\Scripts\python -m pip install -r requirements.txt pyinstaller
+build\venv\Scripts\python tools/build.py            # → dist/
 ```
-Đổi icon: sửa `tools/make_icon.py` rồi chạy lại (tạo `assets/icon.png`, `assets/icon.ico`).
+
+Phát hành:
+
+1. Tăng `__version__` trong `src/version.py`, thêm mục mới vào `CHANGELOG.md`, commit.
+2. Tạo tag cùng số và push: `git tag -a v1.2.0 -m "ARAM Helper 1.2.0" && git push origin main v1.2.0`.
+3. GitHub Actions (`release.yml`) chạy test, build `Setup.exe` + bản portable (Windows) + `.app` (macOS) rồi tạo
+   Release. App của người dùng hiện nút **Có bản mới** trong vòng vài giờ.

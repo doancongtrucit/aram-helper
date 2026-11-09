@@ -68,6 +68,10 @@ class SettingsDialog:
         foot.pack(fill="x")
         from version import __version__
         a.button(foot, T("Đóng"), self.close, 9, primary=True).pack(side="right")
+        try:
+            tk.Label(foot, image=d.app_logo(a.root, a.S(20)), bg=d.BG).pack(side="left", padx=(0, a.S(6)))
+        except Exception:
+            pass
         a.label(foot, f"ARAM Helper {__version__}", 8, d.MUTED).pack(side="left")
         a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
 
@@ -155,16 +159,16 @@ class SettingsDialog:
         self._note(T("Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện."))
         row = self._row(T("Số lõi mỗi bậc"))
         auto = tk.BooleanVar(value=int(settings.get("top_n") or 0) == 0)
-        n = tk.IntVar(value=int(settings.get("top_n") or 8) or 8)
+        n = tk.IntVar(value=int(settings.get("top_n") or 6) or 6)
         self.vars["top_n"] = tk.IntVar(value=int(settings.get("top_n") or 0))   # chỉ để _sync không lỗi
         spin = tk.Spinbox(row, from_=1, to=16, width=4, textvariable=n, font=a.f(9), bg=self.d.BG, fg=self.d.TEXT,
                           buttonbackground=self.d.PANEL2, relief="flat",
                           command=lambda: settings.set("top_n", int(n.get())))
-        spin.bind("<Return>", lambda e: settings.set("top_n", max(1, min(16, int(n.get() or 8)))))
+        spin.bind("<Return>", lambda e: settings.set("top_n", max(1, min(16, int(n.get() or 6)))))
 
         def toggle_auto():
             spin.configure(state="disabled" if auto.get() else "normal")
-            settings.set("top_n", 0 if auto.get() else max(1, int(n.get() or 8)))
+            settings.set("top_n", 0 if auto.get() else max(1, int(n.get() or 6)))
         tk.Checkbutton(row, text=T("Tự vừa cửa sổ"), variable=auto, command=toggle_auto, bg=self.d.PANEL,
                        fg=self.d.TEXT, selectcolor=self.d.BG, activebackground=self.d.PANEL,
                        activeforeground=self.d.TEXT, font=a.f(9)).pack(side="left")
@@ -174,7 +178,7 @@ class SettingsDialog:
         self._check("app_follow_offer", T("Cửa sổ chính phản ứng khi đang chọn lõi (tô sáng, ô Nên chọn)"))
         self._note(T("Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
-        self._check("check_updates", T("Báo khi có bản mới (kiểm tra GitHub mỗi ngày 1 lần)"))
+        self._check("check_updates", T("Báo khi có bản mới (tự kiểm tra trên GitHub)"))
         import paths
         row = self._row(T("Thư mục dữ liệu"))
         a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")
@@ -229,4 +233,4 @@ class SettingsDialog:
         import esp32_link
         self._check("esp32", T("Gửi màn ARAM lên ESP32 (PC Control Deck)"))
         if not esp32_link.Esp32Link.enabled():
-            self._note(T("Cần file data/esp32.json – xem HUONG_DAN.md mục 4b."))
+            self._note(T("Cần file esp32.json trong thư mục dữ liệu – xem docs/USER_GUIDE.md, mục ESP32."))

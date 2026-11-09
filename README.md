@@ -1,49 +1,57 @@
-# ARAM Helper
+<p align="center"><img src="assets/icon.png" width="128" alt="ARAM Helper"></p>
+
+<h1 align="center">ARAM Helper</h1>
+
+<p align="center"><b>Gợi ý lõi và trang bị cho ARAM Hỗn Loạn – ngay trên game.</b></p>
+
+<p align="center">
+  <a href="https://github.com/doancongtrucit/aram-helper/releases/latest"><b>Tải về</b></a> ·
+  <a href="docs/USER_GUIDE.md">Hướng dẫn</a> ·
+  <a href="CHANGELOG.md">Có gì mới</a>
+</p>
 
 Ứng dụng máy tính gợi ý **lõi (augment)** và **trang bị** cho tướng bạn đang chơi trong **ARAM Hỗn Loạn**
-(Liên Minh Huyền Thoại). Nguồn dữ liệu: [playaram.gg](https://playaram.gg).
+(Liên Minh Huyền Thoại) – tự nhận tướng, tự đọc 3 lõi đang được đưa ra và gợi ý ngay trên game.
 
 ![ARAM Helper](docs/images/main-window.png)
 
-- Tự nhận tướng khi vào trận (Live Client API chính thức của Riot).
-- Lõi Kim Cương / Vàng / Bạc và trang bị **cạnh nhau trên cùng một màn**, tự vừa mọi cỡ cửa sổ / zoom (Ctrl + / Ctrl −).
-- Combo lõi kèm lý do, build trang bị, giày, phép bổ trợ, đồ nên lên theo đội địch.
-- Ô tìm kiếm lọc nhanh tướng (↑ ↓ Enter) và lõi; giao diện **Tiếng Việt / English**.
-- **Cài đặt**: ngôn ngữ, cỡ chữ, số lõi mỗi bậc, độ mờ / cỡ / vị trí / mục hiển thị của overlay, bật/tắt ESP32.
-- Đánh dấu lõi đã chọn → gợi ý lõi hợp combo cho lượt sau.
-- **Windows**: tự đọc 3 lõi đang được đưa ra trên màn hình, overlay gọn trên game, phím tắt khi đang chơi.
-- **macOS**: cửa sổ chính (chưa có đọc màn hình / overlay).
+## Tính năng
+
+- **Tự nhận tướng** khi vào trận qua Live Client Data API chính thức của Riot.
+- **Lõi Kim Cương / Vàng / Bạc** (6 lõi mạnh nhất mỗi bậc, xem thêm tới 16) và **trang bị** trên cùng một màn,
+  tự xếp bố cục theo cỡ cửa sổ và mức phóng to.
+- **Combo lõi** kèm lý do, 3 lối lên đồ, giày, phép bổ trợ, **đồ nên lên theo đội hình + trang bị của đội địch**.
+- **Tự đọc lõi trên màn hình** (Windows): nhận icon, đọc tên bằng OCR cho lõi dùng chung icon và lõi kỹ năng tướng.
+- **Overlay** gọn, trong suốt trên game; bấm để đánh dấu lõi đã chọn mà không làm game mất focus.
+- Tìm nhanh tướng / lõi, giao diện **Tiếng Việt / English**, nhiều tuỳ chọn hiển thị, tự báo khi có bản mới.
+- Tuỳ chọn: hiển thị tóm tắt trận trên màn ESP32 (PC Control Deck).
 
 ![Overlay trên game](docs/images/overlay-ingame.png)
 
-## Cài đặt
-Tải bản mới nhất ở **[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)** – không cần Python:
+## Tải về
+
+Tải bản mới nhất tại **[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)** – không cần cài Python.
+
+| Hệ điều hành | File |
+|---|---|
+| Windows 10 / 11 (64-bit) | `ARAM-Helper-<phiên bản>-Setup.exe` (khuyên dùng) hoặc `…-win64-portable.zip` |
+| macOS 11+ | `ARAM-Helper-<phiên bản>-macos.zip` (cửa sổ chính; chưa có đọc màn hình / overlay) |
+
+App chưa có chữ ký số: Windows hiện "Windows protected your PC" → **More info → Run anyway**;
+macOS → chuột phải vào app → **Open**.
+
+## Tài liệu
 
 | | |
 |---|---|
-| **Windows 10/11** | `…-Setup.exe` (bộ cài, không cần admin) hoặc `…-win64-portable.zip` (giải nén là chạy) |
-| **macOS 11+** | `…-macos.zip` → kéo `ARAM Helper.app` vào Applications |
+| 📖 [Hướng dẫn sử dụng](docs/USER_GUIDE.md) | Cài đặt, cách dùng, hiệu chỉnh đọc màn hình, overlay, phím tắt, xử lý sự cố |
+| 📝 [Nhật ký thay đổi](CHANGELOG.md) | Thay đổi qua từng phiên bản |
+| 🛠 [Phát triển](CONTRIBUTING.md) | Cấu trúc mã nguồn, chạy từ mã nguồn, test, build và phát hành |
 
-App tự báo khi có bản mới. Chạy từ mã nguồn (cần Python 3.10+): `install-windows.bat` / `bash install-macos.sh`.
+## An toàn
 
-📖 **Hướng dẫn đầy đủ:** [HUONG_DAN.md](HUONG_DAN.md) – cài đặt, cách dùng, hiệu chỉnh đọc màn hình, overlay,
-phím tắt, xử lý sự cố.
-🛠 **Phát triển:** [CONTRIBUTING.md](CONTRIBUTING.md) – cấu trúc code, quy tắc, cách chạy test.
+ARAM Helper **chỉ đọc** (Live Client API trên máy + ảnh chụp màn hình): không đọc/ghi bộ nhớ game,
+không gửi phím/chuột vào game, không tự chọn lõi. Dùng công cụ bên thứ ba do bạn tự cân nhắc theo chính sách
+hiện hành của Riot.
 
-## Chạy thủ công
-```
-python -m venv .venv && .venv\Scripts\activate      # macOS: source .venv/bin/activate
-pip install -r requirements.txt
-python app.py                  # tuỳ chọn: --no-overlay, --champion yasuo
-```
-
-## Nhẹ
-Giao diện tkinter (có sẵn trong Python), không cần trình duyệt. Đo trên màn 2560×1440: ~65–80 MB RAM,
-CPU ~0 khi ngoài trận, ~6% một nhân khi đang quét trong trận.
-
-## Lưu ý
-- App **chỉ đọc** (Live Client API + ảnh chụp màn hình): không đọc/ghi bộ nhớ game, không gửi phím/chuột vào game,
-  không tự chọn lõi. Dùng công cụ bên thứ ba do bạn tự cân nhắc theo chính sách hiện hành của Riot.
-- Phần đọc màn hình mới được kiểm bằng ảnh giả lập; nếu đọc sai trong game thật, hãy mở issue kèm ảnh chụp
-  màn hình lúc chọn lõi.
-- Không liên kết với Riot Games.
+Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg). ARAM Helper không liên kết với Riot Games.

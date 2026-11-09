@@ -38,8 +38,6 @@ OK = "#f5a53a"
 ACCENT = "#6aa8ff"
 TIER_COLOR = {"S+": "#ff8a5c", "S": "#ff8a5c", "A": "#f5c451", "B": "#6aa8ff", "C": MUTED, "D": MUTED}
 FONT = "Segoe UI"
-PANEL_ALPHA = 0.74              # mờ hơn để game nổi bật, chữ vẫn đọc được
-BADGE_ALPHA = 0.84
 SHOW_IN_CAPTURE = os.environ.get("ARAM_OVERLAY_IN_CAPTURE") == "1"   # chỉ để thử nghiệm
 PREFS = str(paths.DATA / "overlay.json")
 
@@ -73,7 +71,6 @@ class Overlay:
         self._sig = None
         self._last_top = 0.0
         self._drag = None
-        self._d = None
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
         for alpha in (settings.get("ov_opacity"), settings.get("ov_badge_opacity")):
@@ -278,7 +275,6 @@ class Overlay:
                 sig = repr(self._signature(d)) + repr(self.collapsed) + repr(settings.all_values())
                 if sig != self._sig:
                     self._sig = sig
-                    self._d = d
                     self._draw(d)
                 if time.time() - self._last_top > 3:      # game có thể đẩy cửa sổ khác xuống
                     for win, _ in self.layers:
@@ -332,10 +328,17 @@ class Overlay:
         hh = S(34)
         head_bg = self._round_rect(cv, 0, 0, W, hh, S(10), fill=BG, outline="", tags=("head",))
         dot_col = GOOD if adv else (OK if scan.get("error") or not scan.get("calibrated") else MUTED)
+        try:
+            from desktop import app_logo
+            self._logo = app_logo(self.root, S(20))
+            cv.create_image(x - S(2), hh / 2, image=self._logo, anchor="w", tags=("head",))
+            x += S(22)
+        except Exception:
+            pass
         cv.create_oval(x, hh / 2 - S(4), x + S(8), hh / 2 + S(4), fill=dot_col, outline="", tags=("head",))
         name = champ.get("name") or "ARAM Helper"
         tier = champ.get("tier", "")
-        t = self._text(cv, x + S(16), hh / 2, self._fit(name, W - S(142), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
+        t = self._text(cv, x + S(16), hh / 2, self._fit(name, W - x - S(132), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
         tx = cv.bbox(t)[2] + S(6)
         if tier:
             self._text(cv, tx, hh / 2, tier, 10, TIER_COLOR.get(tier, OK), True, anchor="w", tags=("head",))
@@ -440,12 +443,10 @@ class Overlay:
         return y + S(42)
 
     def _build_row(self, cv, y, W, b):
-        """1 lối lên đồ: tên ngắn + tỉ lệ thắng, rồi icon 5–6 món + giày (món cốt lõi viền xanh)."""
+        """1 lối lên đồ: tên ngắn, rồi icon 5–6 món + giày (món cốt lõi viền xanh)."""
         S = self.S
         x = S(10)
-        wr = b.get("winrate")
-        self._text(cv, W - S(10), y, f"{wr:.1f}%" if wr is not None else "?", 8, GOOD, True, anchor="ne")
-        self._text(cv, x, y, self._fit(b.get("name", ""), W - S(70), 8, True), 8, TEXT, True)
+        self._text(cv, x, y, self._fit(b.get("name", ""), W - S(20), 8, True), 8, TEXT, True)
         y += S(16)
         ix = x
         for it in b.get("items", [])[:6] + b.get("boots", [])[:1]:

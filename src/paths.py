@@ -14,7 +14,8 @@ from pathlib import Path
 
 APP_NAME = "ARAM Helper"
 FROZEN = bool(getattr(sys, "frozen", False))
-APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
+# bản exe: thư mục chứa exe; mã nguồn: gốc repo (src/ nằm ngay dưới)
+APP_DIR = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent.parent
 
 
 def _data_dir() -> Path:

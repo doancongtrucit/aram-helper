@@ -7,7 +7,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 
 import advice  # noqa: E402

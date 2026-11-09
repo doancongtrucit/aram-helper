@@ -1,6 +1,6 @@
 """ARAM Helper – ứng dụng máy tính gợi ý lõi ARAM Hỗn Loạn (Windows; macOS chỉ có cửa sổ chính).
 
-Chạy: python app.py            (hoặc shortcut do install-windows.bat / install-macos.sh tạo)
+Chạy từ mã nguồn: python app.py   (người dùng cài bản exe / .app từ GitHub Releases)
       python app.py --no-overlay --champion yasuo
 
 Phím tắt (cả khi đang trong game; nếu bị app khác chiếm thì tự dùng phím dự phòng, hiện trong app):
@@ -205,8 +205,9 @@ HUB = Hub(SCANNER)
 
 
 def _setup_output():
-    """Chạy bằng pythonw (không có cửa sổ dòng lệnh) thì ghi log ra data/app.log."""
-    if sys.stdout is None or sys.stderr is None:
+    """Chạy bằng pythonw hoặc bản exe (không có cửa sổ dòng lệnh) thì ghi log ra app.log trong thư mục dữ liệu."""
+    import paths
+    if sys.stdout is None or sys.stderr is None or paths.FROZEN:
         playaram.CACHE_DIR.mkdir(parents=True, exist_ok=True)
         path = playaram.CACHE_DIR / "app.log"
         try:                                   # dùng lâu dài: log quá 1 MB thì xoay vòng (giữ 1 bản cũ)
@@ -215,8 +216,8 @@ def _setup_output():
         except OSError:
             pass
         log = open(path, "a", encoding="utf-8", buffering=1)
-        sys.stdout = sys.stdout or log
-        sys.stderr = sys.stderr or log
+        sys.stdout = log if paths.FROZEN else (sys.stdout or log)
+        sys.stderr = log if paths.FROZEN else (sys.stderr or log)
     else:
         sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     from version import __version__

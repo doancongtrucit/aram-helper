@@ -39,12 +39,6 @@ def _init() -> bool:
     return _ready
 
 
-def __getattr__(name):          # ocr.AVAILABLE → nạp OCR lần đầu được hỏi tới
-    if name == "AVAILABLE":
-        return installed()
-    raise AttributeError(name)
-
-
 def fold(s: str) -> str:
     s = unicodedata.normalize("NFD", s.replace("đ", "d").replace("Đ", "D"))
     s = "".join(c for c in s if unicodedata.category(c) != "Mn").lower()

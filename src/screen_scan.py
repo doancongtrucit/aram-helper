@@ -2,17 +2,12 @@
 
 Hai bước:
 1. Hiệu chỉnh (calibrate): tìm vị trí + kích thước 3 ô icon lõi trên màn hình (chậm ~1-3 s, làm 1 lần
-   cho mỗi độ phân giải). Kết quả lưu ở data/calibration.json.
-2. Nhận diện (detect): cắt đúng 3 ô đó, so với toàn bộ icon lõi bằng tương quan chuẩn hoá có mask
-   (ZNCC) – vài chục ms, chạy mỗi giây được.
+   cho mỗi độ phân giải). Kết quả lưu ở calibration.json trong thư mục dữ liệu.
+2. Nhận diện (detect): cắt đúng 3 ô đó, so với toàn bộ icon lõi (mô hình "icon trên nền 1 màu", điểm R²)
+   – vài chục ms, chạy mỗi giây được. Ô không khớp icon (lõi kỹ năng tướng) thì đọc tên bằng OCR.
 
 Chỉ chụp màn hình, không đọc bộ nhớ hay can thiệp game. Game cần chạy chế độ
 Không viền (Borderless) hoặc Cửa sổ – chế độ Toàn màn hình độc quyền thường cho ảnh đen.
-
-CLI để thử với ảnh chụp sẵn:
-    python screen_scan.py icons                 # tải icon
-    python screen_scan.py calibrate anh.png     # hiệu chỉnh từ ảnh
-    python screen_scan.py detect anh.png        # nhận diện từ ảnh (cần đã hiệu chỉnh)
 """
 from __future__ import annotations
 
@@ -45,6 +40,8 @@ WIDE_SHIFT = 10       # dò rộng ±25% khi gần khớp mà chưa chắc (th�
 NEAR_MIN = 0.40       # điểm từ mức này = "gần khớp": đáng dò rộng + lưu ảnh chẩn đoán
 MATCH_MIN = 0.55      # điểm tối thiểu để coi là khớp
 MARGIN_MIN = 0.02     # cách biệt tối thiểu với icon khác (ngoài nhóm dễ nhầm)
+NAME_MIN = 0.75       # độ giống tên (OCR) tối thiểu khi nhận lõi chỉ bằng tên
+GAP_MIN, GAP_MAX = 1.8, 3.0   # khoảng cách tâm 2 thẻ lõi kề nhau / cỡ icon (trong game ~2.3)
 CLOSE_DELTA = 0.045   # icon có điểm cách icon tốt nhất ≤ mức này được coi là dễ nhầm → ứng viên (OCR phân xử)
 CLOSE_MAX = 6
 
@@ -141,7 +138,7 @@ class Bank:
     def score(self, windows: np.ndarray) -> np.ndarray:
         """Điểm R² của mô hình 'icon dán trên nền 1 màu' trên toàn ô. N x K, 1 = khớp hoàn hảo.
         Phạt cả icon sai lẫn icon chỉ khớp một phần (vì vùng nền cũng phải khớp)."""
-        N, K = windows.shape[0], len(self.ids)
+        N = windows.shape[0]
         r1 = windows @ self.FG.T                                    # N x K
         ch = windows.reshape(N, -1, 3)
         planes = np.ascontiguousarray(ch.transpose(2, 0, 1))                # 3 x N x P, liền bộ nhớ → BLAS nhanh
@@ -204,8 +201,8 @@ def _nms_peaks(score: np.ndarray, radius: int, k: int = 12, floor: float = 0.3):
     return peaks
 
 
-def _best_triple(peaks, size):
-    """3 đỉnh cùng hàng ngang, cách đều nhau, xa nhau hơn 1 icon."""
+def _best_triple(peaks, size, width=None):
+    """3 đỉnh cùng hàng ngang, cách đều nhau, xa nhau hơn 1 icon; bảng chọn lõi nằm giữa màn hình."""
     best = None
     for i in range(len(peaks)):
         for j in range(len(peaks)):
@@ -216,11 +213,40 @@ def _best_triple(peaks, size):
                 if max(abs(a[2] - b[2]), abs(b[2] - c[2]), abs(a[2] - c[2])) > size * 0.25:
                     continue
                 d1, d2 = b[1] - a[1], c[1] - b[1]
-                if min(d1, d2) < size * 1.2 or max(d1, d2) / min(d1, d2) > 1.2:
+                if min(d1, d2) < size * GAP_MIN or max(d1, d2) > size * GAP_MAX or max(d1, d2) / min(d1, d2) > 1.2:
+                    continue
+                if width and abs(b[1] + size / 2 - width / 2) / width > 0.035:
                     continue
                 s = (a[0] + b[0] + c[0]) / 3
                 if best is None or s > best[0]:
                     best = (s, [a, b, c])
+    return best
+
+
+def _best_pair(peaks, size, width):
+    """Chỉ thấy 2 icon (ô còn lại là lõi kỹ năng của tướng, không có icon mẫu): suy ra ô thứ 3 sao cho
+    3 ô cách đều và bảng chọn nằm giữa màn hình. Trả (điểm, [a, b, c]) với c là đỉnh suy ra (điểm 0)."""
+    best = None
+    for i in range(len(peaks)):
+        for j in range(len(peaks)):
+            a, b = peaks[i], peaks[j]
+            if not a[1] < b[1] or abs(a[2] - b[2]) > size * 0.25:
+                continue
+            d = b[1] - a[1]
+            y = (a[2] + b[2]) / 2
+            options = []
+            if size * GAP_MIN <= d <= size * GAP_MAX:            # 2 ô kề nhau: ô 3 ở trái hoặc phải
+                options += [[(0.0, a[1] - d, y), a, b], [a, b, (0.0, b[1] + d, y)]]
+            if 2 * size * GAP_MIN <= d <= 2 * size * GAP_MAX:    # 2 ô ngoài: ô 3 ở giữa
+                options.append([a, (0.0, a[1] + d / 2, y), b])
+            for tri in options:
+                mid = tri[1][1] + size / 2
+                off = abs(mid - width / 2) / width
+                if off > 0.035 or tri[0][1] < 0 or tri[2][1] + size > width:
+                    continue
+                sc = (a[0] + b[0]) / 2 - off
+                if best is None or sc > best[0]:
+                    best = (sc, [(v, int(round(x)), int(round(yy))) for v, x, yy in tri])
     return best
 
 
@@ -232,7 +258,7 @@ def calibrate(screen_bgr: np.ndarray, icons: dict[int, np.ndarray], log=print) -
     small = cv2.resize(screen_bgr[y_lo:y_hi], (int(W * f), int((y_hi - y_lo) * f)), interpolation=cv2.INTER_AREA)
     gray = cv2.cvtColor(small, cv2.COLOR_BGR2GRAY).astype(np.float32)
     uniq = [icons[k] for k in unique_icons(icons)]
-    best = None
+    best = pair_best = None
     t0 = time.time()
     # Kích thước icon trên màn hình: 4%–13% chiều rộng
     for frac in np.arange(0.04, 0.135, 0.01):
@@ -251,9 +277,17 @@ def calibrate(screen_bgr: np.ndarray, icons: dict[int, np.ndarray], log=print) -
             acc = r if acc is None else np.maximum(acc, r)
         if acc is None:
             continue
-        triple = _best_triple(_nms_peaks(acc, s), s)
+        peaks = _nms_peaks(acc, s)
+        triple = _best_triple(peaks, s, gray.shape[1])
         if triple and (best is None or triple[0] > best[0]):
             best = (triple[0], s, triple[1])
+        pair = _best_pair(peaks, s, gray.shape[1])
+        if pair and pair[0] >= 0.55 and (pair_best is None or pair[0] > pair_best[0]):
+            pair_best = (pair[0], s, pair[1])
+    # 2 icon khớp rất tốt thắng 3 điểm khớp vừa phải (3 điểm có thể bắt nhầm vào chữ / hoạ tiết)
+    if pair_best and (not best or best[0] < 0.45 or pair_best[0] > best[0] + 0.1):
+        best = pair_best
+        log("  chỉ thấy 2 icon – suy ra ô thứ 3 (lõi kỹ năng tướng)")
     log(f"  hiệu chỉnh thô: {time.time() - t0:.1f}s, điểm {best[0]:.2f}" if best else "  không tìm thấy 3 icon thẳng hàng")
     if not best or best[0] < 0.45:
         return None
@@ -362,16 +396,42 @@ def read_offer(screen_bgr: np.ndarray, calib: Calibration, bank: Bank, catalog: 
     rarity_of = {a["id"]: a["rarity"] for a in catalog}
     names = {a["id"]: a["name"] for a in catalog}
     res = resolve_rarity(detect(screen_bgr, calib, bank, origin, full, shift), rarity_of)
-    # Chỉ OCR khi icon đã khớp chắc chắn (bảng chọn lõi thật sự đang hiện) – lúc đánh nhau thì bỏ qua
-    if not use_ocr or not ocr.AVAILABLE or not confident(res):
+    # Chỉ OCR khi ít nhất 1 ô đã khớp icon chắc chắn (bảng chọn lõi thật sự đang hiện) – lúc đánh nhau thì bỏ qua
+    if not use_ocr or not ocr.installed() or not any(slot_ok(r) for r in res):
         return res
     h, w = screen_bgr.shape[:2]
     ox, oy = origin
     out = []
     for i, r in enumerate(res):
         r = {**r, "ocr": None}
-        if len(r["candidates"]) > 1:
-            key = (i, tuple(r["candidates"]))
+        if not slot_ok(r) and r.get("center"):
+            # Lõi kỹ năng của tướng: trong game icon là kỹ năng thật của tướng, không có icon mẫu để so
+            # → đọc dòng tên dưới icon, tra trong cả danh sách lõi (cùng độ hiếm nếu đã biết)
+            cx, cy = r["center"]
+            s = r["size"]
+            x0, x1 = max(0, int(cx - 1.1 * s) - ox), min(w, int(cx + 1.1 * s) - ox)
+            y0, y1 = max(0, int(cy + 0.55 * s) - oy), min(h, int(cy + 1.05 * s) - oy)
+            crop = screen_bgr[y0:y1, x0:x1]
+            key = (i, "name", _fingerprint(crop))
+            if ocr_cache is not None and key in ocr_cache:
+                pick, info = ocr_cache[key]
+            else:
+                pool = [a for a in catalog if a["rarity"] == r.get("rarity")] or catalog
+                lines = ocr.read_lines(crop)
+                pick, ratio = ocr.best_name(lines, {a["id"]: [a["name"]] + (alt_names or {}).get(a["id"], [])
+                                                    for a in pool}, min_ratio=NAME_MIN)
+                info = {"lines": lines, "ratio": round(ratio, 2), "by_name": True}
+                if ocr_cache is not None:
+                    ocr_cache[key] = (pick, info)
+            r["ocr"] = info
+            if pick is not None:
+                r.update(id=pick, candidates=[pick], by_name=True)
+        elif len(r["candidates"]) > 1:
+            cx, cy = r["center"]
+            s = r["size"]
+            key = (i, tuple(r["candidates"]),
+                   _fingerprint(screen_bgr[max(0, int(cy + 0.55 * s) - oy):max(0, int(cy + 1.05 * s) - oy),
+                                           max(0, int(cx - 1.1 * s) - ox):max(0, int(cx + 1.1 * s) - ox)]))
             if ocr_cache is not None and key in ocr_cache:
                 pick, info = ocr_cache[key]
             else:
@@ -402,10 +462,22 @@ def recenter(calib: Calibration, results: list[dict], full: tuple[int, int]) -> 
     return Calibration(calib.width, calib.height, calib.size, centers)
 
 
+def slot_ok(r: dict) -> bool:
+    """Ô này khớp icon chắc chắn."""
+    return r.get("id") is not None and r["score"] >= MATCH_MIN and r["score"] - r["second"] >= MARGIN_MIN
+
+
 def confident(results: list[dict]) -> bool:
-    return len(results) == 3 and all(
-        r["id"] is not None and r["score"] >= MATCH_MIN and r["score"] - r["second"] >= MARGIN_MIN for r in results
-    )
+    """Đủ 3 ô: mỗi ô khớp icon chắc chắn, hoặc nhận được bằng tên (lõi kỹ năng tướng)."""
+    return len(results) == 3 and all(slot_ok(r) or r.get("by_name") for r in results)
+
+
+def _fingerprint(crop: np.ndarray) -> bytes:
+    """Dấu vân tay thô của vùng tên: đổi lõi (kể cả bấm đổi lõi) thì OCR lại, còn nguyên thì dùng kết quả cũ."""
+    if crop is None or crop.size == 0:
+        return b""
+    g = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if crop.ndim == 3 else crop
+    return (cv2.resize(g, (24, 6), interpolation=cv2.INTER_AREA) // 64).tobytes()
 
 
 def resolve_rarity(results: list[dict], rarity_of: dict[int, str]) -> list[dict]:
@@ -516,43 +588,3 @@ def read_image(path: str) -> np.ndarray:
     if im is None:
         raise ValueError(f"Không đọc được ảnh {path}")
     return im
-
-
-def annotate(screen_bgr, calib: Calibration, results, names: dict[int, str]) -> np.ndarray:
-    out = screen_bgr.copy()
-    for (cx, cy), r in zip(calib.centers, results):
-        h = calib.size // 2
-        ok = r["score"] >= MATCH_MIN
-        cv2.rectangle(out, (cx - h, cy - h), (cx + h, cy + h), (80, 220, 120) if ok else (60, 60, 230), 2)
-        label = f"{r['id']} {r['score']:.2f}"
-        cv2.putText(out, label, (cx - h, cy + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
-    return out
-
-
-if __name__ == "__main__":
-    import sys
-    sys.stdout.reconfigure(encoding="utf-8")
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "icons"
-    catalog = playaram.get_augment_catalog()
-    names = {a["id"]: a["name"] for a in catalog}
-    print(f"Đã tải thêm {ensure_icons(catalog)} icon ({len(catalog)} lõi).")
-    if cmd in ("calibrate", "detect"):
-        icons = load_icons(catalog)
-        img = read_image(sys.argv[2]) if len(sys.argv) > 2 else grab_screen()
-        if cmd == "calibrate":
-            c = calibrate(img, icons)
-            if not c:
-                sys.exit("Không hiệu chỉnh được – ảnh có đang hiện bảng chọn 3 lõi không?")
-            c.save()
-            print("Đã lưu hiệu chỉnh:", c)
-        calib = Calibration.load()
-        if not calib:
-            sys.exit("Chưa hiệu chỉnh.")
-        t0 = time.time()
-        res = detect(img, calib, bank_for(icons))
-        print(f"Nhận diện {1000 * (time.time() - t0):.0f} ms, chắc chắn: {confident(res)}")
-        for r in res:
-            print(f"  {names.get(r['id'], r['id'])}: {r['score']:.3f} (thứ 2: {r['second']:.3f})")
-        out = DATA / "debug_detect.png"
-        cv2.imencode(".png", annotate(img, calib, res, names))[1].tofile(str(out))
-        print("Ảnh đánh dấu:", out)

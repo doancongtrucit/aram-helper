@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 import i18n  # noqa: E402
 import localize  # noqa: E402
 import settings  # noqa: E402
@@ -35,8 +35,18 @@ class SettingsTest(unittest.TestCase):
     def test_reset(self):
         settings.set_many({"top_n": 5, "lang": "en"})
         settings.reset(["top_n"])
-        self.assertEqual(settings.get("top_n"), 0)
+        self.assertEqual(settings.get("top_n"), 6)
         self.assertEqual(settings.get("lang"), "en")
+
+    def test_file_keeps_only_changes_and_migrates_old_default(self):
+        import json
+        settings.set("lang", "en")
+        self.assertEqual(json.loads(self.path.read_text(encoding="utf-8")), {"_v": settings.VERSION, "lang": "en"})
+        # file của bản cũ lưu cả top_n = 0 (mặc định cũ) → về mặc định mới 6
+        self.path.write_text(json.dumps({"top_n": 0, "ov_opacity": 0.5}), encoding="utf-8")
+        settings._reset_for_tests(self.path)
+        self.assertEqual(settings.get("top_n"), 6)
+        self.assertEqual(settings.get("ov_opacity"), 0.5)
 
     def test_translate(self):
         self.assertEqual(i18n.T("Thắng {wr}%", wr=55), "Thắng 55%")

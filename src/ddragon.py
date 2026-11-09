@@ -115,6 +115,3 @@ def get(locale: str = "vi_VN") -> dict | None:
             _cache[locale] = data
         return data
 
-
-def item_icon(item_id, version: str) -> str:
-    return f"{CDN}/cdn/{version}/img/item/{item_id}.png"

@@ -13,7 +13,7 @@ DEFAULTS = {
     # Chung
     "lang": "vi",                 # vi | en – giao diện + tên lõi/đồ/tướng
     "ui_zoom": 1.0,               # 0.7 – 1.6, phím Ctrl + / Ctrl - / Ctrl 0
-    "top_n": 0,                   # số lõi mỗi bậc; 0 = tự vừa cửa sổ (không phải cuộn)
+    "top_n": 6,                   # số lõi mỗi bậc (bấm "Xem thêm" để mở đủ); 0 = tự vừa cửa sổ
     "app_follow_offer": False,    # cửa sổ chính phản ứng khi bảng chọn lõi hiện ra (tô sáng + ô Nên chọn)
     "always_on_top": False,
     # Overlay
@@ -37,6 +37,7 @@ DEFAULTS = {
     "check_updates": True,
 }
 
+VERSION = 2                       # tăng khi đổi giá trị mặc định cần áp lại cho file cũ
 _lock = threading.Lock()
 _values: dict | None = None
 _listeners: list = []
@@ -48,6 +49,8 @@ def _load() -> dict:
         _values = dict(DEFAULTS)
         try:
             saved = json.loads(PATH.read_text(encoding="utf-8"))
+            if saved.get("_v", 1) < 2:
+                saved.pop("top_n", None)          # bản cũ lưu cả giá trị mặc định cũ (tự vừa cửa sổ)
             _values.update({k: v for k, v in saved.items() if k in DEFAULTS})
         except Exception:
             pass
@@ -71,7 +74,9 @@ def set_many(changes: dict, save: bool = True):
         v.update(changed)
         if save and changed:
             PATH.parent.mkdir(parents=True, exist_ok=True)
-            PATH.write_text(json.dumps(v, ensure_ascii=False, indent=1), encoding="utf-8")
+            # chỉ lưu giá trị khác mặc định → đổi mặc định ở bản sau vẫn có tác dụng
+            keep = {k: val for k, val in v.items() if val != DEFAULTS.get(k)}
+            PATH.write_text(json.dumps({"_v": VERSION, **keep}, ensure_ascii=False, indent=1), encoding="utf-8")
     for fn in list(_listeners):
         if changed:
             try:

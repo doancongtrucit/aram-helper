@@ -11,9 +11,6 @@ venv/
 __pycache__/
 *.pyc
 
-# File do install-macos.sh tạo
-run-macos.command
-
 # Hệ điều hành / editor
 .DS_Store
 Thumbs.db

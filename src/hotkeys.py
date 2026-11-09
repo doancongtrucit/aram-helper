@@ -8,7 +8,6 @@ chiếm một tổ hợp). Phím thực tế nằm trong ACTIVE, vd. {"calibrate
 from __future__ import annotations
 
 import threading
-import time
 import traceback
 
 MODS = {"alt": 0x1, "ctrl": 0x2, "shift": 0x4, "win": 0x8}

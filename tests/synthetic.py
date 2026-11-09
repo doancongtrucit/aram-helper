@@ -10,7 +10,6 @@ import random
 import cv2
 import numpy as np
 
-import screen_scan
 
 CARD_COLORS = {"prismatic": (160, 70, 140), "gold": (40, 120, 170), "silver": (120, 110, 100)}
 

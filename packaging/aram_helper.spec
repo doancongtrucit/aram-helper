@@ -14,8 +14,8 @@ if WIN:
                "winrt.windows.foundation", "winrt.windows.foundation.collections", "winrt.windows.globalization"]
 
 a = Analysis(
-    [str(ROOT / "app.py")],
-    pathex=[str(ROOT)],
+    [str(ROOT / "src" / "app.py")],
+    pathex=[str(ROOT / "src")],
     datas=[(str(ROOT / "assets" / "icon.png"), "assets"), (str(ROOT / "assets" / "icon.ico"), "assets")],
     hiddenimports=hidden,
     excludes=["matplotlib", "pandas", "scipy", "IPython", "pytest", "PyQt5", "PySide6", "tests"],
@@ -39,5 +39,5 @@ exe = EXE(
 coll = COLLECT(exe, a.binaries, a.datas, name="ARAM Helper", upx=False)
 
 if sys.platform == "darwin":
-    app = BUNDLE(coll, name="ARAM Helper.app", icon=None, bundle_identifier="io.github.doancongtrucit.aramhelper",
+    app = BUNDLE(coll, name="ARAM Helper.app", icon=str(ROOT / "assets" / "icon.png"), bundle_identifier="io.github.doancongtrucit.aramhelper",
                  info_plist={"NSHighResolutionCapable": True, "LSApplicationCategoryType": "public.app-category.games"})

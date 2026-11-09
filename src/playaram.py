@@ -22,7 +22,6 @@ CACHE_TTL = 12 * 3600          # giây
 MIN_INTERVAL = 2.0             # giây giữa 2 request tới playaram.gg
 SCHEMA = 2                     # tăng khi đổi cấu trúc JSON để bỏ cache cũ
 
-RARITY_LABEL = {"prismatic": "Kim Cương", "gold": "Vàng", "silver": "Bạc"}
 
 _lock = threading.Lock()
 _last_request = 0.0
@@ -371,13 +370,3 @@ def get_champion(slug: str, force: bool = False) -> dict:
             return stale
         raise
 
-
-if __name__ == "__main__":
-    import sys
-    sys.stdout.reconfigure(encoding="utf-8")
-    d = get_champion(sys.argv[1] if len(sys.argv) > 1 else "yasuo", force=True)
-    print(d["name"], d["tier"], d["winrate"], d["patch"])
-    for r, items in d["augments"].items():
-        print(f"-- {RARITY_LABEL.get(r, r)}")
-        for a in items[:5]:
-            print(f"   {a['name']:<30} {a['winrate']:6.2f}%  {a['pickrate']}%")

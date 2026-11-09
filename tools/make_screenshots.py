@@ -1,4 +1,4 @@
-"""Tạo ảnh minh hoạ cho HUONG_DAN.md (Windows).
+"""Tạo ảnh minh hoạ cho docs/USER_GUIDE.md (Windows).
 
 Dùng dữ liệu mẫu (tests/fixture_*.html) và một màn chọn lõi giả lập – không chụp màn hình thật của máy.
 Chạy:  python tests/fetch_fixtures.py   (nếu chưa có)
@@ -14,7 +14,7 @@ from pathlib import Path
 
 os.environ["OPENBLAS_NUM_THREADS"] = "1"
 ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "tests"))
 ctypes.windll.shcore.SetProcessDpiAwareness(2)
 
@@ -221,7 +221,9 @@ def main_window_shots(root):
     app.search_var.set("")
     win.focus_force()
 
-    # 5) Cài đặt (2 thẻ Chung / Overlay)
+    # 5) Cài đặt (2 thẻ Chung / Overlay) – hiện đường dẫn mẫu, không lộ thư mục thật của máy chụp
+    import paths
+    real_data, paths.DATA = paths.DATA, Path("%LOCALAPPDATA%") / "ARAM Helper"
     app.open_settings()
     dlg = app._settings_dlg
     for page, name in (("general", "settings.png"), ("overlay", "settings-overlay.png")):
@@ -229,6 +231,7 @@ def main_window_shots(root):
         wait(root, 500)
         save(print_window(dlg.win), name, 900)
     dlg.close()
+    paths.DATA = real_data
     win.destroy()
 
 

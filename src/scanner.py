@@ -62,13 +62,6 @@ class Scanner:
             self.calibrating_at = time.time() + delay
             self.status = f"Sẽ hiệu chỉnh sau {delay:.0f} giây – mở bảng chọn lõi trong game." if delay else "Đang hiệu chỉnh…"
 
-    def reset_calibration(self):
-        with self.lock:
-            self.calib = None
-            if ss.CALIB_FILE.exists():
-                ss.CALIB_FILE.unlink()
-            self.status = "Đã xoá hiệu chỉnh."
-
     def start(self):
         threading.Thread(target=self._run, daemon=True, name="scanner").start()
 
@@ -121,7 +114,7 @@ class Scanner:
             if not ss.confident(res):
                 calib = None
         if not calib:
-            diag.save(img, {"note": "hiệu chỉnh thất bại"}, "hieu-chinh-loi")
+            diag.save(img, {"note": "hiệu chỉnh thất bại"}, "calibration-failed")
             diag.log("hiệu chỉnh thất bại – đã lưu ảnh màn hình vào data/debug/")
             self._set(status="Không tìm thấy 3 lõi trên màn hình. Thử lại khi bảng chọn lõi đang hiện rõ.")
             return
@@ -196,7 +189,7 @@ class Scanner:
         if not conf and max(scores) >= ss.NEAR_MIN and now - self._diag_last_save > 10:
             self._diag_last_save = now
             diag.save(img, {"origin": origin, "calibration": self.calib.__dict__, "scores": scores, "margins": margins,
-                            "best": [[names.get(c, c) for c in r["candidates"]] for r in res]}, "gan-khop")
+                            "best": [[names.get(c, c) for c in r["candidates"]] for r in res]}, "near-match")
 
     def request_diagnostic(self):
         """Gọi từ phím tắt: luồng quét sẽ lưu ảnh chẩn đoán ở vòng kế tiếp."""
@@ -217,7 +210,7 @@ class Scanner:
                 "wide_scores": [round(r["score"], 3) for r in wide], "wide_shift": [(r["dx"], r["dy"]) for r in wide],
                 "ocr": [r.get("ocr") for r in res],
             })
-        path = diag.save(img, info, "thu-cong")
+        path = diag.save(img, info, "manual")
         self._set(status=f"Đã lưu ảnh chẩn đoán: {path.name}")
 
     def _run(self):

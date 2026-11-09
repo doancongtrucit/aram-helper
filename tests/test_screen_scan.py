@@ -3,7 +3,7 @@ import sys
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 import fixtures  # noqa: E402
 sys.path.insert(0, str(Path(__file__).parent))
@@ -66,7 +66,7 @@ class ResolveRarity(unittest.TestCase):
         self.assertEqual(out[0]["candidates"], [want["id"]])
 
 
-@unittest.skipUnless(HAS_CV, "cần opencv và icon đã tải (python screen_scan.py icons)")
+@unittest.skipUnless(HAS_CV, "cần opencv và icon đã tải (chạy app một lần)")
 class DetectSynthetic(unittest.TestCase):
     """Ảnh giả lập bảng chọn lõi (không phải ảnh game thật)."""
 
@@ -121,6 +121,43 @@ class DetectSynthetic(unittest.TestCase):
             self.assertTrue(ss.confident(res))
             for slot, want in zip(res, offer):
                 self.assertIn(want, slot["candidates"])
+
+    @unittest.skipUnless(ocr.installed(), "cần OCR của Windows")
+    def test_champion_ability_augment_read_by_name(self):
+        """Lõi kỹ năng tướng: icon trong game là kỹ năng của tướng (không có icon mẫu) → đọc bằng tên."""
+        import numpy as np
+        bank = ss.bank_for(self.icons)
+        known = [BY_NAME["Rút Kiếm Ra"], BY_NAME["Cú Đấm Thần Bí"]]
+        target = next(a["id"] for a in CATALOG if a["rarity"] == "prismatic" and a["id"] not in known
+                      and len(a["name"]) > 8)
+        icons = dict(self.icons)
+        rng = np.random.default_rng(5)
+        fake = np.zeros_like(icons[target])                      # icon lạ: không giống icon nào trong bộ mẫu
+        fake[..., :3] = rng.integers(0, 255, fake[..., :3].shape)
+        fake[..., 3] = 255
+        icons[target] = fake
+        offer = known + [target]
+        img = self.make(icons, offer, "prismatic", seed=21, names=self.names)
+        res = ss.read_offer(img, self.calib, bank, CATALOG)
+        self.assertFalse(ss.slot_ok(res[2]))
+        self.assertTrue(res[2].get("by_name"))
+        self.assertEqual(res[2]["id"], target)
+        self.assertTrue(ss.confident(res))
+
+    def test_calibrates_with_one_unknown_icon(self):
+        """Hiệu chỉnh khi 1 ô là lõi kỹ năng tướng: thấy 2 icon, suy ra ô thứ 3."""
+        import numpy as np
+        known = [BY_NAME["Rút Kiếm Ra"], BY_NAME["Cú Đấm Thần Bí"]]
+        target = BY_NAME["Bầy Ong Nảy Bật"]
+        icons = dict(self.icons)
+        fake = np.zeros_like(icons[target])
+        fake[..., 3] = 255
+        icons[target] = fake
+        img = self.make(icons, [known[0], target, known[1]], "prismatic", seed=4)
+        calib = ss.calibrate(img, self.icons, log=lambda *_: None)
+        self.assertIsNotNone(calib)
+        for got, want in zip([c[0] for c in calib.centers], (660, 960, 1260)):
+            self.assertLess(abs(got - want), 12)
 
 
 if __name__ == "__main__":

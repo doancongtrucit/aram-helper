@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
-sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 sys.path.insert(0, str(Path(__file__).parent))
 import fixtures  # noqa: E402
 import playaram  # noqa: E402
@@ -59,7 +59,7 @@ class DesktopUI(unittest.TestCase):
         self.desktop = desktop
         self.tmp = tempfile.TemporaryDirectory()
         settings._reset_for_tests(Path(self.tmp.name) / "settings.json")
-        settings.set_many({"top_n": 8, "check_updates": False}, save=False)   # không gọi mạng trong test
+        settings.set_many({"check_updates": False}, save=False)   # không gọi mạng trong test
         self.no_net = mock.patch.object(desktop.App, "_load_champion_list", lambda self: None)
         self.no_net.start()
         self.root = tk.Tk()
@@ -89,14 +89,14 @@ class DesktopUI(unittest.TestCase):
         self.app._full_sig = None
         self.tick()
 
-    def test_top_n_and_more(self):
+    def test_default_six_per_tier_and_more(self):
         self.assertEqual(len(self.app.cards), 48)
         for r in ("prismatic", "gold", "silver"):
-            self.assertEqual(len(self.visible_cards(r)), 8)
+            self.assertEqual(len(self.visible_cards(r)), 6)
         self.app._toggle_more("gold")
         self.tick()
         self.assertEqual(len(self.visible_cards("gold")), 16)
-        self.assertEqual(len(self.visible_cards("silver")), 8)
+        self.assertEqual(len(self.visible_cards("silver")), 6)
 
     def test_auto_fit_grows_with_height(self):
         settings.set("top_n", 0)

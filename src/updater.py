@@ -15,7 +15,7 @@ REPO = "doancongtrucit/aram-helper"
 API = f"https://api.github.com/repos/{REPO}/releases/latest"
 RELEASES = f"https://github.com/{REPO}/releases/latest"
 STATE = paths.DATA / "update.json"
-EVERY = 24 * 3600
+EVERY = 6 * 3600          # hỏi GitHub tối đa 4 lần / ngày
 
 
 def parse(v: str) -> tuple[int, ...]:

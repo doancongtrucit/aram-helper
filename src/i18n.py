@@ -15,7 +15,6 @@ EN = {
     "Cài đặt": "Settings",
     "Quét màn hình: {s}": "Screen scan: {s}",
     "Hiệu chỉnh sau {n} giây – mở bảng chọn lõi trong game": "Calibrating in {n} s – open the augment choice in game",
-    "Tướng": "Champions",
     # Tướng
     "Tỉ lệ thắng {wr}%": "Win rate {wr}%",
     "{n} trận": "{n} games",
@@ -31,9 +30,6 @@ EN = {
     "Lõi Kim Cương": "Prismatic", "Lõi Vàng": "Gold", "Lõi Bạc": "Silver",
     "Xem thêm ({n})": "More ({n})", "Thu gọn": "Less",
     "Lõi đã chọn:": "Taken:", "Xoá hết": "Clear",
-    "Bấm vào lõi bạn đã chọn để app gợi ý lõi hợp combo cho lượt sau{hint}.":
-        "Click the augments you took so the next suggestions favour combos{hint}.",
-    " (trong game: {key}/2/3)": " (in game: {key}/2/3)",
     "hợp combo {t}": "combo {t} fit", "combo {t}": "combo {t}",
     "Không có dữ liệu": "No data",
     "Đọc từ màn hình · ": "From screen · ",
@@ -68,9 +64,6 @@ EN = {
     "THEO ĐỘI ĐỊCH": "VS ENEMY TEAM",
     "Chưa hiệu chỉnh: khi bảng chọn lõi hiện ra, bấm {key}.": "Not calibrated: when the augment choice shows, press {key}.",
     "có {n}/{m}": "have {n}/{m}",
-    "hợp combo {t} (+{b})": "combo {t} (+{b})",
-    "1 trong {n} lõi": "1 of {n} augments",
-    "chưa chắc: 1 trong {n} lõi": "unsure: 1 of {n} augments",
     "1 trong {n}": "1 of {n}",
     # Gợi ý đồ theo đội địch
     "{k}/{n} địch hồi máu": "{k}/{n} enemies heal",
@@ -111,12 +104,13 @@ EN = {
     "Lối lên đồ": "Builds", "Theo đội địch": "Vs enemy team",
     "Số lối lên đồ": "Builds shown",
     "Gửi màn ARAM lên ESP32 (PC Control Deck)": "Send the ARAM screen to the ESP32 (PC Control Deck)",
-    "Cần file data/esp32.json – xem HUONG_DAN.md mục 4b.": "Needs data/esp32.json – see HUONG_DAN.md section 4b.",
+    "Cần file esp32.json trong thư mục dữ liệu – xem docs/USER_GUIDE.md, mục ESP32.": "Needs esp32.json in the data folder – see docs/USER_GUIDE.md, ESP32 section.",
     "Mặc định": "Defaults", "Đóng": "Close",
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
+    "Gợi ý lõi và trang bị cho ARAM Hỗn Loạn": "Augment and item advice for ARAM Mayhem",
     "Có bản mới {v}": "Update {v}",
-    "Báo khi có bản mới (kiểm tra GitHub mỗi ngày 1 lần)": "Tell me about new versions (checks GitHub once a day)",
+    "Báo khi có bản mới (tự kiểm tra trên GitHub)": "Tell me about new versions (checks GitHub)",
     "Thư mục dữ liệu": "Data folder", "Mở": "Open",
 }
 

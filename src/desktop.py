@@ -20,7 +20,6 @@ import urllib.request
 from tkinter import ttk
 
 import advice
-import hotkeys
 import i18n
 import paths
 import playaram
@@ -45,6 +44,19 @@ CARD_GAP = 6
 WIDE_MIN = 640            # từ bề rộng này (px ở 100%): 2 cột lõi | trang bị, xem cùng lúc không phải cuộn
 IMG_DIR = playaram.CACHE_DIR / "img"
 ICON_DIR = playaram.CACHE_DIR / "icons"
+
+
+_logos: dict = {}
+
+
+def app_logo(root, size_px: int):
+    """Logo app (assets/icon.png) ở cỡ size_px – dùng chung cho cửa sổ chính, hộp Cài đặt, overlay."""
+    key = (id(root), size_px)
+    if key not in _logos:
+        from PIL import Image, ImageTk
+        im = Image.open(paths.RES / "assets" / "icon.png").convert("RGBA")
+        _logos[key] = ImageTk.PhotoImage(im.resize((size_px, size_px), Image.LANCZOS), master=root)
+    return _logos[key]
 
 
 def fold(s: str) -> str:
@@ -613,7 +625,7 @@ class App:
         if not champ:
             msg = (T("Đang tải dữ liệu {name}…", name=st["focus"]) if st.get("focus") and not st.get("error")
                    else st.get("error") or T("Vào một trận ARAM Hỗn Loạn để app tự nhận tướng, hoặc tìm tướng ở ô tìm kiếm phía trên."))
-            self.label(self.body, msg, 11, MUTED, wraplength=self.S(700)).pack(pady=self.S(60))
+            self._render_welcome(msg)
             return
         self._render_head(champ)
         self._render_tabs(champ)
@@ -661,6 +673,20 @@ class App:
             sc = getattr(self, name, None)
             if sc is not None:
                 sc.canvas.yview_moveto(y)
+
+    def _render_welcome(self, msg):
+        """Màn chào khi chưa có tướng: logo, tên app, giới thiệu ngắn."""
+        from version import __version__
+        box = tk.Frame(self.body, bg=BG)
+        box.place(relx=0.5, rely=0.42, anchor="center")
+        try:
+            tk.Label(box, image=app_logo(self.root, self.S(128)), bg=BG).pack()
+        except Exception:
+            pass
+        self.label(box, "ARAM Helper", 22, TEXT, True).pack(pady=(self.S(10), 0))
+        self.label(box, T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn") + f"  ·  v{__version__}", 10, MUTED).pack()
+        self.label(box, msg, 11, OKC if self._st.get("error") else TEXT, wraplength=self.S(620),
+                   justify="center").pack(pady=(self.S(18), 0))
 
     def _render_head(self, c):
         self.icon(self.head, c.get("icon"), 40).pack(side="left", padx=(0, self.S(10)))
@@ -853,7 +879,7 @@ class App:
         card["name"].configure(fg=DIMTEXT if state == "dim" else TEXT)
 
     # ----- cập nhật nhẹ: tìm kiếm (+ bảng lõi đọc từ màn hình nếu bật) -----
-    def _light_update(self, from_search=False):
+    def _light_update(self):
         st = self._st
         champ = st.get("champion")
         if not champ or self.tab != "aug" or self.advice_box is None:
