@@ -49,7 +49,6 @@ aram-helper/
 | `counter_items.py` | Phân tích đội hình + trang bị địch → 2 dòng gợi ý đồ |
 | `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR tên lõi, luồng quét nền (Windows) |
 | `playaram.py`, `ddragon.py`, `live_client.py` | Nguồn dữ liệu: playaram.gg, Riot Data Dragon, Live Client Data API |
-| `esp32_link.py` | Gửi tóm tắt trận lên màn ARAM của PC Control Deck (UDP) |
 | `paths.py`, `version.py`, `updater.py` | Thư mục dữ liệu, số phiên bản, kiểm tra bản mới |
 | `hotkeys.py`, `diag.py` | Phím tắt toàn cục (Windows), log + ảnh chẩn đoán bộ quét |
 
@@ -80,7 +79,7 @@ aram-helper/
 ## Sửa thường gặp
 
 - Trang nguồn đổi giao diện → sửa hàm `parse_*` trong `playaram.py`, chạy lại `fetch_fixtures.py` và test.
-- Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính, overlay, ESP32 cùng dùng), cập nhật `tests/test_advice.py`.
+- Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính, overlay cùng dùng), cập nhật `tests/test_advice.py`.
 - Phím tắt mới → thêm vào `keys` trong `app.main()` kèm phím dự phòng.
 - Tuỳ chọn mới → thêm khoá vào `settings.DEFAULTS`, ô điều khiển trong `settings_ui.py`; phần dùng nó đọc
   `settings.get()` (cần đổi ngay thì đăng ký `settings.on_change`). File cài đặt chỉ lưu giá trị khác mặc định;

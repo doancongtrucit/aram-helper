@@ -3,6 +3,19 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.6.0] – 2026-11-10
+
+### Đã đổi
+- Giao diện **Cài đặt** mới kiểu app gaming: thanh điều hướng bên trái (trang + mục con, bấm để cuộn tới), nội dung chia
+  mục, mỗi dòng có mô tả ngắn; công tắc bật / tắt có hiệu ứng trượt, nhóm nút chọn thay cho nút tròn, cuộn chuột mượt.
+  Nút ✕ / phím Esc để đóng, **↺ Mặc định** ở đầu trang.
+- Thanh trượt mảnh có núm tròn trắng; font chữ toàn app đổi sang **Inter** (đi kèm app, SIL OFL) – chữ tròn,
+  dễ đọc như các app chat / gaming. Máy nạp font lỗi thì tự dùng font hệ thống.
+
+### Đã gỡ
+- Tính năng gửi màn ARAM lên ESP32 (PC Control Deck): bỏ module, thẻ **ESP32** trong Cài đặt và mục hướng dẫn.
+  File `esp32.json` cũ trong thư mục dữ liệu (nếu có) không còn được dùng – xoá được.
+
 ## [1.5.0] – 2026-11-09
 
 ### Thêm
@@ -112,6 +125,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.6.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.1...v1.4.2

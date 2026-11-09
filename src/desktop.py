@@ -5,7 +5,7 @@ Tab "Lõi & trang bị": cửa sổ rộng → 2 cột (lõi bên trái, trang b
 chọn số lõi mỗi bậc theo chiều cao để không phải cuộn dù cửa sổ to/nhỏ hay zoom (Ctrl + / Ctrl - / Ctrl 0).
 Tab "Combo lõi": lối chơi, combo lõi kèm lý do, đồ khuyên dùng, mẹo.
 Ô tìm kiếm: gõ tên tướng → danh sách chọn nhanh (↑ ↓ Enter); gõ tên lõi → tô sáng lõi.
-Mặc định cửa sổ chính KHÔNG đổi khi bảng chọn lõi hiện ra (gợi ý ở overlay / ESP32) – bật lại trong Cài đặt.
+Mặc định cửa sổ chính KHÔNG đổi khi bảng chọn lõi hiện ra (gợi ý ở overlay) – bật lại trong Cài đặt.
 """
 from __future__ import annotations
 
@@ -19,10 +19,11 @@ import about
 import i18n
 import paths
 import settings
+import theme
 import updater
 from i18n import T
 from theme import (
-    BG, PANEL, PANEL2, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, ACCENT, TIER_COLOR, IS_MAC, FONT, MONO,
+    BG, PANEL, PANEL2, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, ACCENT, TIER_COLOR, IS_MAC,
     WIDE_MIN, app_logo)
 from widgets import Images, Scroll, Tooltip
 from views.augments import AugmentsMixin
@@ -35,6 +36,7 @@ from views.search import SearchMixin
 class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
     def __init__(self, root: tk.Tk, hub, scanner=None, overlay=None):
         self.root, self.hub, self.scanner, self.overlay = root, hub, scanner, overlay
+        theme.load_fonts(root)                  # Inter đi kèm app (font hệ thống nếu nạp lỗi)
         # Windows: 96 dpi = 100%; macOS Tk báo 72 dpi nhưng màn Retina đã tự nhân → giữ tỉ lệ 1
         self.base_scale = 1.0 if IS_MAC else root.winfo_fpixels("1i") / 96.0
         self.img = Images(root, self.base_scale)
@@ -107,7 +109,7 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         return int(round(px * self.scale))
 
     def f(self, size, bold=False, mono=False):
-        return (MONO if mono else FONT, max(6, int(round(size * self.zoom))), "bold" if bold else "normal")
+        return theme.font(max(6, int(round(size * self.zoom))), bold, mono)
 
     def _zoom_step(self, step):
         z = 1.0 if step == 0 else round(min(1.6, max(0.7, self.zoom + 0.1 * step)), 2)
@@ -172,8 +174,8 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         from tkinter import font as tkfont
         key = (size, bold, self.zoom)
         if key not in self._fonts:
-            self._fonts[key] = tkfont.Font(family=FONT, size=max(6, int(round(size * self.zoom))),
-                                           weight="bold" if bold else "normal")
+            fam, weight = theme.family(bold)
+            self._fonts[key] = tkfont.Font(family=fam, size=max(6, int(round(size * self.zoom))), weight=weight)
         f = self._fonts[key]
         if f.measure(text) <= width_px:
             return text

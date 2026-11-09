@@ -79,15 +79,15 @@ EN = {
     " – giữ build gợi ý": " – keep the suggested build",
     "{p}% phép": "{p}% magic", "{k} hồi máu": "{k} heal", "{k} đỡ đòn": "{k} tank", "{k} khống chế": "{k} CC",
     # Settings
-    "Chung": "General", "Overlay": "Overlay", "ESP32": "ESP32",
+    "Chung": "General", "Overlay": "Overlay",
     "Ngôn ngữ": "Language",
     "Cỡ giao diện": "UI size",
     "Số lõi mỗi bậc": "Augments per tier",
     "Tự vừa cửa sổ": "Fit window",
     "Cửa sổ chính phản ứng khi đang chọn lõi (tô sáng, ô Nên chọn)":
         "Main window reacts to the augment choice (highlight, Pick box)",
-    "Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32.":
-        "Off: the main window stays as is for an overview; pick suggestions only show on the overlay / ESP32.",
+    "Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay.":
+        "Off: the main window stays as is for an overview; pick suggestions only show on the overlay.",
     "Cửa sổ chính luôn nằm trên": "Main window always on top",
     "Bật overlay": "Show overlay",
     "Độ đậm khung": "Panel opacity",
@@ -104,8 +104,6 @@ EN = {
     "Gợi ý lõi": "Augment pick", "Combo": "Combo", "Lõi đã chọn": "Taken augments",
     "Lối lên đồ": "Builds", "Theo đội địch": "Vs enemy team",
     "Số lối lên đồ": "Builds shown",
-    "Gửi màn ARAM lên ESP32 (PC Control Deck)": "Send the ARAM screen to the ESP32 (PC Control Deck)",
-    "Cần file esp32.json trong thư mục dữ liệu – xem docs/USER_GUIDE.md, mục ESP32.": "Needs esp32.json in the data folder – see docs/USER_GUIDE.md, ESP32 section.",
     "Mặc định": "Defaults", "Đóng": "Close",
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
@@ -113,10 +111,32 @@ EN = {
     "Giữ focus cho game: app vô tình lấy focus khi đang chơi thì trả lại ngay":
         "Keep focus on the game: if the app accidentally takes focus while playing, give it back",
     "Giới thiệu": "About", "Email": "Email",
+    "Cài đặt ứng dụng": "App settings", "Hỗ trợ": "Support", "Giao diện": "Appearance", "Cửa sổ chính": "Main window",
+    "Trong trận": "In game", "Cập nhật & dữ liệu": "Updates & data", "Hiển thị": "Display", "Vị trí": "Position",
+    "Nội dung": "Content", "Liên hệ": "Contact", "Xem": "View", "Tạo gói": "Create", "Tự vừa": "Auto",
+    "Giao diện, tên lõi, trang bị và tướng": "Interface, augment, item and champion names",
+    "Số lõi hiện sẵn ở mỗi bậc, bấm Xem thêm để xem tiếp. Tự vừa: theo chiều cao cửa sổ.":
+        "Augments shown per tier; click See more for the rest. Auto: fit the window height.",
+    "Phản ứng khi đang chọn lõi": "React to the augment choice",
+    "Tô sáng lõi và hiện ô Nên chọn. Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay.":
+        "Highlight augments and show the Pick box. Off: the main window stays as an overview; pick suggestions only show on the overlay.",
+    "Tự ghi nhận lõi đã chọn": "Record taken augments automatically",
+    "Theo cú bấm chuột lên thẻ khi chọn lõi.": "From your mouse click on the card during the augment choice.",
+    "Giữ focus cho game": "Keep focus on the game",
+    "App vô tình lấy focus khi đang chơi thì trả lại game ngay và ghi vào log.":
+        "If the app accidentally takes focus while playing, give it back to the game and log it.",
+    "Báo khi có bản mới": "Notify about new versions",
+    "Tự kiểm tra bản phát hành trên GitHub.": "Checks releases on GitHub.",
+    "Khung gợi ý và nhãn trên thẻ lõi nằm trên game.": "Suggestion panel and card labels drawn over the game.",
+    "Kéo thả: giữ chuột trên thanh tiêu đề overlay để di chuyển.": "Drag: hold the overlay title bar to move it.",
+    "Gợi ý đổi lõi (↻)": "Reroll hint (↻)",
+    "Chỉ thẻ nên bấm đổi khi cả 3 lõi đều không tốt.": "Points at the card to reroll when all 3 augments are weak.",
+    "Bấm để bật / tắt từng mục trong khung overlay.": "Click to show / hide each section of the overlay panel.",
+    "Mở mẫu báo lỗi trên GitHub Issues.": "Opens the issue form on GitHub.",
     "Tạo gói báo lỗi": "Create bug report",
     "Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi": "Bundle logs + diagnostic images into a zip to attach to an issue",
-    "Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che; không gồm cấu hình ESP32.\n\nTạo file zip ra Desktop?":
-        "The bundle contains the app log, up to 12 recent diagnostic images (game screenshots taken during augment picks), the augment card position, settings and system info.\n\nFolder paths and IP addresses are masked; the ESP32 config is not included.\n\nCreate the zip on your Desktop?",
+    "Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che.\n\nTạo file zip ra Desktop?":
+        "The bundle contains the app log, up to 12 recent diagnostic images (game screenshots taken during augment picks), the augment card position, settings and system info.\n\nFolder paths and IP addresses are masked.\n\nCreate the zip on your Desktop?",
     "Đã tạo {f} – đính kèm file này khi báo lỗi.": "Created {f} – attach it to your issue.", "Phiên bản {v}": "Version {v}", "Developer": "Developer",
     "Trang dự án": "Project page", "Báo lỗi / góp ý": "Report an issue", "Giấy phép": "License",
     "Thành phần mã nguồn mở": "Open-source components", "Nguồn dữ liệu": "Data sources",

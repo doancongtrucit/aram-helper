@@ -24,6 +24,7 @@ import advice
 import game_window
 import paths
 import settings
+import theme
 from advice import TIER_BONUS
 from i18n import T
 
@@ -38,7 +39,6 @@ GOOD_BG = "#123a2a"
 OK = "#f5a53a"
 ACCENT = "#6aa8ff"
 TIER_COLOR = {"S+": "#ff8a5c", "S": "#ff8a5c", "A": "#f5c451", "B": "#6aa8ff", "C": MUTED, "D": MUTED}
-FONT = "Segoe UI"
 SHOW_IN_CAPTURE = os.environ.get("ARAM_OVERLAY_IN_CAPTURE") == "1"   # chỉ để thử nghiệm
 PREFS = str(paths.DATA / "overlay.json")
 
@@ -92,6 +92,7 @@ class Overlay:
         from widgets import Images
         self.hub, self.scanner, self.root = hub, scanner, root
         _dpi_aware()
+        theme.load_fonts(root)
         self.dpi = root.winfo_fpixels("1i") / 96.0
         self.zoom = 1.0
         self.k = self.dpi
@@ -224,8 +225,8 @@ class Overlay:
     def _font(self, size, bold=False):
         key = (size, bold)
         if key not in self._fonts:
-            self._fonts[key] = tkfont.Font(family=FONT, size=max(6, int(round(size * self.zoom))),
-                                           weight="bold" if bold else "normal")
+            fam, weight = theme.family(bold)
+            self._fonts[key] = tkfont.Font(family=fam, size=max(6, int(round(size * self.zoom))), weight=weight)
         return self._fonts[key]
 
     def _fit(self, text, width, size, bold=False):

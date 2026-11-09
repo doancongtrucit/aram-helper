@@ -303,11 +303,6 @@ def main():
         focus_guard.FocusGuard(lambda: HUB.game.get("in_game", False), log=diag.log,
                                enabled_fn=lambda: settings.get("focus_guard")).start()
 
-    import esp32_link
-    if esp32_link.Esp32Link.enabled():          # data/esp32.json có thì đẩy màn ARAM lên ESP32 (bật/tắt trong Cài đặt)
-        esp32_link.Esp32Link(HUB.state, log=print).start()
-        print("ESP32: bật màn ARAM qua Wi-Fi.")
-
     desktop.App(root, HUB, SCANNER, overlay)
     if overlay:
         overlay.start()

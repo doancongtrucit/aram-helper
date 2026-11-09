@@ -35,8 +35,6 @@ DEFAULTS = {
     "ov_builds": 3,
     "reroll_hint": True,          # gợi ý thẻ nên bấm đổi lõi (↻)
     "ov_corner": "custom",        # top-right | top-left | bottom-right | bottom-left | custom (kéo thả)
-    # ESP32 (PC Control Deck)
-    "esp32": True,
     # Phím tắt toàn cục (Windows); phím dự phòng nằm trong hotkeys.DEFAULTS
     "hk_calibrate": "ctrl+alt+a",
     "hk_pick1": "ctrl+alt+1",

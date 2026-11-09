@@ -13,6 +13,7 @@ The full license texts are included in the components' own distributions and at 
 | [OpenCV](https://opencv.org) (opencv-python-headless) | Image processing | Apache License 2.0 |
 | [PyWinRT](https://github.com/pywinrt/pywinrt) (winrt-*) | Windows OCR access | MIT License |
 | [PyInstaller](https://pyinstaller.org) bootloader | Packaging the Windows / macOS app | GPL-2.0 with bootloader exception |
+| [Inter](https://rsms.me/inter/) font 4.1 (assets/fonts) | Interface font | SIL Open Font License 1.1 (assets/fonts/OFL.txt) |
 | [Inno Setup](https://jrsoftware.org/isinfo.php) | Windows installer | Inno Setup License |
 
 ## Data and game assets

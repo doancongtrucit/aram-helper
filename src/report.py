@@ -3,7 +3,7 @@
 để người dùng đính kèm khi báo lỗi trên GitHub.
 
 Bảo vệ thông tin cá nhân: che đường dẫn thư mục người dùng, tên đăng nhập Windows và địa chỉ IP trong log;
-KHÔNG đưa esp32.json (có token) hay dữ liệu tải về (cache, icon) vào gói. Ảnh chẩn đoán là ảnh màn hình game
+KHÔNG đưa cấu hình khác hay dữ liệu tải về (cache, icon) vào gói. Ảnh chẩn đoán là ảnh màn hình game
 lúc chọn lõi – người dùng được báo trước khi tạo gói.
 """
 from __future__ import annotations
@@ -102,7 +102,7 @@ def make_bundle(dest_dir: Path | None = None, extra: dict | None = None) -> Path
                     z.writestr(f"debug/{meta.name}", sanitize(meta.read_text(encoding="utf-8", errors="replace")))
         z.writestr("README.txt", "ARAM Helper – gói báo lỗi.\n"
                                  "Đính kèm file zip này khi mở issue: https://github.com/doancongtrucit/aram-helper/issues\n"
-                                 "Đã che đường dẫn thư mục người dùng và địa chỉ IP; không gồm esp32.json / dữ liệu tải về.\n")
+                                 "Đã che đường dẫn thư mục người dùng và địa chỉ IP; không gồm dữ liệu tải về.\n")
     return out
 
 

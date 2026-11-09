@@ -8,7 +8,7 @@ ROOT = Path(SPECPATH).parent          # noqa: F821 – SPECPATH do PyInstaller c
 WIN = sys.platform == "win32"
 
 # Các module nạp muộn (import trong hàm) – liệt kê để chắc chắn được đóng gói
-hidden = ["about", "report", "desktop", "theme", "widgets", "views.search", "views.augments", "views.items", "views.combos", "settings_ui", "overlay", "scanner", "screen_scan", "ocr", "hotkeys", "esp32_link",
+hidden = ["about", "report", "desktop", "theme", "widgets", "views.search", "views.augments", "views.items", "views.combos", "settings_ui", "overlay", "scanner", "screen_scan", "ocr", "hotkeys",
           "ddragon", "counter_items", "localize", "updater", "diag", "game_window", "pick_watch", "focus_guard"]
 if WIN:
     hidden += ["winrt.windows.media.ocr", "winrt.windows.graphics.imaging", "winrt.windows.storage.streams",
@@ -18,6 +18,7 @@ a = Analysis(
     [str(ROOT / "src" / "app.py")],
     pathex=[str(ROOT / "src")],
     datas=[(str(ROOT / "assets" / "icon.png"), "assets"), (str(ROOT / "assets" / "icon.ico"), "assets"),
+           (str(ROOT / "assets" / "fonts"), "assets/fonts"),
            (str(ROOT / "LICENSE"), "."), (str(ROOT / "THIRD_PARTY_NOTICES.md"), ".")],
     hiddenimports=hidden,
     excludes=["matplotlib", "pandas", "scipy", "IPython", "pytest", "PyQt5", "PySide6", "tests"],

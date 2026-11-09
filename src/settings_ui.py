@@ -1,9 +1,15 @@
 # Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
-"""Hộp thoại Cài đặt: 3 thẻ Chung / Overlay / ESP32. Mọi thay đổi áp dụng ngay (settings.set → các phần đăng ký tự cập nhật)."""
+"""Hộp thoại Cài đặt kiểu "app gaming": thanh điều hướng bên trái (trang + mục con), nội dung bên phải chia mục,
+mỗi dòng = tên + mô tả bên trái, điều khiển bên phải (công tắc trượt, nút chọn, thanh trượt).
+
+Mọi thay đổi áp dụng ngay (settings.set → các phần đăng ký tự cập nhật). Đổi trang chỉ dựng lại phần nội dung;
+cuộn bằng chuột / bấm mục con cuộn mượt (có gia tốc giảm dần).
+"""
 from __future__ import annotations
 
 import sys
 import tkinter as tk
+from tkinter import ttk
 
 import about
 import paths
@@ -19,6 +25,145 @@ _VK = {**{65 + i: chr(97 + i) for i in range(26)}, **{48 + i: str(i) for i in ra
        **{111 + i: f"f{i}" for i in range(1, 13)}}
 SECTIONS = [("offer", "Gợi ý lõi"), ("combo", "Combo"), ("owned", "Lõi đã chọn"),
             ("build", "Lối lên đồ"), ("counter", "Theo đội địch")]
+TOP_N = [("0", "Tự vừa"), ("4", "4"), ("6", "6"), ("8", "8"), ("10", "10"), ("12", "12")]
+
+# Bảng màu riêng của hộp thoại (nền theme.BG / PANEL của app)
+SIDE, CONTENT = "#0e1119", "#141927"
+NAV_HOVER, NAV_ACTIVE = "#1b2132", "#252d42"
+BTN, BTN_HOVER, SEG_ON = "#232a3d", "#2f3852", "#3a4669"
+SW_OFF, KNOB = "#4a5168", "#ffffff"
+SIDE_W, WIN_W, WIN_H = 236, 920, 640       # px ở cỡ 100%
+FRAME_MS, ANIM_FRAMES = 12, 9
+
+
+def _mix(c1: str, c2: str, t: float) -> str:
+    a = [int(c1[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(c2[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x + (y - x) * t):02x}" for x, y in zip(a, b))
+
+
+_switch_imgs: dict = {}
+
+
+def _switch_img(root, w: int, h: int, bg: str, on: str, step: int, steps: int):
+    """Ảnh công tắc (khử răng cưa bằng vẽ to gấp 4 rồi thu nhỏ) ở vị trí step/steps – dùng làm các khung chuyển động."""
+    key = (id(root), w, h, bg, on, step, steps)
+    if key not in _switch_imgs:
+        from PIL import Image, ImageDraw, ImageTk
+        k, t = 4, step / steps
+        W, H = w * k, h * k
+        track = _mix(SW_OFF, on, t)
+        im = Image.new("RGBA", (W, H), bg)
+        dr = ImageDraw.Draw(im)
+        dr.rounded_rectangle((0, 0, W - 1, H - 1), radius=H // 2, fill=track)
+        pad = 3 * k
+        d = H - 2 * pad
+        x = pad + (W - 2 * pad - d) * t
+        dr.ellipse((x, pad, x + d, pad + d), fill=KNOB)
+        cx, cy, r, lw = x + d / 2, pad + d / 2, d * 0.22, max(2, int(1.8 * k))
+        if t >= 0.5:      # ✓ khi bật, ✕ khi tắt – như các app chat / gaming quen thuộc
+            dr.line((cx - r, cy, cx - r * 0.25, cy + r * 0.75, cx + r, cy - r * 0.7), fill=track, width=lw, joint="curve")
+        else:
+            dr.line((cx - r * 0.8, cy - r * 0.8, cx + r * 0.8, cy + r * 0.8), fill=track, width=lw)
+            dr.line((cx - r * 0.8, cy + r * 0.8, cx + r * 0.8, cy - r * 0.8), fill=track, width=lw)
+        _switch_imgs[key] = ImageTk.PhotoImage(im.resize((w, h), Image.LANCZOS), master=root)
+    return _switch_imgs[key]
+
+
+class Switch(tk.Label):
+    """Công tắc bật / tắt có hiệu ứng trượt. Đổi giá trị biến (kể cả từ _sync) → tự chạy hiệu ứng."""
+    STEPS = 6
+
+    def __init__(self, parent, var: tk.BooleanVar, on_toggle, S, on_color):
+        super().__init__(parent, bg=parent["bg"], bd=0, cursor="hand2")
+        self.var, self.size, self.on_color = var, (S(42), S(24)), on_color
+        self.pos = self.STEPS if var.get() else 0
+        self._job = None
+        self.bind("<Button-1>", lambda e: on_toggle(not self.var.get()))
+        var.trace_add("write", lambda *_: self._animate())
+        self._draw()
+
+    def _draw(self):
+        w, h = self.size
+        self.configure(image=_switch_img(self.winfo_toplevel(), w, h, self["bg"], self.on_color, self.pos, self.STEPS))
+
+    def _animate(self):
+        if self._job:
+            self.after_cancel(self._job)
+            self._job = None
+        try:
+            target = self.STEPS if self.var.get() else 0
+        except tk.TclError:
+            return
+        if not self.winfo_exists() or self.pos == target:
+            return
+        self.pos += 1 if target > self.pos else -1
+        self._draw()
+        self._job = self.after(FRAME_MS + 4, self._animate)
+
+
+_knob_imgs: dict = {}
+
+
+def _knob_img(root, d: int, bg: str):
+    """Núm tròn trắng khử răng cưa (kèm bóng mờ nhẹ) cho thanh trượt."""
+    key = (id(root), d, bg)
+    if key not in _knob_imgs:
+        from PIL import Image, ImageDraw, ImageFilter, ImageTk
+        k = 4
+        D = d * k
+        im = Image.new("RGBA", (D, D), bg)
+        shadow = Image.new("L", (D, D), 0)
+        ImageDraw.Draw(shadow).ellipse((k, 2 * k, D - k, D - 1), fill=110)
+        im.paste(Image.new("RGBA", (D, D), "#000000"), (0, 0), shadow.filter(ImageFilter.GaussianBlur(k)))
+        ImageDraw.Draw(im).ellipse((k, k, D - 2 * k, D - 2 * k), fill=KNOB)
+        _knob_imgs[key] = ImageTk.PhotoImage(im.resize((d, d), Image.LANCZOS), master=root)
+    return _knob_imgs[key]
+
+
+class Slider(tk.Canvas):
+    """Thanh trượt mảnh: phần đã kéo tô màu, núm tròn trắng. Bấm / kéo bất kỳ đâu trên thanh để đổi giá trị."""
+
+    def __init__(self, parent, var: tk.DoubleVar, lo, hi, step, cast, on_move, on_release, length, S, color):
+        self.knob = S(20)
+        super().__init__(parent, width=length, height=self.knob + S(4), bg=parent["bg"], highlightthickness=0,
+                         bd=0, cursor="hand2")
+        self.var, self.lo, self.hi, self.step, self.cast = var, lo, hi, step, cast
+        self.on_move, self.on_release, self.length, self.color = on_move, on_release, length, color
+        self.track = max(3, S(4))
+        self._img = _knob_img(self.winfo_toplevel(), self.knob, parent["bg"])
+        self.bind("<Button-1>", self._drag)
+        self.bind("<B1-Motion>", self._drag)
+        self.bind("<ButtonRelease-1>", lambda e: self.on_release(self._value(e.x)))
+        var.trace_add("write", lambda *_: self.winfo_exists() and self._draw())
+        self._draw()
+
+    def _x(self, v) -> float:
+        r = self.knob / 2
+        t = (float(v) - self.lo) / (self.hi - self.lo) if self.hi > self.lo else 0
+        return r + max(0.0, min(1.0, t)) * (self.length - 2 * r)
+
+    def _value(self, x):
+        r = self.knob / 2
+        t = max(0.0, min(1.0, (x - r) / max(1, self.length - 2 * r)))
+        v = self.lo + round(t * (self.hi - self.lo) / self.step) * self.step
+        return self.cast(round(v)) if self.cast is int else round(v, 2)
+
+    def _drag(self, e):
+        v = self._value(e.x)
+        if v != self.var.get():
+            self.on_move(v)
+
+    def _draw(self):
+        self.delete("all")
+        try:
+            x = self._x(self.var.get())
+        except tk.TclError:
+            return
+        r, cy, w = self.knob / 2, int(self["height"]) / 2, self.track
+        self.create_line(r, cy, self.length - r, cy, fill=SW_OFF, width=w, capstyle="round")
+        self.create_line(r, cy, x, cy, fill=self.color, width=w, capstyle="round")
+        self.create_image(x, cy, image=self._img)
 
 
 class SettingsDialog:
@@ -27,24 +172,31 @@ class SettingsDialog:
         self.app, self.d = app, d
         self.page = "general"
         self.win = tk.Toplevel(app.root)
-        self.win.configure(bg=d.BG)
+        self.win.configure(bg=CONTENT)
         self.win.resizable(False, False)
         self.win.transient(app.root)
         self.win.protocol("WM_DELETE_WINDOW", self.close)
+        self.win.bind("<Escape>", self._on_escape)
+        self.win.bind("<MouseWheel>", self._on_wheel)
         self._listener = lambda ch: self.win.after(0, self._on_change, ch)
         settings.on_change(self._listener)
         self._capture = None
+        self._scroll_job = None
         self._build()
 
+    # ----- vị trí / đóng -----
     def center(self):
         """Đặt hộp thoại giữa cửa sổ chính (gọi mỗi lần mở / dựng lại)."""
         a, w = self.app.root, self.win
         w.update_idletasks()
+        W, H = self._size
         # geometry đặt góc khung ngoài; trừ viền + thanh tiêu đề để phần nội dung nằm đúng giữa
         bx, by = max(0, w.winfo_rootx() - w.winfo_x()), max(0, w.winfo_rooty() - w.winfo_y())
-        x = a.winfo_rootx() + (a.winfo_width() - w.winfo_reqwidth()) // 2 - bx
-        y = a.winfo_rooty() + (a.winfo_height() - w.winfo_reqheight()) // 2 - by
-        w.geometry(f"+{max(0, x)}+{max(0, y)}")
+        x = a.winfo_rootx() + (a.winfo_width() - W) // 2 - bx
+        y = a.winfo_rooty() + (a.winfo_height() - H) // 2 - by
+        sw, sh = w.winfo_screenwidth(), w.winfo_screenheight()
+        x, y = min(max(0, x), max(0, sw - W)), min(max(0, y), max(0, sh - H - by))
+        w.geometry(f"{W}x{H}+{x}+{y}")
         if not getattr(self, "_recentered", False):          # lần đầu: chưa biết cỡ thanh tiêu đề → đặt lại 1 lần
             self._recentered = True
             w.after(60, self.center)
@@ -56,6 +208,12 @@ class SettingsDialog:
             pass
         self.win.destroy()
 
+    def _on_escape(self, _=None):
+        if self._capture:
+            return self._end_capture()
+        self.close()
+        return "break"
+
     def _on_change(self, ch):
         if not self.win.winfo_exists():
             return
@@ -65,51 +223,230 @@ class SettingsDialog:
             self._sync()
 
     # ----- khung -----
+    def _pages(self):
+        pages = [("general", "⚙", T("Chung")), ("overlay", "▣", T("Overlay"))]
+        if sys.platform == "win32":
+            pages.append(("hotkeys", "⌨", T("Phím tắt")))
+        return [(T("Cài đặt ứng dụng"), pages), (T("Hỗ trợ"), [("about", "ⓘ", T("Giới thiệu"))])]
+
     def _build(self):
-        d, a = self.d, self.app
+        """Dựng cả hộp thoại (lần đầu, đổi ngôn ngữ / cỡ chữ)."""
+        a = self.app
+        self._sub_labels, self._sections = [], []
         for w in self.win.winfo_children():
             w.destroy()
-        self.vars: dict[str, tk.Variable] = {}
         self.win.title("ARAM Helper – " + T("Cài đặt"))
-        tabs = tk.Frame(self.win, bg=d.BG, padx=a.S(12), pady=a.S(8))
-        tabs.pack(fill="x")
-        pages = [("general", T("Chung")), ("overlay", T("Overlay"))]
-        if sys.platform == "win32":
-            pages.append(("hotkeys", T("Phím tắt")))
-        for key, text in pages + [("esp32", T("ESP32")), ("about", T("Giới thiệu"))]:
-            on = key == self.page
-            t = tk.Label(tabs, text=text, fg=d.TEXT if on else d.MUTED, bg=d.BG, font=a.f(10, True),
-                         padx=a.S(10), pady=a.S(4), cursor="hand2")
-            t.pack(side="left")
-            if on:
-                tk.Frame(t, bg=d.ACCENT, height=a.S(2)).place(relx=0, rely=1, relwidth=1, anchor="sw")
-            t.bind("<Button-1>", lambda e, k=key: self._go(k))
-        tk.Frame(self.win, bg=d.LINE, height=1).pack(fill="x", padx=a.S(12))
-        self.body = tk.Frame(self.win, bg=d.PANEL, padx=a.S(14), pady=a.S(10))
-        self.body.pack(fill="both", expand=True, padx=a.S(12), pady=a.S(8))
+        sw, sh = self.win.winfo_screenwidth(), self.win.winfo_screenheight()
+        self._size = (min(a.S(WIN_W), sw - 40), min(a.S(WIN_H), sh - 80))
+        self.side = tk.Frame(self.win, bg=SIDE, width=a.S(SIDE_W))
+        self.side.pack(side="left", fill="y")
+        self.side.pack_propagate(False)
+        tk.Frame(self.win, bg=self.d.LINE, width=1).pack(side="left", fill="y")
+        main = tk.Frame(self.win, bg=CONTENT)
+        main.pack(side="left", fill="both", expand=True)
+
+        # thanh tiêu đề trang: tên trang · Mặc định · ✕
+        self.head = tk.Frame(main, bg=CONTENT, height=a.S(52))
+        self.head.pack(fill="x")
+        self.head.pack_propagate(False)
+        tk.Frame(main, bg=self.d.LINE, height=1).pack(fill="x")
+
+        # vùng cuộn
+        wrap = tk.Frame(main, bg=CONTENT)
+        wrap.pack(fill="both", expand=True)
+        self.canvas = tk.Canvas(wrap, bg=CONTENT, highlightthickness=0, bd=0)
+        self.sb = ttk.Scrollbar(wrap, orient="vertical", command=self._scroll_cmd)
+        self.canvas.configure(yscrollcommand=self._on_scrolled)
+        self.sb.pack(side="right", fill="y")
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.body_w = self._size[0] - a.S(SIDE_W) - a.S(20) - 2 * a.S(44)
+        self.inner = tk.Frame(self.canvas, bg=CONTENT)
+        self._win_id = self.canvas.create_window(a.S(44), 0, window=self.inner, anchor="nw", width=self.body_w)
+        self.inner.bind("<Configure>", lambda e: self.canvas.configure(
+            scrollregion=(0, 0, 0, self.inner.winfo_reqheight() + a.S(40))))
+        self.center()
+        self._render_page()
+
+    def _render_page(self):
+        """Đổi trang: chỉ dựng lại nội dung + thanh bên, về đầu trang."""
+        a, d = self.app, self.d
+        self._end_capture(refresh=False)
+        self.vars: dict[str, tk.Variable] = {}
+        self._sections: list[tuple[str, tk.Widget]] = []
+        self._hk_buttons = {}
+        self._wraps = []
+        for w in self.inner.winfo_children():
+            w.destroy()
+        for w in self.head.winfo_children():
+            w.destroy()
+        self.body = self.inner
+        tk.Frame(self.inner, bg=CONTENT, height=a.S(12)).pack()
         getattr(self, "_page_" + self.page)()
-        foot = tk.Frame(self.win, bg=d.BG, padx=a.S(12), pady=a.S(8))
-        foot.pack(fill="x")
+        tk.Frame(self.inner, bg=CONTENT, height=a.S(24)).pack()
+        self._fit_wraps()                     # cũng cập nhật vị trí các mục → tô đúng mục con ở đầu trang
+
+        title = dict((k, t) for _, items in self._pages() for k, _, t in items).get(self.page, "")
+        a.label(self.head, title, 12, d.TEXT, True, bg=CONTENT).pack(side="left", padx=a.S(24))
+        close = a.label(self.head, "✕", 13, d.MUTED, bg=CONTENT, cursor="hand2", padx=a.S(10))
+        close.pack(side="right", padx=(0, a.S(12)))
+        close.bind("<Button-1>", lambda e: self.close())
+        self._hover(close, CONTENT, NAV_HOVER, fg=(d.MUTED, d.TEXT))
+        if self.page != "about":
+            reset = self._btn(self.head, "↺ " + T("Mặc định"), self._defaults, bg=CONTENT, hover=NAV_HOVER, fg=d.MUTED)
+            reset.pack(side="right", padx=a.S(4))
+
+        self.canvas.yview_moveto(0)
+        self._scroll_pos = 0.0
+        self._render_nav()
+        self.win.after(80, self._mark_subnav)      # tô lại khi các mục đã có vị trí thật
+
+    def _render_nav(self):
+        a, d = self.app, self.d
+        self._sub_labels = []
+        for w in self.side.winfo_children():
+            w.destroy()
         from version import __version__
-        a.button(foot, T("Đóng"), self.close, 9, primary=True).pack(side="right")
+        top = tk.Frame(self.side, bg=SIDE, padx=a.S(16), pady=a.S(18))
+        top.pack(fill="x")
         try:
-            tk.Label(foot, image=d.app_logo(a.root, a.S(20)), bg=d.BG).pack(side="left", padx=(0, a.S(6)))
+            tk.Label(top, image=d.app_logo(a.root, a.S(40)), bg=SIDE).pack(side="left", padx=(0, a.S(10)))
         except Exception:
             pass
-        a.label(foot, f"ARAM Helper {__version__}  ·  {about.COPYRIGHT}", 8, d.MUTED).pack(side="left")
-        if self.page != "about":
-            a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
-        self.center()
+        box = tk.Frame(top, bg=SIDE)
+        box.pack(side="left")
+        a.label(box, about.APP_NAME, 11, d.TEXT, True, bg=SIDE).pack(anchor="w")
+        a.label(box, T("Phiên bản {v}", v=__version__), 8, d.MUTED, bg=SIDE).pack(anchor="w")
+
+        self._sub_labels = []
+        for group, items in self._pages():
+            a.label(self.side, group.upper(), 7, d.MUTED, True, bg=SIDE).pack(
+                anchor="w", padx=a.S(22), pady=(a.S(12), a.S(4)))
+            for key, icon, text in items:
+                on = key == self.page
+                bg = NAV_ACTIVE if on else SIDE
+                row = tk.Frame(self.side, bg=bg, cursor="hand2", padx=a.S(10), pady=a.S(7))
+                row.pack(fill="x", padx=a.S(12), pady=a.S(1))
+                ic = a.label(row, icon, 11, d.TEXT if on else d.MUTED, bg=bg, width=2)
+                ic.pack(side="left")
+                tx = a.label(row, text, 10, d.TEXT if on else d.MUTED, on, bg=bg)
+                tx.pack(side="left", padx=(a.S(6), 0))
+                for w in (row, ic, tx):
+                    w.bind("<Button-1>", lambda e, k=key: self._go(k))
+                if not on:
+                    self._hover_group(row, (ic, tx), SIDE, NAV_HOVER)
+                elif self._sections:
+                    self._render_subnav()
+
+        foot = tk.Frame(self.side, bg=SIDE, padx=a.S(18), pady=a.S(14))
+        foot.pack(side="bottom", fill="x")
+        a.label(foot, about.COPYRIGHT, 7, d.DIMTEXT, bg=SIDE, wraplength=a.S(SIDE_W - 36), justify="left").pack(anchor="w")
+        self._mark_subnav()
+
+    def _render_subnav(self):
+        """Mục con của trang đang mở (như Account Info / Password & Security) – bấm để cuộn tới."""
+        a, d = self.app, self.d
+        box = tk.Frame(self.side, bg=SIDE)
+        box.pack(fill="x", padx=(a.S(30), a.S(12)), pady=(a.S(2), a.S(6)))
+        for i, (text, _) in enumerate(self._sections):
+            row = tk.Frame(box, bg=SIDE, cursor="hand2")
+            row.pack(fill="x")
+            bar = tk.Frame(row, bg=d.LINE, width=a.S(2))
+            bar.pack(side="left", fill="y")
+            lb = a.label(row, text, 9, d.MUTED, bg=SIDE, padx=a.S(12), pady=a.S(5), cursor="hand2")
+            lb.pack(side="left")
+            for w in (row, lb):
+                w.bind("<Button-1>", lambda e, k=i: self._jump(k))
+                w.bind("<Enter>", lambda e, l=lb: l.configure(fg=d.TEXT))
+                w.bind("<Leave>", lambda e, k=i: self._mark_subnav())
+            self._sub_labels.append((bar, lb))
+
+    def _mark_subnav(self):
+        """Tô mục con đang nằm ở đầu vùng xem."""
+        if not getattr(self, "_sub_labels", None) or not self.win.winfo_exists():
+            return
+        cur = self._current_section()
+        for i, (bar, lb) in enumerate(self._sub_labels):
+            if not lb.winfo_exists():         # đang dựng lại thanh bên
+                return
+            on = i == cur
+            bar.configure(bg=self.d.TEXT if on else self.d.LINE)
+            lb.configure(fg=self.d.TEXT if on else self.d.MUTED)
+
+    def _current_section(self) -> int:
+        if not self._sections:
+            return 0
+        top = self.canvas.canvasy(0) + self.app.S(60)
+        cur = 0
+        for i, (_, w) in enumerate(self._sections):
+            y = w.winfo_y() if w.winfo_exists() else 0
+            if i and y == 0:                  # mục chưa được xếp chỗ (vừa dựng xong) → bỏ qua
+                continue
+            if y <= top:
+                cur = i
+        if self._scroll_pos >= 0.999 and self._max_scroll() > 0:     # cuộn hết: mục cuối
+            cur = len(self._sections) - 1
+        return cur
 
     def _go(self, key):
+        if key == self.page and getattr(self, "_sections", None) is not None:
+            return self._scroll_to(0)
         self.page = key
-        self._build()
+        self._render_page()
 
+    # ----- cuộn mượt -----
+    def _max_scroll(self) -> int:
+        return max(0, self.inner.winfo_reqheight() + self.app.S(40) - self.canvas.winfo_height())
+
+    def _on_scrolled(self, lo, hi):
+        self.sb.set(lo, hi)
+        total = self._max_scroll()
+        self._scroll_pos = (self.canvas.canvasy(0) / total) if total else 0.0
+        self._mark_subnav()
+
+    def _scroll_cmd(self, *args):
+        if self._scroll_job:
+            self.win.after_cancel(self._scroll_job)
+            self._scroll_job = None
+        self.canvas.yview(*args)
+
+    def _on_wheel(self, e):
+        if not hasattr(self, "canvas") or not self.canvas.winfo_exists():
+            return
+        steps = -e.delta / (1 if self.d.IS_MAC else 120)
+        base = getattr(self, "_scroll_target", None)
+        if self._scroll_job is None or base is None:
+            base = self.canvas.canvasy(0)
+        self._scroll_to(base + steps * self.app.S(90))
+
+    def _jump(self, i):
+        if 0 <= i < len(self._sections):
+            self._scroll_to(self._sections[i][1].winfo_y() - self.app.S(8))
+
+    def _scroll_to(self, y):
+        """Cuộn tới y (px) với gia tốc giảm dần."""
+        total = self._max_scroll()
+        y = max(0, min(total, y))
+        self._scroll_target = y
+        if self._scroll_job:
+            self.win.after_cancel(self._scroll_job)
+        start = self.canvas.canvasy(0)
+
+        def frame(i=1):
+            t = i / ANIM_FRAMES
+            ease = 1 - (1 - t) ** 3
+            pos = start + (y - start) * ease
+            self.canvas.yview_moveto(pos / (total + self.canvas.winfo_height()) if total else 0)
+            if i < ANIM_FRAMES:
+                self._scroll_job = self.win.after(FRAME_MS, frame, i + 1)
+            else:
+                self._scroll_job = None
+        frame()
+
+    # ----- mặc định / đồng bộ -----
     def _defaults(self):
         keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates", "auto_pick", "focus_guard"],
                 "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k in ("overlay", "reroll_hint")],
-                "hotkeys": ["hk_" + k for k, _ in HOTKEYS],
-                "esp32": ["esp32"]}[self.page]
+                "hotkeys": ["hk_" + k for k, _ in HOTKEYS]}[self.page]
         settings.reset(keys)
 
     def _sync(self):
@@ -117,153 +454,253 @@ class SettingsDialog:
         for key, var in self.vars.items():
             v = settings.get(key)
             try:
-                if var.get() != v:
+                cur = var.get()
+                if isinstance(var, tk.StringVar):
+                    cur, v = str(cur), str(v)
+                elif isinstance(var, tk.BooleanVar):
+                    v = bool(v)
+                if cur != v:
                     var.set(v)
             except tk.TclError:
                 pass
+        self._hk_refresh()
 
-    # ----- ô điều khiển -----
-    def _row(self, label):
-        d, a = self.d, self.app
-        row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(4))
+    # ----- khối dựng giao diện -----
+    def _hover(self, w, bg, hover_bg, fg=None):
+        def on(_):
+            w.configure(bg=hover_bg, **({"fg": fg[1]} if fg else {}))
+
+        def off(_):
+            w.configure(bg=bg, **({"fg": fg[0]} if fg else {}))
+        w.bind("<Enter>", on)
+        w.bind("<Leave>", off)
+
+    def _hover_group(self, frame, children, bg, hover_bg):
+        def paint(c, fg):
+            for w in (frame, *children):
+                w.configure(bg=c)
+            for w in children:
+                w.configure(fg=fg)
+
+        def leave(e):
+            x, y = frame.winfo_pointerxy()
+            if frame.winfo_containing(x, y) not in (frame, *children):
+                paint(bg, self.d.MUTED)
+        for w in (frame, *children):
+            w.bind("<Enter>", lambda e: paint(hover_bg, self.d.TEXT))
+            w.bind("<Leave>", leave)
+
+    def _btn(self, parent, text, cmd, primary=False, bg=None, hover=None, fg=None):
+        a, d = self.app, self.d
+        bg = bg or (d.GOOD if primary else BTN)
+        hover = hover or ("#5ae6ab" if primary else BTN_HOVER)
+        b = tk.Label(parent, text=text, bg=bg, fg=fg or ("#05261a" if primary else d.TEXT), font=a.f(9, True),
+                     padx=a.S(14), pady=a.S(6), cursor="hand2")
+        b.bind("<Button-1>", lambda e: cmd())
+        self._hover(b, bg, hover)
+        return b
+
+    def _section(self, title, first=False):
+        """Tiêu đề mục (kèm đường kẻ phía trên, trừ mục đầu). Mục được thêm vào thanh bên để bấm cuộn tới."""
+        a, d = self.app, self.d
+        box = tk.Frame(self.inner, bg=CONTENT)
+        box.pack(fill="x")
+        if self._sections and not first:
+            tk.Frame(box, bg=d.LINE, height=1).pack(fill="x", pady=(a.S(18), a.S(24)))
+        a.label(box, title, 15, d.TEXT, True, bg=CONTENT).pack(anchor="w", pady=(a.S(4), a.S(10)))
+        self._sections.append((title, box))
+        return box
+
+    def _row(self, label, desc=None, below=False):
+        """Một dòng: tên (+ mô tả mờ) bên trái; trả về khung đặt điều khiển (bên phải, hoặc ngay dưới nếu below)."""
+        a, d = self.app, self.d
+        row = tk.Frame(self.inner, bg=CONTENT, pady=a.S(9))
         row.pack(fill="x")
-        a.label(row, label, 9, d.TEXT, width=24, anchor="w").pack(side="left")
-        return row
+        row.columnconfigure(0, weight=1)
+        left = tk.Frame(row, bg=CONTENT)
+        left.grid(row=0, column=0, sticky="w")
+        a.label(left, label, 10, d.TEXT, True, bg=CONTENT).pack(anchor="w")
+        row.desc = None
+        if desc is not None:
+            row.desc = a.label(left, desc, 9, d.MUTED, bg=CONTENT, justify="left",
+                               wraplength=self.body_w - (0 if below else a.S(250)))
+            row.desc.pack(anchor="w", pady=(a.S(2), 0))
+        ctl = tk.Frame(row, bg=CONTENT)
+        if below:
+            ctl.grid(row=1, column=0, columnspan=2, sticky="w", pady=(a.S(8), 0))
+        else:
+            ctl.grid(row=0, column=1, sticky="e", padx=(a.S(16), 0))
+            if row.desc is not None:
+                self._wraps.append((row.desc, ctl))
+        return ctl
+
+    def _fit_wraps(self):
+        """Mô tả xuống dòng vừa chỗ trống bên trái điều khiển (điều khiển rộng như nhóm nút thì mô tả hẹp lại)."""
+        self.inner.update_idletasks()
+        for desc, ctl in self._wraps:
+            desc.configure(wraplength=max(self.app.S(160), self.body_w - ctl.winfo_reqwidth() - self.app.S(32)))
 
     def _note(self, text):
-        self.app.label(self.body, text, 8, self.d.MUTED, wraplength=self.app.S(400), justify="left").pack(
-            anchor="w", pady=(0, self.app.S(4)))
+        self.app.label(self.inner, text, 9, self.d.MUTED, bg=CONTENT, wraplength=self.body_w, justify="left").pack(
+            anchor="w", pady=(self.app.S(2), self.app.S(8)))
 
-    def _check(self, key, label, parent=None):
-        d, a = self.d, self.app
+    def _check(self, key, label, desc=None):
         var = tk.BooleanVar(value=bool(settings.get(key)))
         self.vars[key] = var
-        tk.Checkbutton(parent or self.body, text=label, variable=var, command=lambda: settings.set(key, var.get()),
-                       bg=d.PANEL, fg=d.TEXT, selectcolor=d.BG, activebackground=d.PANEL, activeforeground=d.TEXT,
-                       font=a.f(9), anchor="w").pack(anchor="w", side="left" if parent else "top")
+        ctl = self._row(label, desc)
+        Switch(ctl, var, lambda v: (var.set(v), settings.set(key, v)), self.app.S, self.d.GOOD).pack()
         return var
 
-    def _choice(self, key, label, options):
-        d, a = self.d, self.app
-        row = self._row(label)
+    def _segmented(self, parent, var, options, on_pick, multi=None):
+        """Nhóm nút chọn liền nhau; multi = {value: BooleanVar} để chọn nhiều."""
+        a, d = self.app, self.d
+        box = tk.Frame(parent, bg=BTN, padx=a.S(3), pady=a.S(3))
+        cells = []
+
+        def paint(*_):
+            for value, cell in cells:
+                try:
+                    on = multi[value].get() if multi else str(var.get()) == value
+                except tk.TclError:
+                    return
+                cell.configure(bg=SEG_ON if on else BTN, fg=d.TEXT if on else d.MUTED,
+                               font=a.f(9, on))
+                cell.on = on
+        for value, text in options:
+            cell = tk.Label(box, text=text, bg=BTN, fg=d.MUTED, font=a.f(9), padx=a.S(11), pady=a.S(4),
+                            cursor="hand2")
+            cell.pack(side="left", padx=(0, a.S(2)))
+            cell.bind("<Button-1>", lambda e, v=value: on_pick(v))
+            cell.bind("<Enter>", lambda e, c=cell: (not getattr(c, "on", False)) and c.configure(bg=BTN_HOVER, fg=d.TEXT))
+            cell.bind("<Leave>", lambda e: paint())
+            cells.append((value, cell))
+        for v in ([var] if var is not None else []) + list((multi or {}).values()):
+            v.trace_add("write", paint)
+        paint()
+        return box
+
+    def _choice(self, key, label, options, desc=None, cast=str, below=False):
         var = tk.StringVar(value=str(settings.get(key)))
         self.vars[key] = var
-        for value, text in options:
-            tk.Radiobutton(row, text=text, value=value, variable=var, command=lambda: settings.set(key, var.get()),
-                           bg=d.PANEL, fg=d.TEXT, selectcolor=d.BG, activebackground=d.PANEL,
-                           activeforeground=d.TEXT, font=a.f(9)).pack(side="left", padx=(0, a.S(6)))
-        return row
+        ctl = self._row(label, desc, below)
 
-    def _slider(self, key, label, lo, hi, step, fmt="{:.0%}", live=True, cast=float):
+        def pick(v):
+            var.set(v)
+            settings.set(key, cast(v))
+        self._segmented(ctl, var, options, pick).pack(side="left")
+        return ctl
+
+    def _slider(self, key, label, lo, hi, step, fmt="{:.0%}", live=True, cast=float, desc=None):
         """Thanh trượt. live=False: chỉ áp dụng khi nhả chuột (đổi cỡ giao diện dựng lại cả cửa sổ)."""
-        d, a = self.d, self.app
-        row = self._row(label)
+        a, d = self.app, self.d
+        ctl = self._row(label, desc, below=True)
         var = tk.DoubleVar(value=float(settings.get(key)))
         self.vars[key] = var
-        val = a.label(row, fmt.format(cast(var.get())), 9, d.MUTED, width=6, anchor="e")
+        val = a.label(ctl, "", 9, d.TEXT, True, bg=CONTENT, width=7, anchor="e")
 
-        def moved(_=None):
-            v = cast(round(var.get() / step) * step) if cast is int else round(round(var.get() / step) * step, 2)
-            val.configure(text=fmt.format(v))
+        def show(*_):
+            if val.winfo_exists():
+                val.configure(text=fmt.format(cast(var.get()) if cast is int else var.get()))
+
+        def moved(v):
+            var.set(v)
             if live:
                 settings.set(key, v)
-            return v
-        sc = tk.Scale(row, from_=lo, to=hi, resolution=step, orient="horizontal", variable=var, showvalue=False,
-                      length=a.S(200), width=a.S(10), sliderlength=a.S(16), bg=d.ACCENT, fg=d.TEXT,
-                      troughcolor=d.BG, highlightthickness=0, bd=0, sliderrelief="flat",
-                      activebackground="#9cc6ff", command=moved)
-        sc.pack(side="left")
-        val.pack(side="left", padx=a.S(6))
-        if not live:
-            sc.bind("<ButtonRelease-1>", lambda e: settings.set(key, moved()))
-        return row
+
+        def released(v):
+            if not live:
+                settings.set(key, v)
+        var.trace_add("write", show)
+        Slider(ctl, var, lo, hi, step, cast, moved, released, self.body_w - a.S(80), a.S, d.ACCENT).pack(side="left")
+        val.pack(side="left", padx=(a.S(12), 0))
+        show()
+        return ctl
 
     # ----- các trang -----
     def _page_general(self):
         a = self.app
-        self._choice("lang", T("Ngôn ngữ"), [("vi", "Tiếng Việt"), ("en", "English")])
-        self._slider("ui_zoom", T("Cỡ giao diện"), 0.7, 1.6, 0.1, live=False)
-        self._note(T("Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện."))
-        row = self._row(T("Số lõi mỗi bậc"))
-        auto = tk.BooleanVar(value=int(settings.get("top_n") or 0) == 0)
-        n = tk.IntVar(value=int(settings.get("top_n") or 6) or 6)
-        self.vars["top_n"] = tk.IntVar(value=int(settings.get("top_n") or 0))   # chỉ để _sync không lỗi
-        spin = tk.Spinbox(row, from_=1, to=16, width=4, textvariable=n, font=a.f(9), bg=self.d.BG, fg=self.d.TEXT,
-                          buttonbackground=self.d.PANEL2, relief="flat",
-                          command=lambda: settings.set("top_n", int(n.get())))
-        spin.bind("<Return>", lambda e: settings.set("top_n", max(1, min(16, int(n.get() or 6)))))
+        self._section(T("Giao diện"))
+        self._choice("lang", T("Ngôn ngữ"), [("vi", "Tiếng Việt"), ("en", "English")],
+                     desc=T("Giao diện, tên lõi, trang bị và tướng"))
+        self._slider("ui_zoom", T("Cỡ giao diện"), 0.7, 1.6, 0.1, live=False,
+                     desc=T("Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện."))
+        n = str(int(settings.get("top_n") or 0))
+        opts = [(v, T(t)) for v, t in TOP_N]
+        if n not in dict(TOP_N):
+            opts.append((n, n))
+        self._choice("top_n", T("Số lõi mỗi bậc"), opts, cast=int,
+                     desc=T("Số lõi hiện sẵn ở mỗi bậc, bấm Xem thêm để xem tiếp. Tự vừa: theo chiều cao cửa sổ."))
 
-        def toggle_auto():
-            spin.configure(state="disabled" if auto.get() else "normal")
-            settings.set("top_n", 0 if auto.get() else max(1, int(n.get() or 6)))
-        tk.Checkbutton(row, text=T("Tự vừa cửa sổ"), variable=auto, command=toggle_auto, bg=self.d.PANEL,
-                       fg=self.d.TEXT, selectcolor=self.d.BG, activebackground=self.d.PANEL,
-                       activeforeground=self.d.TEXT, font=a.f(9)).pack(side="left")
-        spin.pack(side="left", padx=a.S(8))
-        spin.configure(state="disabled" if auto.get() else "normal")
-        tk.Frame(self.body, bg=self.d.PANEL, height=a.S(6)).pack()
-        self._check("app_follow_offer", T("Cửa sổ chính phản ứng khi đang chọn lõi (tô sáng, ô Nên chọn)"))
-        self._note(T("Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32."))
+        self._section(T("Cửa sổ chính"))
+        self._check("app_follow_offer", T("Phản ứng khi đang chọn lõi"),
+                    T("Tô sáng lõi và hiện ô Nên chọn. Tắt: cửa sổ chính giữ nguyên để xem tổng quát, "
+                      "gợi ý chọn lõi chỉ hiện trên overlay."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
+
         if sys.platform == "win32":
-            self._check("auto_pick", T("Tự ghi nhận lõi đã chọn (theo cú bấm chuột lên thẻ khi chọn lõi)"))
-            self._check("focus_guard", T("Giữ focus cho game: app vô tình lấy focus khi đang chơi thì trả lại ngay"))
-        self._check("check_updates", T("Báo khi có bản mới (tự kiểm tra trên GitHub)"))
-        row = self._row(T("Thư mục dữ liệu"))
-        a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")
-        a.button(row, T("Mở"), paths.open_data_folder, 8).pack(side="left", padx=a.S(6))
+            self._section(T("Trong trận"))
+            self._check("auto_pick", T("Tự ghi nhận lõi đã chọn"), T("Theo cú bấm chuột lên thẻ khi chọn lõi."))
+            self._check("focus_guard", T("Giữ focus cho game"),
+                        T("App vô tình lấy focus khi đang chơi thì trả lại game ngay và ghi vào log."))
+
+        self._section(T("Cập nhật & dữ liệu"))
+        self._check("check_updates", T("Báo khi có bản mới"), T("Tự kiểm tra bản phát hành trên GitHub."))
+        ctl = self._row(T("Thư mục dữ liệu"), a._fit(str(paths.DATA), self.body_w - a.S(260), 9))
+        self._btn(ctl, T("Mở"), paths.open_data_folder).pack()
 
     def _page_overlay(self):
-        d, a = self.d, self.app
-        self._check("overlay", T("Bật overlay"))
+        a = self.app
+        self._section(T("Overlay"))
+        self._check("overlay", T("Bật overlay"), T("Khung gợi ý và nhãn trên thẻ lõi nằm trên game."))
+        self._check("ov_only_offer", T("Chỉ hiện khung khi đang chọn lõi"))
+        if not a.overlay:
+            self._note(T("Overlay chỉ có trên Windows."))
+
+        self._section(T("Hiển thị"))
         self._slider("ov_opacity", T("Độ đậm khung"), 0.3, 1.0, 0.02)
         self._slider("ov_badge_opacity", T("Độ đậm nhãn trên thẻ lõi"), 0.3, 1.0, 0.02)
         self._slider("ov_scale", T("Cỡ overlay"), 0.7, 1.6, 0.1)
         self._slider("ov_width", T("Bề rộng khung"), 220, 420, 10, fmt="{} px", cast=int)
-        row = self._choice("ov_corner", T("Vị trí khung"), [(k, T(t)) for k, t in CORNERS[:3]])
-        row2 = tk.Frame(self.body, bg=d.PANEL)
-        row2.pack(fill="x")
-        a.label(row2, "", 9, width=24).pack(side="left")
-        for value, text in CORNERS[3:]:
-            tk.Radiobutton(row2, text=T(text), value=value, variable=self.vars["ov_corner"],
-                           command=lambda: settings.set("ov_corner", self.vars["ov_corner"].get()),
-                           bg=d.PANEL, fg=d.TEXT, selectcolor=d.BG, activebackground=d.PANEL,
-                           activeforeground=d.TEXT, font=a.f(9)).pack(side="left", padx=(0, a.S(6)))
+
+        self._section(T("Vị trí"))
+        ctl = self._choice("ov_corner", T("Vị trí khung"), [(k, T(t)) for k, t in CORNERS],
+                           desc=T("Kéo thả: giữ chuột trên thanh tiêu đề overlay để di chuyển."), below=True)
         if a.overlay:
-            a.button(row2, T("Đặt lại vị trí"), a.overlay.reset_position, 8).pack(side="left", padx=a.S(6))
-        del row
-        tk.Frame(self.body, bg=d.PANEL, height=a.S(6)).pack()
+            self._btn(ctl, T("Đặt lại vị trí"), a.overlay.reset_position).pack(side="left", padx=a.S(10))
+
+        self._section(T("Nội dung"))
         self._check("ov_badges", T("Nhãn ★ / #2 / #3 trên thẻ lõi"))
-        self._check("ov_only_offer", T("Chỉ hiện khung khi đang chọn lõi"))
-        self._check("reroll_hint", T("Gợi ý thẻ nên đổi lõi (↻) khi cả 3 lõi không tốt"))
-        row = self._row(T("Mục hiển thị"))
-        for key, text in SECTIONS:
-            self._check("ov_show_" + key, T(text), parent=row)
-        self._choice("ov_builds", T("Số lối lên đồ"), [("1", "1"), ("2", "2"), ("3", "3")])
-        var = self.vars["ov_builds"]
-        for w in self.body.winfo_children()[-1].winfo_children():
-            if isinstance(w, tk.Radiobutton):
-                w.configure(command=lambda: settings.set("ov_builds", int(var.get())))
-        if not a.overlay:
-            self._note(T("Overlay chỉ có trên Windows."))
+        self._check("reroll_hint", T("Gợi ý đổi lõi (↻)"), T("Chỉ thẻ nên bấm đổi khi cả 3 lõi đều không tốt."))
+        multi = {}
+        for key, _ in SECTIONS:
+            v = tk.BooleanVar(value=bool(settings.get("ov_show_" + key)))
+            self.vars["ov_show_" + key] = multi[key] = v
+        ctl = self._row(T("Mục hiển thị"), T("Bấm để bật / tắt từng mục trong khung overlay."), below=True)
+
+        def flip(k):
+            multi[k].set(not multi[k].get())
+            settings.set("ov_show_" + k, multi[k].get())
+        self._segmented(ctl, None, [(k, T(t)) for k, t in SECTIONS], flip, multi=multi).pack(side="left")
+        self._choice("ov_builds", T("Số lối lên đồ"), [("1", "1"), ("2", "2"), ("3", "3")], cast=int)
 
     def _page_hotkeys(self):
         """Đổi phím tắt: bấm vào ô rồi nhấn tổ hợp mới (cần Ctrl hoặc Alt). Esc huỷ, Backspace về mặc định."""
         import hotkeys
-        d, a = self.d, self.app
-        self._hk_buttons = {}
-        for name, text in HOTKEYS:
-            row = self._row(T(text))
-            b = tk.Label(row, text=hotkeys.pretty(settings.get("hk_" + name)), bg=d.BG, fg=d.TEXT, font=a.f(9, True),
-                         width=18, padx=a.S(8), pady=a.S(3), cursor="hand2", highlightthickness=1,
-                         highlightbackground=d.LINE)
-            b.pack(side="left")
-            b.bind("<Button-1>", lambda e, n=name: self._start_capture(n))
-            note = a.label(row, "", 8, d.OKC)
-            note.pack(side="left", padx=a.S(8))
-            self._hk_buttons[name] = (b, note)
+        a, d = self.app, self.d
+        self._section(T("Phím tắt"))
         self._note(T("Bấm vào ô rồi nhấn tổ hợp phím mới (cần Ctrl hoặc Alt, ví dụ Ctrl+Shift+L). "
                      "Esc: huỷ · Backspace: về mặc định. Phím bị app khác dùng thì app tự dùng phím dự phòng."))
+        for name, text in HOTKEYS:
+            ctl = self._row(T(text), "")
+            b = tk.Label(ctl, text=hotkeys.pretty(settings.get("hk_" + name)), bg=BTN, fg=d.TEXT, font=a.f(9, True),
+                         width=18, padx=a.S(8), pady=a.S(5), cursor="hand2", highlightthickness=1,
+                         highlightbackground=BTN)
+            b.pack()
+            b.bind("<Button-1>", lambda e, n=name: self._start_capture(n))
+            self._hover(b, BTN, BTN_HOVER)
+            note = ctl.master.grid_slaves(row=0, column=0)[0].winfo_children()[-1]
+            note.configure(fg=d.OKC)
+            self._hk_buttons[name] = (b, note)
         self._hk_refresh()
 
     def _hk_refresh(self):
@@ -272,12 +709,16 @@ class SettingsDialog:
         for name, (b, note) in getattr(self, "_hk_buttons", {}).items():
             if not b.winfo_exists():
                 return
+            if name == self._capture:
+                continue
             want, got = settings.get("hk_" + name), hotkeys.ACTIVE.get(name)
-            b.configure(text=hotkeys.pretty(want), highlightbackground=self.d.LINE)
+            b.configure(text=hotkeys.pretty(want), highlightbackground=BTN)
             note.configure(text="" if name not in hotkeys.ACTIVE or got == want
                            else T("bị app khác dùng – đang dùng {k}", k=hotkeys.pretty(got)))
 
     def _start_capture(self, name):
+        if self._capture:
+            self._end_capture(refresh=False)
         b, note = self._hk_buttons[name]
         self._capture = name
         b.configure(text=T("Nhấn tổ hợp phím…"), highlightbackground=self.d.ACCENT)
@@ -311,63 +752,60 @@ class SettingsDialog:
         settings.set("hk_" + name, combo)
         return self._end_capture()
 
-    def _end_capture(self):
+    def _end_capture(self, refresh=True):
         self._capture = None
-        self.win.unbind("<KeyPress>")
-        self._hk_refresh()
-        self.win.after(1200, self._hk_refresh)    # chờ luồng phím tắt đăng ký lại xong
+        try:
+            self.win.unbind("<KeyPress>")
+        except tk.TclError:
+            pass
+        if refresh:
+            self._hk_refresh()
+            self.win.after(1200, self._hk_refresh)    # chờ luồng phím tắt đăng ký lại xong
         return "break"
 
     def _page_about(self):
         """Giới thiệu: phiên bản, bản quyền, developer, nguồn dữ liệu, giấy phép."""
         import webbrowser
         from version import __version__
-        d, a = self.d, self.app
-        head = tk.Frame(self.body, bg=d.PANEL)
-        head.pack(fill="x")
+        a, d = self.app, self.d
+        hero = tk.Frame(self.inner, bg=d.PANEL2, padx=a.S(20), pady=a.S(18))
+        hero.pack(fill="x", pady=(0, a.S(8)))
         try:
-            tk.Label(head, image=d.app_logo(a.root, a.S(64)), bg=d.PANEL).pack(side="left", padx=(0, a.S(12)))
+            tk.Label(hero, image=d.app_logo(a.root, a.S(72)), bg=d.PANEL2).pack(side="left", padx=(0, a.S(16)))
         except Exception:
             pass
-        box = tk.Frame(head, bg=d.PANEL)
+        box = tk.Frame(hero, bg=d.PANEL2)
         box.pack(side="left")
-        a.label(box, about.APP_NAME, 16, d.TEXT, True).pack(anchor="w")
+        a.label(box, about.APP_NAME, 18, d.TEXT, True).pack(anchor="w")
         a.label(box, T("Phiên bản {v}", v=__version__) + "  ·  " + T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn"),
                 9, d.MUTED).pack(anchor="w")
-        a.label(box, about.COPYRIGHT, 9, d.TEXT).pack(anchor="w", pady=(a.S(4), 0))
+        a.label(box, about.COPYRIGHT, 9, d.TEXT).pack(anchor="w", pady=(a.S(6), 0))
 
-        row = self._row(T("Developer"))
-        link = a.label(row, about.DEVELOPER, 9, d.ACCENT, cursor="hand2")
-        link.pack(side="left")
-        link.bind("<Button-1>", lambda e: webbrowser.open(about.DEVELOPER_URL))
-        row = self._row(T("Email"))
-        mail = a.label(row, about.EMAIL, 9, d.ACCENT, cursor="hand2")
-        mail.pack(side="left")
-        mail.bind("<Button-1>", lambda e: webbrowser.open("mailto:" + about.EMAIL))
-        row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(4))
-        row.pack(fill="x")
-        for text, fn in ((T("Trang dự án"), lambda: webbrowser.open(about.REPO_URL)),
-                         (T("Báo lỗi / góp ý"), lambda: webbrowser.open(about.ISSUES_URL + "/new/choose")),
-                         (T("Giấy phép"), lambda: self._show_file("LICENSE", T("Giấy phép"))),
-                         (T("Thành phần mã nguồn mở"),
-                          lambda: self._show_file("THIRD_PARTY_NOTICES.md", T("Thành phần mã nguồn mở")))):
-            a.button(row, text, fn, 8).pack(side="left", padx=(0, a.S(6)))
+        def link(parent, text, fn):
+            lb = a.label(parent, text, 10, d.ACCENT, bg=CONTENT, cursor="hand2")
+            lb.bind("<Button-1>", lambda e: fn())
+            self._hover(lb, CONTENT, CONTENT, fg=(d.ACCENT, "#9cc6ff"))
+            return lb
 
-        row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(2))
-        row.pack(fill="x")
-        a.button(row, "🧰 " + T("Tạo gói báo lỗi"), self._bug_report, 8, primary=True).pack(side="left")
-        a.label(row, T("Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi"), 8, d.MUTED).pack(
-            side="left", padx=a.S(8))
-        a.label(self.body, T("Nguồn dữ liệu"), 9, d.TEXT, True).pack(anchor="w", pady=(a.S(10), a.S(2)))
+        self._section(T("Liên hệ"))
+        link(self._row(T("Developer")), about.DEVELOPER, lambda: webbrowser.open(about.DEVELOPER_URL)).pack()
+        link(self._row(T("Email")), about.EMAIL, lambda: webbrowser.open("mailto:" + about.EMAIL)).pack()
+
+        self._section(T("Hỗ trợ"))
+        self._btn(self._row(T("Tạo gói báo lỗi"), T("Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi")),
+                  "🧰 " + T("Tạo gói"), self._bug_report, primary=True).pack()
+        self._btn(self._row(T("Báo lỗi / góp ý"), T("Mở mẫu báo lỗi trên GitHub Issues.")), T("Mở"),
+                  lambda: webbrowser.open(about.ISSUES_URL + "/new/choose")).pack()
+        self._btn(self._row(T("Trang dự án")), T("Mở"), lambda: webbrowser.open(about.REPO_URL)).pack()
+        self._btn(self._row(T("Giấy phép")), T("Xem"), lambda: self._show_file("LICENSE", T("Giấy phép"))).pack()
+        self._btn(self._row(T("Thành phần mã nguồn mở")), T("Xem"),
+                  lambda: self._show_file("THIRD_PARTY_NOTICES.md", T("Thành phần mã nguồn mở"))).pack()
+
+        self._section(T("Nguồn dữ liệu"))
         for name, url, what in about.DATA_SOURCES:
-            line = tk.Frame(self.body, bg=d.PANEL)
-            line.pack(anchor="w")
-            link = a.label(line, name, 9, d.ACCENT, cursor="hand2")
-            link.pack(side="left")
-            link.bind("<Button-1>", lambda e, u=url: webbrowser.open(u))
-            a.label(line, " – " + T(what), 9, d.MUTED).pack(side="left")
-        a.label(self.body, about.RIOT_DISCLAIMER, 7, d.MUTED, wraplength=a.S(470), justify="left").pack(
-            anchor="w", pady=(a.S(10), 0))
+            link(self._row(name, T(what)), "↗", lambda u=url: webbrowser.open(u)).pack()
+        a.label(self.inner, about.RIOT_DISCLAIMER, 8, d.DIMTEXT, bg=CONTENT, wraplength=self.body_w,
+                justify="left").pack(anchor="w", pady=(a.S(16), 0))
 
     def _bug_report(self, confirm: bool = True):
         """Tạo gói báo lỗi (zip) ra Desktop; hỏi trước vì có ảnh màn hình game lúc chọn lõi."""
@@ -376,8 +814,8 @@ class SettingsDialog:
         if confirm and not messagebox.askokcancel(
                 T("Tạo gói báo lỗi"),
                 T("Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí "
-                  "bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che; không gồm "
-                  "cấu hình ESP32.\n\nTạo file zip ra Desktop?"), parent=self.win):
+                  "bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che."
+                  "\n\nTạo file zip ra Desktop?"), parent=self.win):
             return None
         try:
             hub = getattr(self.app, "hub", None)
@@ -416,9 +854,3 @@ class SettingsDialog:
         x = self.win.winfo_rootx() + (self.win.winfo_width() - w.winfo_reqwidth()) // 2
         w.geometry(f"+{max(0, x)}+{max(0, self.win.winfo_rooty() - a.S(40))}")
         return w
-
-    def _page_esp32(self):
-        import esp32_link
-        self._check("esp32", T("Gửi màn ARAM lên ESP32 (PC Control Deck)"))
-        if not esp32_link.Esp32Link.enabled():
-            self._note(T("Cần file esp32.json trong thư mục dữ liệu – xem docs/USER_GUIDE.md, mục ESP32."))

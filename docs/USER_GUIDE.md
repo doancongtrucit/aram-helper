@@ -18,10 +18,9 @@ Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg) · Dữ li�
 6. [Overlay trên game](#6-overlay-trên-game)
 7. [Cài đặt app](#7-cài-đặt-app)
 8. [Phím tắt](#8-phím-tắt)
-9. [Màn ARAM trên ESP32 (tuỳ chọn)](#9-màn-aram-trên-esp32-tuỳ-chọn)
-10. [Xử lý sự cố](#10-xử-lý-sự-cố)
-11. [Quyền riêng tư và an toàn](#11-quyền-riêng-tư-và-an-toàn)
-12. [Bản quyền](#12-bản-quyền)
+9. [Xử lý sự cố](#9-xử-lý-sự-cố)
+10. [Quyền riêng tư và an toàn](#10-quyền-riêng-tư-và-an-toàn)
+11. [Bản quyền](#11-bản-quyền)
 
 ---
 
@@ -166,8 +165,8 @@ xếp hạng các lõi đó, lõi ngoài top 6 cũng được hiện ra.
 **Điểm gợi ý** (trên overlay khi đang chọn lõi) = tỉ lệ thắng của lõi với tướng này + thưởng nếu hợp combo với lõi
 bạn đã lấy trong trận (S +4, A +3, B +2, C +1). Lõi ngoài top 16 của tướng dùng tỉ lệ thắng chung của mọi tướng (ghi "chung").
 
-Khi đang chọn lõi trong game, cửa sổ chính **giữ nguyên** để bạn xem tổng quát – gợi ý hiện trên overlay
-(và ESP32). Muốn cửa sổ chính cũng tô sáng + hiện ô **Nên chọn**, bật trong **Cài đặt → Chung**.
+Khi đang chọn lõi trong game, cửa sổ chính **giữ nguyên** để bạn xem tổng quát – gợi ý hiện trên overlay.
+Muốn cửa sổ chính cũng tô sáng + hiện ô **Nên chọn**, bật trong **Cài đặt → Chung**.
 
 ---
 
@@ -244,7 +243,6 @@ Bấm **⚙** (bánh răng) ở góc phải thanh trên. Thay đổi áp dụng 
 | **Chung** | Ngôn ngữ **Tiếng Việt / English** (giao diện, tên lõi, trang bị, tướng) · Cỡ giao diện 70–160% · Số lõi mỗi bậc (mặc định 6, hoặc tự vừa cửa sổ) · Cửa sổ chính phản ứng khi đang chọn lõi · Cửa sổ luôn nằm trên · Báo khi có bản mới · Mở thư mục dữ liệu |
 | **Overlay** | Bật/tắt · Độ đậm khung và nhãn trên thẻ lõi · Cỡ overlay · Bề rộng khung · Vị trí (kéo thả hoặc 4 góc, **Đặt lại vị trí**) · Nhãn ★ trên thẻ lõi · Chỉ hiện khi đang chọn lõi · Mục hiển thị · Số lối lên đồ 1–3 |
 | **Phím tắt** | Đổi phím cho Định vị lõi, đánh dấu lõi ở thẻ 1 / 2 / 3, ẩn / hiện overlay, lưu ảnh chẩn đoán (mục 8) |
-| **ESP32** | Bật/tắt gửi màn ARAM lên ESP32 (mục 9) |
 | **Giới thiệu** | Phiên bản, bản quyền, developer, nguồn dữ liệu, giấy phép, thành phần mã nguồn mở |
 
 ![Cài đặt – Overlay](images/settings-overlay.png)
@@ -262,7 +260,7 @@ Bấm **⚙** (bánh răng) ở góc phải thanh trên. Thay đổi áp dụng 
 | **Ctrl+Alt+A** | Định vị lõi – tìm lại vị trí 3 thẻ lõi |
 | **Ctrl+Alt+1 / 2 / 3** | Đánh dấu đã chọn lõi ở thẻ 1 / 2 / 3 |
 | **Ctrl+Alt+O** | Ẩn / hiện overlay |
-| **Ctrl+Alt+D** | Lưu ảnh chẩn đoán (khi app đọc sai lõi – xem mục 10) |
+| **Ctrl+Alt+D** | Lưu ảnh chẩn đoán (khi app đọc sai lõi – xem mục 9) |
 | **Ctrl + / Ctrl − / Ctrl 0** | Phóng to / thu nhỏ / về 100% (trong cửa sổ chính) |
 
 **Đổi phím tắt:** **⚙ Cài đặt → Phím tắt** → bấm vào ô của việc cần đổi rồi nhấn tổ hợp mới (cần có Ctrl hoặc Alt,
@@ -273,28 +271,7 @@ Ctrl+Alt+Shift+1/2/3, Ctrl+Alt+Shift+O, Ctrl+Alt+Shift+D); trang **Phím tắt**
 
 ---
 
-## 9. Màn ARAM trên ESP32 (tuỳ chọn)
-
-Nếu bạn có màn CYD chạy [PC Control Deck](https://github.com/doancongtrucit/esp-control) đã kết nối Wi-Fi,
-ARAM Helper gửi tóm tắt trận lên đó qua mạng nội bộ:
-
-- Vào trận → CYD tự mở **màn ARAM**: tướng, hạng, tỉ lệ thắng; **PICK** 3 lõi đang được đưa ra (chấm xanh = nên chọn);
-  **BUILD / TAKEN** giữa các lượt chọn; **COMBO** tốt nhất; **VS ENEMY TEAM** 2 dòng đồ theo đội địch.
-- Hết trận (hoặc 15 giây không nhận dữ liệu) → tự quay lại màn trước. Bấm Home trên CYD → không tự mở lại tới ván sau.
-
-**Thiết lập (1 lần):** cập nhật firmware + bridge PC Control Deck bản có màn ARAM, rồi tạo file `esp32.json`
-trong thư mục dữ liệu (mục 2.6):
-
-```json
-{"bridge_dir": "<thư mục host của PC Control Deck>"}
-```
-
-ARAM Helper đọc token trong `config.json` của bridge và IP thiết bị trong `device_state.json`.
-Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>"}`. Không có file thì tính năng tắt.
-
----
-
-## 10. Xử lý sự cố
+## 9. Xử lý sự cố
 
 | Hiện tượng | Cách xử lý |
 |---|---|
@@ -310,24 +287,23 @@ Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>
 | Windows chặn khi mở app | App chưa có chữ ký số: **More info → Run anyway**. |
 
 **Báo lỗi:** **⚙ → Giới thiệu → Tạo gói báo lỗi** tạo file `ARAM-Helper-bug-report-….zip` ra Desktop (log, tối đa 12 ảnh
-chẩn đoán gần nhất, vị trí bảng lõi, cài đặt, thông tin hệ thống; đã che đường dẫn thư mục và địa chỉ IP, không gồm
-cấu hình ESP32). Rồi bấm **Báo lỗi / góp ý** để mở mẫu báo lỗi trên
+chẩn đoán gần nhất, vị trí bảng lõi, cài đặt, thông tin hệ thống; đã che đường dẫn thư mục và địa chỉ IP). Rồi bấm **Báo lỗi / góp ý** để mở mẫu báo lỗi trên
 [GitHub Issues](https://github.com/doancongtrucit/aram-helper/issues) và kéo file zip vào.
 
 ---
 
-## 11. Quyền riêng tư và an toàn
+## 10. Quyền riêng tư và an toàn
 
 - ARAM Helper **chỉ đọc**: Live Client Data API chính thức của Riot (chạy trên máy bạn, cổng 2999) và ảnh chụp
   màn hình. App **không** đọc/ghi bộ nhớ game, **không** gửi phím/chuột vào game, **không** tự chọn lõi.
   Dùng công cụ bên thứ ba luôn do bạn tự cân nhắc theo chính sách hiện hành của Riot.
 - Ảnh chụp màn hình chỉ được xử lý trên máy; ảnh chẩn đoán chỉ lưu khi cần (giữ tối đa 30 ảnh) và không gửi đi đâu.
 - App chỉ kết nối tới: playaram.gg (thống kê), Riot Data Dragon và CommunityDragon (tên, icon tướng / trang bị / lõi),
-  GitHub (kiểm tra bản mới – tắt được trong Cài đặt), và thiết bị ESP32 của bạn nếu có cấu hình.
+  GitHub (kiểm tra bản mới – tắt được trong Cài đặt).
 
 ---
 
-## 12. Bản quyền
+## 11. Bản quyền
 
 ARAM Helper © 2026 [doancongtrucit](https://github.com/doancongtrucit). All rights reserved – xem [LICENSE](../LICENSE).
 Liên hệ developer (xin phép sử dụng, góp ý): [doancongtrucit@gmail.com](mailto:doancongtrucit@gmail.com).

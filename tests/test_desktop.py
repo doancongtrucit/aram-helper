@@ -276,7 +276,7 @@ class DesktopUI(unittest.TestCase):
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg
-        for page in ("overlay", "hotkeys", "esp32", "about", "general"):
+        for page in ("overlay", "hotkeys", "about", "general"):
             dlg._go(page)
             self.root.update()
         settings.set("lang", "en")                  # hộp thoại dựng lại theo ngôn ngữ mới
