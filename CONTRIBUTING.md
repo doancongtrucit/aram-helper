@@ -14,8 +14,9 @@ Python 3.10+ (CI dùng 3.13), Windows để chạy đủ tính năng (macOS ch�
 python -m venv .venv
 .venv\Scripts\activate                      # macOS: source .venv/bin/activate
 pip install -r requirements.txt
-python tests/fetch_fixtures.py              # tải trang mẫu cho test (không commit)
-python -m unittest discover -s tests -v
+python tests/fetch_icons.py                 # tải icon lõi cho test nhận diện màn hình (1 lần)
+python tools/run_tests.py                   # chạy test; báo lỗi nếu quá 2 test bị bỏ qua
+python tests/fetch_fixtures.py              # (tuỳ chọn) tải trang thật để kiểm tra parser – không commit
 python src/app.py --champion yasuo          # chạy từ mã nguồn, log in ra Terminal
 ```
 
@@ -71,7 +72,9 @@ aram-helper/
    giao diện nặng. Đo lại RAM / CPU khi đổi phần quét.
 4. **Không đưa dữ liệu cá nhân vào repo**: không commit `data/`, log, ảnh chụp màn hình thật, đường dẫn máy,
    email, IP… Commit bằng email noreply của GitHub.
-5. **Test trước khi commit**: `python -m unittest discover -s tests`. Đổi phần nhận diện thì chạy thêm
+5. **Test trước khi commit**: `python tools/run_tests.py` (GitHub Actions chạy lại ở mỗi push / pull request).
+   Test dùng trang mẫu dựng từ `tests/sample_data.json` – số liệu tự đặt, không chép nội dung trang nguồn; đổi
+   dữ liệu mẫu thì sửa file JSON đó. Đổi phần nhận diện thì chạy thêm
    `python tests/bench_scan.py 40` và so độ chính xác với trước.
 
 ## Sửa thường gặp

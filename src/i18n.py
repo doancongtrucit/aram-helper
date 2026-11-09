@@ -113,7 +113,12 @@ EN = {
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
     "Phím tắt": "Hotkeys",
-    "Giới thiệu": "About", "Email": "Email", "Phiên bản {v}": "Version {v}", "Developer": "Developer",
+    "Giới thiệu": "About", "Email": "Email",
+    "Tạo gói báo lỗi": "Create bug report",
+    "Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi": "Bundle logs + diagnostic images into a zip to attach to an issue",
+    "Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che; không gồm cấu hình ESP32.\n\nTạo file zip ra Desktop?":
+        "The bundle contains the app log, up to 12 recent diagnostic images (game screenshots taken during augment picks), the augment card position, settings and system info.\n\nFolder paths and IP addresses are masked; the ESP32 config is not included.\n\nCreate the zip on your Desktop?",
+    "Đã tạo {f} – đính kèm file này khi báo lỗi.": "Created {f} – attach it to your issue.", "Phiên bản {v}": "Version {v}", "Developer": "Developer",
     "Trang dự án": "Project page", "Báo lỗi / góp ý": "Report an issue", "Giấy phép": "License",
     "Thành phần mã nguồn mở": "Open-source components", "Nguồn dữ liệu": "Data sources",
     "thống kê lõi, combo, lối lên đồ": "augment, combo and build statistics",

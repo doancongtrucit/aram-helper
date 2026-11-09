@@ -346,12 +346,17 @@ class SettingsDialog:
         row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(4))
         row.pack(fill="x")
         for text, fn in ((T("Trang dự án"), lambda: webbrowser.open(about.REPO_URL)),
-                         (T("Báo lỗi / góp ý"), lambda: webbrowser.open(about.ISSUES_URL)),
+                         (T("Báo lỗi / góp ý"), lambda: webbrowser.open(about.ISSUES_URL + "/new/choose")),
                          (T("Giấy phép"), lambda: self._show_file("LICENSE", T("Giấy phép"))),
                          (T("Thành phần mã nguồn mở"),
                           lambda: self._show_file("THIRD_PARTY_NOTICES.md", T("Thành phần mã nguồn mở")))):
             a.button(row, text, fn, 8).pack(side="left", padx=(0, a.S(6)))
 
+        row = tk.Frame(self.body, bg=d.PANEL, pady=a.S(2))
+        row.pack(fill="x")
+        a.button(row, "🧰 " + T("Tạo gói báo lỗi"), self._bug_report, 8, primary=True).pack(side="left")
+        a.label(row, T("Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi"), 8, d.MUTED).pack(
+            side="left", padx=a.S(8))
         a.label(self.body, T("Nguồn dữ liệu"), 9, d.TEXT, True).pack(anchor="w", pady=(a.S(10), a.S(2)))
         for name, url, what in about.DATA_SOURCES:
             line = tk.Frame(self.body, bg=d.PANEL)
@@ -362,6 +367,32 @@ class SettingsDialog:
             a.label(line, " – " + T(what), 9, d.MUTED).pack(side="left")
         a.label(self.body, about.RIOT_DISCLAIMER, 7, d.MUTED, wraplength=a.S(470), justify="left").pack(
             anchor="w", pady=(a.S(10), 0))
+
+    def _bug_report(self, confirm: bool = True):
+        """Tạo gói báo lỗi (zip) ra Desktop; hỏi trước vì có ảnh màn hình game lúc chọn lõi."""
+        from tkinter import messagebox
+        import report
+        if confirm and not messagebox.askokcancel(
+                T("Tạo gói báo lỗi"),
+                T("Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí "
+                  "bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che; không gồm "
+                  "cấu hình ESP32.\n\nTạo file zip ra Desktop?"), parent=self.win):
+            return None
+        try:
+            hub = getattr(self.app, "hub", None)
+            st = hub.state() if hub else {}
+            scan = st.get("scan") or {}
+            extra = {"in_game": (st.get("game") or {}).get("in_game"), "scan_status": scan.get("status"),
+                     "scan_error": scan.get("error"), "calibrated": scan.get("calibrated")}
+            path = report.make_bundle(extra=extra)
+        except Exception as e:
+            if confirm:
+                messagebox.showerror(T("Tạo gói báo lỗi"), repr(e), parent=self.win)
+            return None
+        if confirm:
+            report.reveal(path)
+            self.app.toast(T("Đã tạo {f} – đính kèm file này khi báo lỗi.", f=path.name))
+        return path
 
     def _show_file(self, name, title):
         """Xem LICENSE / THIRD_PARTY_NOTICES ngay trong app (file đi kèm bản cài)."""

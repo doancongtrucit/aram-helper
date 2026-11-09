@@ -20,3 +20,6 @@ Thumbs.db
 # Build bản exe / .app (python tools/build.py)
 build/
 dist/
+
+# Dữ liệu tạm của GitHub Actions (icon cho test)
+.ci-data/

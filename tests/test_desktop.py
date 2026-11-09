@@ -241,6 +241,10 @@ class DesktopUI(unittest.TestCase):
         body = [c for c in viewer.winfo_children() if isinstance(c, tk.Text)][0].get("1.0", "end")
         self.assertIn("All rights reserved", body)
         viewer.destroy()
+        import report
+        with mock.patch.object(report, "default_dir", return_value=Path(self.tmp.name)),                 mock.patch.object(report.paths, "DATA", Path(self.tmp.name) / "data"):
+            zipped = dlg._bug_report(confirm=False)
+        self.assertTrue(zipped.exists())
         dlg.close()
 
     def test_settings_dialog_pages(self):

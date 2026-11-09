@@ -295,13 +295,15 @@ Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>
 | "Ảnh chụp màn hình bị đen" | Đổi game sang **Không viền** hoặc **Cửa sổ**. |
 | Bảng chọn lõi hiện mà overlay không gợi ý | Xem dòng **Quét màn hình** trong app. App tự dò lại khi thẻ lõi xê dịch; vẫn không được thì bấm **Ctrl+Alt+A** (Định vị lõi) khi bảng chọn đang hiện. |
 | Định vị lõi báo không tìm thấy bảng lõi | Bấm khi bảng chọn lõi đang hiện rõ, không bị che. Cần ít nhất 2 trong 3 thẻ là lõi thường (không phải lõi kỹ năng tướng). |
-| Đọc sai lõi | Khi bảng chọn lõi **đang hiện**, bấm **Ctrl+Alt+D** → app lưu ảnh + kết quả quét vào thư mục `debug` trong thư mục dữ liệu. Gửi các file đó kèm `app.log` khi báo lỗi. |
+| Đọc sai lõi | Khi bảng chọn lõi **đang hiện**, bấm **Ctrl+Alt+D** → app lưu ảnh + kết quả quét. Sau trận: **⚙ → Giới thiệu → Tạo gói báo lỗi** rồi đính kèm file zip khi báo lỗi. |
 | Overlay không hiện | Overlay chỉ hiện khi đang trong trận; kiểm tra công tắc **Overlay** trong app và chế độ hiển thị Không viền của game. |
 | Phím tắt không hoạt động | Xem **Cài đặt → Phím tắt** (có thể đã đổi sang phím dự phòng) hoặc đổi sang tổ hợp khác. |
 | Windows chặn khi mở app | App chưa có chữ ký số: **More info → Run anyway**. |
 
-Log của app: `app.log` trong thư mục dữ liệu (mục 2.6). Báo lỗi tại
-[GitHub Issues](https://github.com/doancongtrucit/aram-helper/issues) – đừng đính kèm thông tin cá nhân.
+**Báo lỗi:** **⚙ → Giới thiệu → Tạo gói báo lỗi** tạo file `ARAM-Helper-bug-report-….zip` ra Desktop (log, tối đa 12 ảnh
+chẩn đoán gần nhất, vị trí bảng lõi, cài đặt, thông tin hệ thống; đã che đường dẫn thư mục và địa chỉ IP, không gồm
+cấu hình ESP32). Rồi bấm **Báo lỗi / góp ý** để mở mẫu báo lỗi trên
+[GitHub Issues](https://github.com/doancongtrucit/aram-helper/issues) và kéo file zip vào.
 
 ---
 

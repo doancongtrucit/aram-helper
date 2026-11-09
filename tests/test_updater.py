@@ -50,6 +50,8 @@ class UpdaterTest(unittest.TestCase):
         with mock.patch.dict("os.environ", {"ARAM_HELPER_DATA": self.tmp.name}):
             self.assertEqual(paths._data_dir(), Path(self.tmp.name))
         with mock.patch.object(paths, "FROZEN", True), mock.patch.dict("os.environ", {"LOCALAPPDATA": self.tmp.name}):
+            import os
+            os.environ.pop("ARAM_HELPER_DATA", None)          # khôi phục khi thoát patch.dict
             if sys.platform == "win32":
                 self.assertEqual(paths._data_dir(), Path(self.tmp.name) / "ARAM Helper")
 

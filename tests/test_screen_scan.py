@@ -89,7 +89,7 @@ class ResolveRarity(unittest.TestCase):
         self.assertEqual(out[0]["candidates"], [want["id"]])
 
 
-@unittest.skipUnless(HAS_CV, "cần opencv và icon đã tải (chạy app một lần)")
+@unittest.skipUnless(HAS_CV, "cần opencv và icon lõi (python tests/fetch_icons.py)")
 class DetectSynthetic(unittest.TestCase):
     """Ảnh giả lập bảng chọn lõi (không phải ảnh game thật)."""
 

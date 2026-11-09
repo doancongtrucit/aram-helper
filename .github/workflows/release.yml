@@ -29,8 +29,14 @@ jobs:
         run: |
           v=$(python -c "import sys; sys.path.insert(0, 'src'); from version import __version__; print(__version__)")
           if [ "v$v" != "$GITHUB_REF_NAME" ]; then echo "version.py ($v) khác tag $GITHUB_REF_NAME"; exit 1; fi
-      - name: Test
-        run: python -m unittest discover -s tests
+      - name: Tải icon lõi cho test nhận diện
+        run: python tests/fetch_icons.py
+        env:
+          ARAM_HELPER_DATA: ${{ runner.temp }}/aram-data
+      - name: Test (báo lỗi nếu quá 2 test bị bỏ qua)
+        run: python tools/run_tests.py
+        env:
+          ARAM_HELPER_DATA: ${{ runner.temp }}/aram-data
       - name: Inno Setup
         shell: pwsh
         run: |
@@ -47,6 +53,7 @@ jobs:
 
   macos:
     runs-on: macos-latest
+    timeout-minutes: 40            # GitHub đôi khi hết máy macOS – không để chặn bản phát hành Windows
     env:
       PYTHONIOENCODING: utf-8
     steps:
@@ -66,7 +73,8 @@ jobs:
 
   release:
     needs: [windows, macos]
-    if: startsWith(github.ref, 'refs/tags/')
+    # macOS lỗi / bị huỷ vẫn đăng bản Windows (bản macOS bổ sung sau bằng Re-run)
+    if: always() && startsWith(github.ref, 'refs/tags/') && needs.windows.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/download-artifact@v4

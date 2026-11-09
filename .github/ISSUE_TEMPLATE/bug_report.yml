@@ -1,0 +1,46 @@
+name: Báo lỗi / Bug report
+description: App đọc sai lõi, không gợi ý, overlay lỗi, app không mở… / Something doesn't work
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cảm ơn bạn đã báo lỗi! Trong app: **⚙ Cài đặt → Giới thiệu → Tạo gói báo lỗi** rồi kéo file zip vào ô bên dưới.
+        Gói đã che đường dẫn máy và địa chỉ IP. Nếu lỗi xảy ra lúc chọn lõi, bấm **Ctrl+Alt+D** ngay lúc bảng chọn đang hiện
+        trước khi tạo gói.
+        *Thanks! In the app: Settings → About → Create bug report, then drop the zip below.*
+  - type: input
+    id: version
+    attributes:
+      label: Phiên bản ARAM Helper / Version
+      description: Xem ở Cài đặt → Giới thiệu
+      placeholder: "1.4.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: Cách cài / Install type
+      options: ["Setup.exe", "Portable zip", "macOS .app", "Từ mã nguồn / from source"]
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: Chuyện gì xảy ra? / What happened?
+      description: Bạn mong đợi gì, app làm gì thay vào đó / Expected vs actual
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Các bước để tái hiện / Steps to reproduce
+      placeholder: |
+        1. Vào trận ARAM Hỗn Loạn với tướng …
+        2. Lượt chọn lõi thứ …
+        3. …
+  - type: textarea
+    id: bundle
+    attributes:
+      label: Gói báo lỗi / Bug report zip
+      description: Kéo thả file ARAM-Helper-bug-report-*.zip vào đây / Drop the zip here
