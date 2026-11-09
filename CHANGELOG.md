@@ -3,17 +3,20 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
-## [Chưa phát hành]
+## [1.4.0] – 2026-11-09
 
 ### Thêm
 - **Tự ghi nhận lõi đã chọn**: khi bảng chọn đóng, lõi ở thẻ bạn vừa bấm chuột được đánh dấu đã chọn
   (không cần bấm overlay hay Ctrl+Alt+1/2/3). Tắt trong Cài đặt → Chung.
 - **Gợi ý đổi lõi (↻)**: overlay ghi "↻ nên đổi" ở thẻ yếu hơn hẳn mức trung bình của tướng khi nút đổi lõi
   của thẻ đó còn lượt (nhận ra nút đã dùng). Tắt trong Cài đặt → Overlay.
-
 - **Thông tin bản quyền**: LICENSE (All rights reserved), THIRD_PARTY_NOTICES.md, trang **Cài đặt → Giới thiệu**
-  (phiên bản, developer, nguồn dữ liệu, giấy phép), dòng bản quyền ở màn chào, trong file exe, bộ cài
+  (phiên bản, developer, email liên hệ, nguồn dữ liệu, giấy phép), dòng bản quyền ở màn chào, trong file exe, bộ cài
   (trang giấy phép khi cài) và bản macOS.
+
+### Thay đổi
+- Thanh trên làm lại theo kiểu app gaming: logo, ô tìm kiếm có kính lúp, chip trạng thái trận, công tắc Overlay,
+  nút bánh răng; nút "↩ Tướng trong trận" chỉ hiện khi đang xem tướng khác; thanh trạng thái mảnh ở đáy.
 
 ### Đã sửa
 - Log chẩn đoán không làm hỏng bộ quét khi cửa sổ dòng lệnh không dùng UTF-8.
@@ -64,6 +67,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.4.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/doancongtrucit/aram-helper/releases/tag/v1.1.1
