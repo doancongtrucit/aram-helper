@@ -109,6 +109,8 @@ EN = {
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
     "Gợi ý lõi và trang bị cho ARAM Hỗn Loạn": "Augment and item advice for ARAM Mayhem",
+    "Có lỗi nhỏ ở giao diện – đã ghi vào app.log. Bấm để mở thư mục dữ liệu.":
+        "A small UI error was logged to app.log. Click to open the data folder.",
     "Có bản mới {v}": "Update {v}",
     "Báo khi có bản mới (tự kiểm tra trên GitHub)": "Tell me about new versions (checks GitHub)",
     "Thư mục dữ liệu": "Data folder", "Mở": "Open",

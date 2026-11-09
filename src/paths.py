@@ -34,5 +34,17 @@ def _data_dir() -> Path:
 
 
 DATA = _data_dir()
+
+
+def open_data_folder():
+    """Mở thư mục dữ liệu bằng trình quản lý file của hệ điều hành."""
+    import subprocess
+    DATA.mkdir(parents=True, exist_ok=True)
+    if sys.platform == "win32":
+        os.startfile(DATA)                 # noqa: S606 – mở bằng Explorer
+    else:
+        subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(DATA)])
+
+
 # File đi kèm app (icon...): bản exe nằm trong thư mục giải nén của PyInstaller, bản mã nguồn nằm cạnh code
 RES = Path(getattr(sys, "_MEIPASS", APP_DIR))

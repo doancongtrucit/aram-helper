@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import tkinter as tk
 
+import paths
 import settings
 from i18n import T
 
@@ -14,7 +15,7 @@ SECTIONS = [("offer", "Gợi ý lõi"), ("combo", "Combo"), ("owned", "Lõi đã
 
 class SettingsDialog:
     def __init__(self, app):
-        import desktop as d
+        import theme as d
         self.app, self.d = app, d
         self.page = "general"
         self.win = tk.Toplevel(app.root)
@@ -179,22 +180,9 @@ class SettingsDialog:
         self._note(T("Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
         self._check("check_updates", T("Báo khi có bản mới (tự kiểm tra trên GitHub)"))
-        import paths
         row = self._row(T("Thư mục dữ liệu"))
         a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")
-        a.button(row, T("Mở"), self._open_data, 8).pack(side="left", padx=a.S(6))
-
-    @staticmethod
-    def _open_data():
-        import os
-        import subprocess
-        import sys
-        import paths
-        paths.DATA.mkdir(parents=True, exist_ok=True)
-        if sys.platform == "win32":
-            os.startfile(paths.DATA)      # noqa: S606 – mở thư mục bằng Explorer
-        else:
-            subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(paths.DATA)])
+        a.button(row, T("Mở"), paths.open_data_folder, 8).pack(side="left", padx=a.S(6))
 
     def _page_overlay(self):
         d, a = self.d, self.app

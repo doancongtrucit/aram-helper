@@ -174,6 +174,21 @@ class DesktopUI(unittest.TestCase):
         self.tick()
         self.assertTrue(self.app._single.inner.winfo_children())
 
+    def test_ui_error_shows_toast_and_keeps_running(self):
+        import io
+        from contextlib import redirect_stdout
+        broken = tk.Button(self.root, command=lambda: 1 / 0)
+        out = io.StringIO()
+        with redirect_stdout(out):
+            broken.invoke()                      # lỗi trong callback → report_callback_exception
+        self.root.update()
+        self.assertIn("ZeroDivisionError", out.getvalue())
+        self.assertTrue(self.app._toast_w.winfo_exists())
+        with redirect_stdout(io.StringIO()):
+            broken.invoke()                      # lỗi lặp lại: chỉ ghi log, không hiện thêm thông báo
+        self.tick()                              # app vẫn chạy bình thường
+        self.assertEqual(len(self.app.cards), 48)
+
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg

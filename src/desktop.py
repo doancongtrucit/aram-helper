@@ -8,215 +8,29 @@ Mặc định cửa sổ chính KHÔNG đổi khi bảng chọn lõi hiện ra (
 """
 from __future__ import annotations
 
-import hashlib
-import queue
-import re
 import sys
 import threading
 import time
 import tkinter as tk
-import unicodedata
-import urllib.request
 from tkinter import ttk
 
-import advice
 import i18n
 import paths
-import playaram
 import settings
 import updater
 from i18n import T
-
-# ---------- giao diện ----------
-BG, PANEL, PANEL2, CARD, LINE = "#0b0d14", "#141826", "#1a2031", "#111524", "#262d40"
-TEXT, MUTED, DIMTEXT = "#e6e8ef", "#8a91a8", "#4a5066"
-GOOD, OKC, BAD, ACCENT = "#3ddc97", "#f5a53a", "#ef6b6b", "#6aa8ff"
-HIT_BG, OWNED_BG = "#12291f", "#14223a"
-RARITY = [("prismatic", "Lõi Kim Cương", "#c58cff"), ("gold", "Lõi Vàng", "#f0c35a"), ("silver", "Lõi Bạc", "#b9c3d6")]
-RARITY_COLOR = {k: c for k, _, c in RARITY}
-TIER_COLOR = {"S+": "#ff8a5c", "S": "#ff8a5c", "A": "#f5c451", "B": "#6aa8ff", "C": MUTED, "D": MUTED}
-IS_MAC = sys.platform == "darwin"
-FONT, MONO = ("Helvetica Neue", "Menlo") if IS_MAC else ("Segoe UI", "Consolas")
-LOW_PICK = 1.5
-CARD_MIN_W = 172          # bề rộng tối thiểu 1 thẻ lõi (px ở 100%)
-CARD_H = 44               # chiều cao thẻ lõi
-CARD_GAP = 6
-WIDE_MIN = 640            # từ bề rộng này (px ở 100%): 2 cột lõi | trang bị, xem cùng lúc không phải cuộn
-IMG_DIR = playaram.CACHE_DIR / "img"
-ICON_DIR = playaram.CACHE_DIR / "icons"
-
-
-_logos: dict = {}
-
-
-def app_logo(root, size_px: int):
-    """Logo app (assets/icon.png) ở cỡ size_px – dùng chung cho cửa sổ chính, hộp Cài đặt, overlay."""
-    key = (id(root), size_px)
-    if key not in _logos:
-        from PIL import Image, ImageTk
-        im = Image.open(paths.RES / "assets" / "icon.png").convert("RGBA")
-        _logos[key] = ImageTk.PhotoImage(im.resize((size_px, size_px), Image.LANCZOS), master=root)
-    return _logos[key]
-
-
-def fold(s: str) -> str:
-    s = unicodedata.normalize("NFD", s.replace("đ", "d").replace("Đ", "D"))
-    return re.sub(r"\s+", " ", "".join(c for c in s if unicodedata.category(c) != "Mn").lower()).strip()
-
-
-# ---------- ảnh (tải nền, cache đĩa + RAM) ----------
-class Images:
-    """Icon lõi lấy từ data/icons/<id>.png; icon trang bị / tướng / phép tải 1 lần từ nguồn dữ liệu rồi cache."""
-
-    def __init__(self, root: tk.Tk, scale: float):
-        self.root, self.scale = root, scale
-        self.mem: dict = {}
-        self.waiting: dict = {}
-        self.blank: dict = {}
-        self.jobs: queue.Queue = queue.Queue()
-        self.done: queue.Queue = queue.Queue()
-        self.listeners: list = []          # gọi khi có ảnh mới tải xong (overlay vẽ lại)
-        threading.Thread(target=self._worker, daemon=True, name="images").start()
-        self.root.after(80, self._pump)
-
-    def px(self, size: int) -> int:
-        return max(8, int(round(size * self.scale)))
-
-    def set(self, widget, src, size: int):
-        """src: id lõi (int) hoặc URL ảnh. Gán ảnh cho Label ngay nếu đã có, không thì tải nền."""
-        if src is None:
-            return
-        k = (src, self.px(size))
-        if k in self.mem:
-            widget.configure(image=self.mem[k])
-            return
-        widget.configure(image=self._blank(k[1]))
-        lst = self.waiting.setdefault(k, [])
-        lst.append(widget)
-        if len(lst) == 1:
-            self.jobs.put(k)
-
-    def photo(self, src, size: int):
-        """Cho Canvas: trả PhotoImage nếu đã có, không thì tải nền (xong sẽ gọi listeners) và trả None."""
-        if src is None:
-            return None
-        k = (src, self.px(size))
-        if k in self.mem:
-            return self.mem[k]
-        if k not in self.waiting:
-            self.waiting[k] = []
-            self.jobs.put(k)
-        return None
-
-    def _blank(self, px):
-        if px not in self.blank:
-            self.blank[px] = tk.PhotoImage(width=px, height=px)
-        return self.blank[px]
-
-    def _worker(self):
-        from PIL import Image
-        IMG_DIR.mkdir(parents=True, exist_ok=True)
-        while True:
-            k = self.jobs.get()
-            src, px = k
-            img = None
-            try:
-                if isinstance(src, int):
-                    path = ICON_DIR / f"{src}.png"
-                else:
-                    path = IMG_DIR / (hashlib.sha1(src.encode()).hexdigest()[:16] + ".img")
-                    if not path.exists():
-                        req = urllib.request.Request(src, headers={"User-Agent": playaram.USER_AGENT,
-                                                                   "Accept": "image/png,image/*"})
-                        with urllib.request.urlopen(req, timeout=15) as r:
-                            path.write_bytes(r.read())
-                with Image.open(path) as im:
-                    img = im.convert("RGBA").resize((px, px), Image.LANCZOS)
-            except Exception:
-                img = None
-            self.done.put((k, img))
-
-    def _pump(self):
-        got = False
-        try:
-            from PIL import ImageTk
-            while True:
-                k, img = self.done.get_nowait()
-                widgets = self.waiting.pop(k, [])
-                if img is None:
-                    continue
-                photo = ImageTk.PhotoImage(img)
-                self.mem[k] = photo
-                got = True
-                for w in widgets:
-                    try:
-                        w.configure(image=photo)
-                    except tk.TclError:      # widget đã bị vẽ lại
-                        pass
-        except queue.Empty:
-            pass
-        if got:
-            for fn in self.listeners:
-                fn()
-        self.root.after(80, self._pump)
-
-
-
-# ---------- vùng cuộn ----------
-class Scroll(tk.Frame):
-    """Khung cuộn dọc. Cuộn chuột được xử lý chung (App._wheel): cuộn đúng vùng nằm dưới con trỏ."""
-
-    def __init__(self, parent, step: int):
-        super().__init__(parent, bg=BG)
-        self.canvas = tk.Canvas(self, bg=BG, highlightthickness=0, bd=0, yscrollincrement=step)
-        self.bar = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=self.bar.set)
-        self.bar.pack(side="right", fill="y")
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.inner = tk.Frame(self.canvas, bg=BG)
-        self.inner._scroll = self
-        self.canvas._scroll = self
-        self._win = self.canvas.create_window(0, 0, window=self.inner, anchor="nw")
-        self.inner.bind("<Configure>", lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", lambda e: self.canvas.itemconfigure(self._win, width=e.width))
-
-    def clear(self):
-        for w in self.inner.winfo_children():
-            w.destroy()
-
-
-class Tooltip:
-    """Chú thích nhỏ khi rê chuột (tên món dưới icon)."""
-
-    def __init__(self, app):
-        self.app, self.win = app, None
-
-    def bind(self, widget, text: str):
-        if text:
-            widget.bind("<Enter>", lambda e: self.show(e, text), add="+")
-            widget.bind("<Leave>", lambda e: self.hide(), add="+")
-
-    def show(self, e, text):
-        self.hide()
-        w = tk.Toplevel(self.app.root)
-        w.overrideredirect(True)
-        w.attributes("-topmost", True)
-        tk.Label(w, text=text, bg=PANEL2, fg=TEXT, font=self.app.f(9), padx=6, pady=2,
-                 highlightthickness=1, highlightbackground=LINE).pack()
-        w.geometry(f"+{e.x_root + 12}+{e.y_root + 16}")
-        self.win = w
-
-    def hide(self):
-        if self.win is not None:
-            try:
-                self.win.destroy()
-            except tk.TclError:
-                pass
-            self.win = None
+from theme import (
+    BG, PANEL, PANEL2, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, ACCENT, TIER_COLOR, IS_MAC, FONT, MONO,
+    WIDE_MIN, app_logo)
+from widgets import Images, Scroll, Tooltip
+from views.augments import AugmentsMixin
+from views.combos import CombosMixin
+from views.items import ItemsMixin
+from views.search import SearchMixin
 
 
 # ---------- cửa sổ chính ----------
-class App:
+class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
     def __init__(self, root: tk.Tk, hub, scanner=None, overlay=None):
         self.root, self.hub, self.scanner, self.overlay = root, hub, scanner, overlay
         # Windows: 96 dpi = 100%; macOS Tk báo 72 dpi nhưng màn Retina đã tự nhân → giữ tỉ lệ 1
@@ -251,6 +65,7 @@ class App:
                           ("<Control-minus>", -1), ("<Control-KP_Subtract>", -1), ("<Control-Key-0>", 0)):
             root.bind(seq, lambda e, s=step: self._zoom_step(s))
         root.bind_all("<MouseWheel>", self._wheel)
+        root.report_callback_exception = self._on_ui_error      # lỗi trong callback: ghi log + báo nhẹ
         root.bind("<Configure>", self._on_root_configure, add="+")
         settings.on_change(lambda ch: root.after(0, self._on_settings, ch))
         self._style()
@@ -458,103 +273,6 @@ class App:
         self.overlay.set_visible(self.ov_var.get())
         settings.set("overlay", bool(self.ov_var.get()))
 
-    # ----- tìm tướng nhanh -----
-    def _load_champion_list(self):
-        try:
-            slugs = playaram.get_champion_list()
-        except Exception:
-            slugs = []
-        names = {}
-        try:
-            import ddragon
-            dd = ddragon.get(i18n.ddragon_locale())
-            names = {k: v["name"] for k, v in (dd or {}).get("champions", {}).items()}
-        except Exception:
-            pass
-        champs = [(s, names.get(s, s.capitalize()), fold(names.get(s, s))) for s in slugs]
-        self._champs = sorted(champs, key=lambda c: c[2])
-
-    def champion_matches(self, text: str, limit: int = 8) -> list[tuple[str, str]]:
-        t = fold(text).strip()
-        if not t or "," in t:
-            return []
-        flat = t.replace(" ", "")
-        starts = [c for c in self._champs if c[2].startswith(t) or c[0].startswith(flat)]
-        inside = [c for c in self._champs if c not in starts and (t in c[2] or flat in c[0])]
-        return [(slug, name) for slug, name, _ in (starts + inside)[:limit]]
-
-    def _on_search(self):
-        text = self.search_text()
-        matches = self.champion_matches(text)
-        try:
-            focused = self.root.focus_get() is self.search
-        except (KeyError, tk.TclError):     # Tk lỗi 'popdown' khi focus nằm ở menu/combobox
-            focused = False
-        if matches and focused:
-            self._show_popup(matches)
-        else:
-            self._hide_popup()
-        self._light_update()
-
-    def _show_popup(self, matches):
-        if self._popup is None:
-            win = tk.Toplevel(self.root)
-            win.overrideredirect(True)
-            win.attributes("-topmost", True)
-            lb = tk.Listbox(win, bg=PANEL, fg=TEXT, selectbackground=ACCENT, selectforeground="#06121f",
-                            font=self.f(10), relief="flat", highlightthickness=1, highlightbackground=LINE,
-                            activestyle="none")
-            lb.pack(fill="both", expand=True)
-            lb.bind("<ButtonRelease-1>", lambda e: self._popup_pick())
-            self._popup = (win, lb)
-        win, lb = self._popup
-        lb.delete(0, "end")
-        self._popup_slugs = [s for s, _ in matches]
-        for slug, name in matches:
-            lb.insert("end", f"  {name}")
-        lb.selection_clear(0, "end")
-        lb.selection_set(0)
-        x, y = self.search.winfo_rootx(), self.search.winfo_rooty() + self.search.winfo_height()
-        h = len(matches) * self.S(22) + 4
-        win.geometry(f"{self.search.winfo_width()}x{h}+{x}+{y}")
-        lb.configure(height=len(matches))
-
-    def _hide_popup(self):
-        if self._popup is not None:
-            try:
-                self._popup[0].destroy()
-            except tk.TclError:
-                pass
-            self._popup = None
-
-    def _popup_move(self, step):
-        if self._popup is None:
-            return
-        lb = self._popup[1]
-        cur = lb.curselection()
-        i = (cur[0] if cur else -1) + step
-        i = max(0, min(lb.size() - 1, i))
-        lb.selection_clear(0, "end")
-        lb.selection_set(i)
-        lb.see(i)
-        return "break"
-
-    def _popup_pick(self):
-        if self._popup is None:
-            return
-        cur = self._popup[1].curselection()
-        slug = self._popup_slugs[cur[0] if cur else 0]
-        self._hide_popup()
-        self.search_var.set("")
-        self.root.focus()
-        self.hub.set_focus(slug)
-        self._scroll_top = True
-        return "break"
-
-    def _auto(self):
-        self.hub.set_focus(None)
-        self._scroll_top = True
-
     # ----- vòng cập nhật -----
     def _on_root_configure(self, e):
         if e.widget is not self.root:
@@ -577,8 +295,8 @@ class App:
                 self._full_sig = full
                 self._render(st)
             self._light_update()
-        except Exception as e:  # không để giao diện chết vì 1 lỗi
-            print("ui:", repr(e))
+        except Exception:       # không để giao diện chết vì 1 lỗi
+            self._on_ui_error(*sys.exc_info())
         self.root.after(700, self._poll)
 
     def _update_bars(self, st):
@@ -757,344 +475,33 @@ class App:
                 self.scanner.mark_hidden()
             self._full_sig = None
 
-    # ----- lõi -----
-    def _per_tier(self, pane_w, pane_h) -> tuple[int, int]:
-        """(số cột, số lõi mỗi bậc). top_n = 0: tự vừa chiều cao để 3 bậc không phải cuộn."""
-        cols = max(1, (pane_w - self.S(8)) // self.S(CARD_MIN_W))
-        n = int(settings.get("top_n") or 0)
-        if n <= 0:
-            head, step = self._meas or (self.S(52), self.S(CARD_H + CARD_GAP + 8))
-            avail = pane_h - 3 * head - (self.S(150) if self._follow_offer() else 0)
-            rows = max(1, int(avail // (3 * step)))
-            n = min(16, max(cols, cols * rows))
-        return cols, n
+    # ----- lỗi giao diện -----
+    def _on_ui_error(self, exc, val, tb):
+        """Lỗi trong giao diện: ghi đủ vào app.log, hiện 1 thông báo nhỏ (tối đa 1 lần / 30 giây)."""
+        import traceback
+        print("Lỗi giao diện:\n" + "".join(traceback.format_exception(exc, val, tb)), end="", flush=True)
+        now = time.time()
+        if now - getattr(self, "_last_error_toast", 0) > 30:
+            self._last_error_toast = now
+            self.toast(T("Có lỗi nhỏ ở giao diện – đã ghi vào app.log. Bấm để mở thư mục dữ liệu."),
+                       paths.open_data_folder)
 
-    def _measure(self) -> bool:
-        """Đo chiều cao thật của tiêu đề bậc và 1 hàng thẻ (font / DPI khác nhau). True nếu khác lần trước."""
-        try:
-            sec, rows = self._secs[0]
-            card = next(c for c in self.cards.values() if c["rarity"] == RARITY[0][0] and c["w"].winfo_manager())
-            step = card["w"].winfo_height() + self.S(CARD_GAP)
-            head = sec.winfo_height() + self.S(8) - rows * step
-        except (StopIteration, IndexError, tk.TclError):
-            return False
-        if step <= 4 or head <= 0:
-            return False
-        old, self._meas = self._meas, (head, step)
-        return old is None or abs(old[0] - head) > 2 or abs(old[1] - step) > 2
+    def toast(self, text, on_click=None, ms=8000):
+        """Thông báo nhỏ ở góc dưới phải, tự ẩn sau ms; bấm vào thì gọi on_click."""
+        old = getattr(self, "_toast_w", None)
+        if old is not None and old.winfo_exists():
+            old.destroy()
+        lb = tk.Label(self.root, text=text, bg="#3a1d24", fg=TEXT, font=self.f(9), padx=self.S(12), pady=self.S(6),
+                      highlightthickness=1, highlightbackground=BAD, cursor="hand2" if on_click else "")
+        lb.place(relx=1, rely=1, x=-self.S(16), y=-self.S(16), anchor="se")
 
-    def _follow_offer(self) -> bool:
-        return bool(settings.get("app_follow_offer"))
-
-    def _render_augments(self, root, champ, st, pane_w, pane_h):
-        self.advice_box = tk.Frame(root, bg=BG)
-        self.advice_box.pack(fill="x", padx=(0, self.S(6)))
-        owned = set(st.get("owned", []))
-        fit = advice.combo_fit(champ, owned)
-        any_tier = {}
-        for c in advice.combos(champ):
-            for a in c["augments"]:
-                if advice.TIER_BONUS.get(c["tier"], 0) > advice.TIER_BONUS.get(any_tier.get(a["id"]), 0):
-                    any_tier[a["id"]] = c["tier"]
-        base = champ.get("winrate") or 50
-        cols, top_n = self._per_tier(pane_w, pane_h)
-        self._auto_n = (cols, top_n)
-        self._secs = []
-        card_w = (pane_w - self.S(8)) / cols
-        self._name_w = max(self.S(50), int(card_w - self.S(76)))
-        for key, title, color in RARITY:
-            items = champ.get("augments", {}).get(key, [])
-            more, open_ = len(items) - top_n, key in self.expanded
-            sec = tk.Frame(root, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
-            sec.pack(fill="x", pady=(0, self.S(8)), padx=(0, self.S(6)))
-            head = tk.Frame(sec, bg=PANEL, padx=self.S(10), pady=self.S(4))
-            head.pack(fill="x")
-            self.label(head, T(title), 10, color, True).pack(side="left")
-            if more > 0:
-                self.button(head, T("Thu gọn") if open_ else T("Xem thêm ({n})", n=more),
-                            lambda k=key: self._toggle_more(k), 8).pack(side="right")
-            body = tk.Frame(sec, bg=PANEL, padx=self.S(4), pady=self.S(4))
-            body.pack(fill="x")
-            for c in range(cols):
-                body.grid_columnconfigure(c, weight=1, uniform="card")
-            shown = len(items) if open_ else min(len(items), top_n)
-            self._secs.append((sec, -(-shown // cols)))
-            for i, a in enumerate(items):
-                card = self._aug_card(body, a, i, color, base, fit.get(a["id"]), any_tier.get(a["id"]), a["id"] in owned)
-                card["extra"], card["rarity"], card["pos"] = i >= top_n, key, (i // cols, i % cols)
-                self.cards[a["id"]] = card
-                if not card["extra"] or open_ or card["owned"]:
-                    card["w"].grid(row=card["pos"][0], column=card["pos"][1], sticky="nsew",
-                                   padx=self.S(CARD_GAP // 2), pady=self.S(CARD_GAP // 2))
-            if not items:
-                self.label(body, T("Không có dữ liệu"), 10, MUTED).grid(row=0, column=0)
-
-    def _toggle_more(self, key):
-        self.expanded.symmetric_difference_update({key})
-        self._full_sig = None
-
-    def _aug_card(self, parent, a, i, color, base, fit, any_tier, owned):
-        outer = tk.Frame(parent, bg=color)                       # viền trái màu theo bậc
-        inner = tk.Frame(outer, bg=CARD, padx=self.S(6), pady=self.S(3))
-        inner.pack(fill="both", expand=True, padx=(self.S(2), 0))
-        frame = tk.Frame(inner, bg="#0b0e18", highlightthickness=1, highlightbackground=color, padx=self.S(2), pady=self.S(2))
-        frame.pack(side="left")
-        self.icon(frame, a["id"], 30).pack()
-        right = tk.Frame(inner, bg=CARD)
-        right.pack(side="left", fill="x", expand=True, padx=(self.S(8), 0))
-        top = tk.Frame(right, bg=CARD)
-        top.pack(fill="x")
-        self.label(top, f"{i + 1}", 7, MUTED).pack(side="left")
-        name = self.label(top, self._fit(a["name"], self._name_w, 9, True), 9, TEXT, True, anchor="w")
-        name.pack(side="left", padx=(self.S(3), 0), fill="x", expand=True)
-        stats = tk.Frame(right, bg=CARD)
-        stats.pack(fill="x")
-        wr = a.get("winrate") or 0
-        wcol = GOOD if wr >= base + 2 else OKC if wr >= base - 1 else BAD
-        self.label(stats, f"{wr:.2f}%", 9, wcol, True, mono=True).pack(side="left")
-        low = a.get("pickrate") is not None and a["pickrate"] < LOW_PICK
-        self.label(stats, f"{a.get('pickrate', '?')}%{'*' if low else ''}", 8, MUTED, mono=True).pack(side="left", padx=self.S(6))
-        roomy = self._name_w >= self.S(150)        # thẻ hẹp: nhãn combo rút gọn còn "◆A"
-        if fit:
-            self.badge(stats, T("hợp combo {t}", t=fit) if roomy else f"◆{fit}", GOOD, filled=True).pack(side="left")
-        elif any_tier:
-            self.badge(stats, T("combo {t}", t=any_tier) if roomy else f"◆{any_tier}",
-                       TIER_COLOR.get(any_tier, MUTED)).pack(side="left")
-        card = {"w": outer, "inner": inner, "name": name, "color": color, "fold": fold(a["name"]), "owned": owned}
-        self.bind_tree(outer, lambda: self._own(toggle=a["id"]))
-        self._style_card(card, "owned" if owned else "normal")
-        return card
-
-    def _style_card(self, card, state):
-        bg = {"hit": HIT_BG, "owned": OWNED_BG}.get(state, CARD)
-        edge = {"hit": GOOD, "owned": ACCENT}.get(state, card["color"])
-        card["w"].configure(bg=edge)
-
-        def paint(w):
-            if isinstance(w, (tk.Frame, tk.Label)) and w["bg"] in (CARD, HIT_BG, OWNED_BG):
-                w.configure(bg=bg)
-            for ch in w.winfo_children():
-                paint(ch)
-        paint(card["inner"])
-        card["name"].configure(fg=DIMTEXT if state == "dim" else TEXT)
-
-    # ----- cập nhật nhẹ: tìm kiếm (+ bảng lõi đọc từ màn hình nếu bật) -----
-    def _light_update(self):
-        st = self._st
-        champ = st.get("champion")
-        if not champ or self.tab != "aug" or self.advice_box is None:
-            return
-        text = self.search_text()
-        terms = [] if self.champion_matches(text) else [t.strip() for t in fold(text).split(",") if t.strip()]
-        adv = st.get("advice") if self._follow_offer() else None    # mặc định: cửa sổ chính giữ nguyên
-        sig = (tuple(terms), repr([(a["slot"], [c["id"] for c in a["candidates"]]) for a in adv or []]),
-               tuple(st.get("owned", [])))
-        if sig == self._light_sig:
-            return
-        self._light_sig = sig
-        offer_ids = {c["id"] for a in adv or [] for c in a["candidates"]}
-        hits = [i for i, c in self.cards.items() if any(t in c["fold"] for t in terms)] if terms else []
-        active = bool(terms or offer_ids)
-        for i, c in self.cards.items():
-            hit = i in offer_ids or i in hits
-            self._style_card(c, "hit" if hit else "owned" if c["owned"] else "dim" if active else "normal")
-            if c["extra"]:   # lõi ngoài top N đang được tìm / đọc ra / đã chọn thì vẫn hiện
-                if hit or c["owned"] or c["rarity"] in self.expanded:
-                    c["w"].grid(row=c["pos"][0], column=c["pos"][1], sticky="nsew",
-                                padx=self.S(CARD_GAP // 2), pady=self.S(CARD_GAP // 2))
-                else:
-                    c["w"].grid_remove()
-        for w in self.advice_box.winfo_children():
-            w.destroy()
-        if adv:
-            self._advice(adv, "offer")
-        elif terms:
-            cat = self.hub.catalog()
-            ids = list(dict.fromkeys(hits + [i for i, a in cat.items() if any(t in fold(a["name"]) for t in terms)]))[:6]
-            if ids:
-                self._advice(advice.rank_offer([[i] for i in ids], champ, cat, set(st.get("owned", []))), "search")
-
-    def _advice(self, ranked, source):
-        box = tk.Frame(self.advice_box, bg=PANEL, highlightthickness=1, highlightbackground=GOOD,
-                       padx=self.S(10), pady=self.S(6))
-        box.pack(fill="x", pady=(0, self.S(8)))
-        rows = sorted(ranked, key=lambda r: r["rank"])
-        head = tk.Frame(box, bg=PANEL)
-        head.pack(fill="x")
-        self.label(head, (T("Đọc từ màn hình · ") if source == "offer" else "") + T("Nên chọn:"), 9, TEXT).pack(side="left")
-        self.label(head, rows[0]["best"]["name"], 9, GOOD, True).pack(side="left", padx=self.S(4))
-        if source == "offer" and self.scanner:
-            self.button(head, T("Ẩn"), self.scanner.mark_hidden, 8).pack(side="right")
-        for r in rows:
-            b = r["best"]
-            row = tk.Frame(box, bg=PANEL, pady=self.S(2))
-            row.pack(fill="x")
-            self.icon(row, b["id"], 24).pack(side="left")
-            mid = tk.Frame(row, bg=PANEL)
-            mid.pack(side="left", fill="x", expand=True, padx=self.S(8))
-            if len(r["candidates"]) > 1:
-                self.label(mid, T("Một trong (icon giống nhau) – bấm lõi bạn đã chọn:"), 8, MUTED).pack(anchor="w")
-                line = tk.Frame(mid, bg=PANEL)
-                line.pack(anchor="w")
-                for c in r["candidates"]:
-                    chip = tk.Frame(line, bg=PANEL2, padx=self.S(4), pady=self.S(1))
-                    chip.pack(side="left", padx=(0, self.S(4)), pady=self.S(2))
-                    self.icon(chip, c["id"], 16).pack(side="left")
-                    self.label(chip, c["name"], 8).pack(side="left", padx=self.S(3))
-                    self.bind_tree(chip, lambda c=c: self._pick_aug(c["id"], source))
-            else:
-                self.label(mid, b["name"], 9, GOOD if r["rank"] == 1 else TEXT, r["rank"] == 1).pack(anchor="w")
-            wr = (T("chưa có số liệu") if b["winrate"] is None
-                  else f"{b['winrate']}%" + (T(" (chung, mọi tướng)") if b["source"] == "chung" else ""))
-            extra = T("  ·  +{b} hợp combo {t}", b=advice.TIER_BONUS[b["fit"]], t=b["fit"]) if b.get("fit") else ""
-            self.label(mid, T("Thắng {wr}{extra}", wr=wr, extra=extra), 8, MUTED).pack(anchor="w")
-            if len(r["candidates"]) == 1:
-                self.button(row, T("Đã chọn"), lambda i=b["id"]: self._pick_aug(i, source), 8,
-                            primary=r["rank"] == 1).pack(side="right")
-
-    def _pick_aug(self, aug_id, source):
-        self._own(add=aug_id)
-        if source == "search":
-            self.search_var.set("")
-            self.search.event_generate("<FocusOut>")
-
-    # ----- đồ theo đội địch (2 dòng) -----
-    def _render_counter(self, root, lines, pane_w):
-        if not lines:
-            return
-        box = tk.Frame(root, bg=PANEL, highlightthickness=1, highlightbackground=OKC, padx=self.S(10), pady=self.S(5))
-        box.pack(fill="x", padx=(0, self.S(6)), pady=(0, self.S(8)))
-        self.label(box, T("Đồ nên lên theo đội hình + trang bị của đội địch"), 8, MUTED).pack(anchor="w")
-        for line in lines[:2]:
-            row = tk.Frame(box, bg=PANEL, pady=self.S(1))
-            row.pack(fill="x")
-            if line.get("icon"):
-                self.icon(row, line["icon"], 22, tip=line["name"]).pack(side="left")
-                self.label(row, line["name"], 9, OKC, True).pack(side="left", padx=(self.S(6), self.S(5)))
-            self.label(row, self._fit(line["why"], pane_w // 2, 9), 9, MUTED if line.get("icon") else TEXT).pack(side="left")
-
-    # ----- trang bị (gọn) -----
-    def _render_items(self, root, c, pane_w):
-        head = tk.Frame(root, bg=BG)
-        head.pack(fill="x", padx=(0, self.S(6)))
-        self.label(head, T("Trang bị gợi ý"), 11, TEXT, True).pack(side="left")
-        hint = self._fit(T("Viền xanh = 2 món cốt lõi quyết định hướng build."), pane_w - self.S(150), 8)
-        if len(hint) > 12:
-            self.label(head, hint, 8, MUTED).pack(side="left", padx=self.S(8))
-        for b in c.get("builds") or []:
-            card = tk.Frame(root, bg=PANEL, highlightthickness=1, highlightbackground=LINE, padx=self.S(8), pady=self.S(5))
-            card.pack(fill="x", padx=(0, self.S(6)), pady=(self.S(4), 0))
-            top = tk.Frame(card, bg=PANEL)
-            top.pack(fill="x")
-            self.label(top, T("Thắng {wr}%", wr=b.get("winrate", "?")), 9, GOOD, True).pack(side="right")
-            self.label(top, self._fit(b.get("name", ""), pane_w - self.S(120), 9, True), 9, TEXT, True).pack(side="left")
-            sub = T("Chọn {pr}%  ·  {n} trận đủ đồ", pr=b.get("pickrate", "?"), n=b.get("games", "?")) \
-                + (f"  ·  {b['style']}" if b.get("style") else "")
-            self.label(card, self._fit(sub, pane_w - self.S(30), 8), 8, MUTED).pack(anchor="w")
-            row = tk.Frame(card, bg=PANEL)
-            row.pack(anchor="w", pady=(self.S(3), 0))
-            big, small = b.get("items", []), b.get("boots", []) + b.get("spells", [])
-            unit = (pane_w - self.S(34)) / max(1.0, len(big) + 0.8 * len(small)) / self.scale
-            size = int(max(18, min(30, unit - 6)))
-            for it in big:
-                self._item_icon(row, it, size)
-            tk.Frame(row, bg=PANEL, width=self.S(6)).pack(side="left")
-            for it in small:
-                self._item_icon(row, it, int(size * 0.8))
-            if b.get("with"):
-                w = tk.Frame(card, bg=PANEL)
-                w.pack(anchor="w", pady=(self.S(3), 0))
-                self.label(w, T("Hay lên cùng:"), 8, MUTED).pack(side="left")
-                for x in b["with"]:
-                    self.icon(w, x.get("icon"), 18, tip=x["name"]).pack(side="left", padx=(self.S(5), self.S(2)))
-                    self.label(w, f"{x.get('winrate') or ''}%", 8, MUTED).pack(side="left")
-        if not c.get("builds"):
-            self.label(root, T("Chưa có build."), 10, MUTED).pack(anchor="w")
-
-        lists = tk.Frame(root, bg=BG)
-        lists.pack(fill="x", padx=(0, self.S(6)), pady=(self.S(8), self.S(4)))
-        ncol = 3 if pane_w >= self.S(560) else 1
-        for k in range(ncol):
-            lists.grid_columnconfigure(k, weight=1, uniform="l")
-        col_w = pane_w // ncol - self.S(16)
-        for k, (title, rows) in enumerate(((T("Trang bị khác"), c.get("other_items")), (T("Giày"), c.get("boots")),
-                                           (T("Phép bổ trợ"), c.get("spells")))):
-            box = tk.Frame(lists, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
-            box.grid(row=k // ncol, column=k % ncol, sticky="nsew", padx=self.S(2), pady=self.S(2))
-            self.label(box, title, 9, TEXT, True).pack(anchor="w", padx=self.S(8), pady=(self.S(4), self.S(2)))
-            for r in rows or []:
-                line = tk.Frame(box, bg=PANEL, padx=self.S(8), pady=self.S(1))
-                line.pack(fill="x")
-                for src in r.get("icons", []):
-                    self.icon(line, src, 18, tip=r["name"]).pack(side="left", padx=(0, self.S(2)))
-                self.label(line, f"{r.get('pickrate', '?')}%", 7, MUTED, mono=True).pack(side="right")
-                self.label(line, f"{r.get('winrate', '?')}%", 8, TEXT, True, mono=True).pack(side="right", padx=self.S(4))
-                self.label(line, self._fit(r["name"], col_w - self.S(110), 8), 8, TEXT, anchor="w").pack(side="left", padx=self.S(4))
-            tk.Frame(box, bg=PANEL, height=self.S(4)).pack()
-
-    def _item_icon(self, parent, it, size):
-        border = tk.Frame(parent, bg=GOOD if it.get("core") else PANEL, padx=self.S(1), pady=self.S(1))
-        border.pack(side="left", padx=(0, self.S(3)))
-        self.icon(border, it.get("icon"), size, tip=it.get("name", "")).pack()
-
-    # ----- tab Combo -----
-    def _render_combos(self, root, c, st, wrap):
-        owned = set(st.get("owned", []))
-        styles = c.get("playstyles") or []
-        if not styles:
-            self.label(root, T("Chưa có lối chơi / combo cho tướng này."), 11, MUTED).pack(pady=self.S(40))
-            return
-        self.label(root, T("Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng. Bấm vào lõi để đánh dấu đã chọn; combo chứa lõi đã chọn được tô xanh."),
-                   8, MUTED, wraplength=wrap, justify="left").pack(anchor="w", pady=(self.S(2), self.S(8)))
-        for s in styles:
-            card = tk.Frame(root, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
-            card.pack(fill="x", padx=(0, self.S(10)), pady=(0, self.S(10)))
-            head = tk.Frame(card, bg=PANEL, padx=self.S(10), pady=self.S(6))
-            head.pack(fill="x")
-            if s.get("tier"):
-                self.badge(head, s["tier"], TIER_COLOR.get(s["tier"], MUTED)).pack(side="left", padx=(0, self.S(8)))
-            self.label(head, s["name"], 10, TEXT, True, wraplength=wrap, justify="left").pack(side="left")
-            if s.get("description"):
-                self.label(card, s["description"], 9, "#c9cddb", wraplength=wrap, justify="left",
-                           padx=self.S(10)).pack(anchor="w", pady=(0, self.S(6)))
-            combos = sorted(s.get("combos", []), key=lambda x: -sum(a["id"] in owned for a in x["augments"]))
-            for cb in combos:
-                n = sum(a["id"] in owned for a in cb["augments"])
-                bg = "#132a20" if n else PANEL
-                tk.Frame(card, bg=LINE, height=1).pack(fill="x")
-                row = tk.Frame(card, bg=bg, padx=self.S(10), pady=self.S(6))
-                row.pack(fill="x")
-                line = tk.Frame(row, bg=bg)
-                line.pack(anchor="w")
-                self.badge(line, cb["tier"], TIER_COLOR.get(cb["tier"], MUTED)).pack(side="left", padx=(0, self.S(8)))
-                for k, a in enumerate(cb["augments"]):
-                    if k:
-                        self.label(line, "+", 10, MUTED).pack(side="left", padx=self.S(3))
-                    have = a["id"] in owned
-                    chip = tk.Frame(line, bg=PANEL2, padx=self.S(4), pady=self.S(1), highlightthickness=1,
-                                    highlightbackground=ACCENT if have else PANEL2)
-                    chip.pack(side="left")
-                    self.icon(chip, a["id"], 18).pack(side="left")
-                    self.label(chip, a["name"], 9, RARITY_COLOR.get(a.get("rarity"), TEXT)).pack(side="left", padx=self.S(4))
-                    self.bind_tree(chip, lambda i=a["id"]: self._own(toggle=i))
-                if n:
-                    self.label(line, T("đã có {n}/{m}", n=n, m=len(cb["augments"])), 9, GOOD).pack(side="left", padx=self.S(8))
-                if cb.get("why"):
-                    self.label(row, cb["why"], 9, "#c9cddb", wraplength=wrap, justify="left").pack(anchor="w", pady=(self.S(3), 0))
-            if s.get("items"):
-                tk.Frame(card, bg=LINE, height=1).pack(fill="x")
-                row = tk.Frame(card, bg=PANEL, padx=self.S(10), pady=self.S(6))
-                row.pack(fill="x")
-                self.label(row, T("Đồ khuyên dùng:"), 9, MUTED).pack(side="left", padx=(0, self.S(8)))
-                for it in s["items"]:
-                    self._item_icon(row, it, 30)
-            if s.get("tips"):
-                tk.Frame(card, bg=LINE, height=1).pack(fill="x")
-                tips = tk.Frame(card, bg=PANEL, padx=self.S(10), pady=self.S(6))
-                tips.pack(fill="x")
-                for t in s["tips"]:
-                    self.label(tips, f"•  {t['title']}. {t['text']}", 9, "#c9cddb", wraplength=wrap,
-                               justify="left").pack(anchor="w", pady=self.S(1))
+        def click(_e):
+            lb.destroy()
+            if on_click:
+                on_click()
+        lb.bind("<Button-1>", click)
+        self.root.after(ms, lambda: lb.winfo_exists() and lb.destroy())
+        self._toast_w = lb
 
     # ----- Cài đặt -----
     def open_settings(self):

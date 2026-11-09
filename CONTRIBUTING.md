@@ -34,7 +34,9 @@ aram-helper/
 | Module (`src/`) | Vai trò |
 |---|---|
 | `app.py` | Điểm vào, `Hub` (trạng thái dùng chung: trận, tướng, lõi đã chọn), phím tắt |
-| `desktop.py` | Cửa sổ chính (tkinter): lõi \| trang bị, zoom, tìm tướng nhanh |
+| `desktop.py` | Cửa sổ chính (tkinter): khung, vòng cập nhật, zoom, màn chào, bắt lỗi giao diện |
+| `views/` | Các phần của cửa sổ chính (mixin của `desktop.App`): `search.py` tìm tướng, `augments.py` bảng lõi + ô Nên chọn, `items.py` trang bị, `combos.py` tab Combo |
+| `theme.py`, `widgets.py` | Màu / font / hằng số bố cục / logo; tải ảnh nền, vùng cuộn, tooltip |
 | `overlay.py` | Overlay trên game (Windows) |
 | `settings.py`, `settings_ui.py` | Tuỳ chọn (`settings.json`, `on_change`) + hộp thoại Cài đặt |
 | `i18n.py`, `localize.py` | Chuỗi giao diện Anh / Việt (`T("chuỗi tiếng Việt")`), đổi tên lõi / đồ / tướng theo ngôn ngữ |

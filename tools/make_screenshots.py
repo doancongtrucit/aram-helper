@@ -29,6 +29,7 @@ import tempfile  # noqa: E402
 settings._reset_for_tests(Path(tempfile.mkdtemp()) / "settings.json")
 import advice  # noqa: E402
 import desktop  # noqa: E402
+import theme  # noqa: E402
 import overlay  # noqa: E402
 import screen_scan as ss  # noqa: E402
 from synthetic import make_screen  # noqa: E402
@@ -150,7 +151,7 @@ def main_window_shots(root):
     hub.offer = False                         # mặc định cửa sổ chính không đổi khi đang chọn lõi
     win = tk.Toplevel(root)
     app = desktop.App(win, hub, Dummy(), Dummy())
-    app._champs = [(s, n, desktop.fold(n)) for s, n in (("yasuo", "Yasuo"), ("yone", "Yone"), ("yuumi", "Yuumi"),
+    app._champs = [(s, n, theme.fold(n)) for s, n in (("yasuo", "Yasuo"), ("yone", "Yone"), ("yuumi", "Yuumi"),
                                                         ("masteryi", "Master Yi"), ("kayle", "Kayle"))]
     win.geometry("1500x900+20+20")
     for _ in range(4):

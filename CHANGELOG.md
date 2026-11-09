@@ -3,6 +3,12 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [Chưa phát hành]
+
+### Thay đổi
+- Lỗi trong giao diện được ghi đủ vào `app.log` và hiện thông báo nhỏ (bấm để mở thư mục dữ liệu) thay vì im lặng.
+- Tách cửa sổ chính thành `theme.py`, `widgets.py` và `views/` (tìm kiếm, lõi, trang bị, combo) cho dễ bảo trì.
+
 ## [1.2.0] – 2026-11-09
 
 ### Đã sửa

@@ -52,7 +52,7 @@ def _dpi_aware():
 class Overlay:
     def __init__(self, hub, scanner, root: tk.Tk):
         """root: cửa sổ chính của app – overlay dùng chung vòng lặp giao diện, chỉ thêm 2 cửa sổ con."""
-        from desktop import Images
+        from widgets import Images
         self.hub, self.scanner, self.root = hub, scanner, root
         _dpi_aware()
         user32 = ctypes.windll.user32
@@ -329,7 +329,7 @@ class Overlay:
         head_bg = self._round_rect(cv, 0, 0, W, hh, S(10), fill=BG, outline="", tags=("head",))
         dot_col = GOOD if adv else (OK if scan.get("error") or not scan.get("calibrated") else MUTED)
         try:
-            from desktop import app_logo
+            from theme import app_logo
             self._logo = app_logo(self.root, S(20))
             cv.create_image(x - S(2), hh / 2, image=self._logo, anchor="w", tags=("head",))
             x += S(22)
