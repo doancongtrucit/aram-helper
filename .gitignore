@@ -19,3 +19,7 @@ run-macos.command
 Thumbs.db
 .vscode/
 .idea/
+
+# Build bản exe / .app (python tools/build.py)
+build/
+dist/

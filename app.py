@@ -208,12 +208,19 @@ def _setup_output():
     """Chạy bằng pythonw (không có cửa sổ dòng lệnh) thì ghi log ra data/app.log."""
     if sys.stdout is None or sys.stderr is None:
         playaram.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        log = open(playaram.CACHE_DIR / "app.log", "a", encoding="utf-8", buffering=1)
+        path = playaram.CACHE_DIR / "app.log"
+        try:                                   # dùng lâu dài: log quá 1 MB thì xoay vòng (giữ 1 bản cũ)
+            if path.stat().st_size > 1_000_000:
+                path.replace(path.with_suffix(".log.1"))
+        except OSError:
+            pass
+        log = open(path, "a", encoding="utf-8", buffering=1)
         sys.stdout = sys.stdout or log
         sys.stderr = sys.stderr or log
     else:
         sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
-    print(f"--- ARAM Helper khởi động {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    from version import __version__
+    print(f"--- ARAM Helper {__version__} khởi động {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 def main():

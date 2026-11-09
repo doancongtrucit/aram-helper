@@ -31,9 +31,10 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+import paths
 import playaram
 
-DATA = Path(__file__).parent / "data"
+DATA = paths.DATA
 ICON_DIR = DATA / "icons"
 CALIB_FILE = DATA / "calibration.json"
 CDRAGON = "https://raw.communitydragon.org/latest/game/"
@@ -179,7 +180,7 @@ class Calibration:
     centers: list[tuple[int, int]]  # tâm 3 icon (px)
 
     def save(self):
-        DATA.mkdir(exist_ok=True)
+        DATA.mkdir(parents=True, exist_ok=True)
         CALIB_FILE.write_text(json.dumps(self.__dict__), encoding="utf-8")
 
     @staticmethod

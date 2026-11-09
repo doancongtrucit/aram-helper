@@ -28,6 +28,8 @@ python app.py --champion yasuo    # chạy có log trong Terminal
 | `hotkeys.py` | Phím tắt toàn cục (Windows) |
 | `diag.py` | Log chẩn đoán bộ quét + ảnh vùng quét khi gần khớp / hiệu chỉnh lỗi / Ctrl+Alt+D (`data/debug/`, giữ 30 ảnh) |
 | `tests/` | Unit test + `synthetic.py`/`bench_scan.py` (ảnh giả lập để đo độ chính xác nhận diện) |
+| `paths.py`, `version.py`, `updater.py` | Thư mục dữ liệu (mã nguồn: `data/`, bản cài: `%LOCALAPPDATA%\ARAM Helper`), số phiên bản, báo bản mới |
+| `packaging/`, `tools/build.py`, `.github/workflows/release.yml` | Đóng gói PyInstaller + bộ cài Inno Setup, build tự động khi tạo tag |
 | `tools/make_screenshots.py` | Tạo lại ảnh trong `docs/images/` từ dữ liệu mẫu + màn chọn lõi giả lập (không chụp màn hình thật) |
 
 ## Quy tắc
@@ -54,3 +56,17 @@ python app.py --champion yasuo    # chạy có log trong Terminal
 - Phím tắt mới → thêm vào `keys` trong `app.main()` kèm phím dự phòng.
 - Tuỳ chọn mới → thêm khoá vào `settings.DEFAULTS`, ô điều khiển trong `settings_ui.py`, phần dùng nó đọc
   `settings.get()` (đổi ngay thì đăng ký `settings.on_change`).
+
+## Phát hành bản mới
+1. Tăng `__version__` trong `version.py` (vd. `1.2.0`), cập nhật tài liệu nếu cần, commit.
+2. Tạo tag cùng số và push: `git tag v1.2.0 && git push origin main v1.2.0`.
+3. GitHub Actions (`release.yml`) chạy test, build `Setup.exe` + bản portable (Windows) + `.app` (macOS),
+   rồi tạo Release kèm các file. App của người dùng sẽ hiện nút **Có bản mới** trong vòng 1 ngày.
+
+Build thử trên máy (Windows):
+```
+python -m venv build/venv
+buildenv\Scripts\python -m pip install -r requirements.txt pyinstaller
+buildenv\Scripts\python tools/build.py        # → dist/ (có Inno Setup 6 thì thêm Setup.exe)
+```
+Đổi icon: sửa `tools/make_icon.py` rồi chạy lại (tạo `assets/icon.png`, `assets/icon.ico`).

@@ -8,7 +8,9 @@ import json
 import time
 from pathlib import Path
 
-DEBUG_DIR = Path(__file__).parent / "data" / "debug"
+import paths
+
+DEBUG_DIR = paths.DATA / "debug"
 MAX_FILES = 30
 
 

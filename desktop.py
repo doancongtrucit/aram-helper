@@ -22,8 +22,10 @@ from tkinter import ttk
 import advice
 import hotkeys
 import i18n
+import paths
 import playaram
 import settings
+import updater
 from i18n import T
 
 # ---------- giao diện ----------
@@ -227,6 +229,8 @@ class App:
 
         root.title("ARAM Helper")
         root.configure(bg=BG)
+        self._set_icon()
+        self._update_info = None
         self._apply_zoom()
         root.geometry(f"{self.S(1280)}x{self.S(820)}")
         root.minsize(640, 420)
@@ -240,7 +244,29 @@ class App:
         self._style()
         self._build()
         threading.Thread(target=self._load_champion_list, daemon=True).start()
+        updater.check_async(lambda info: root.after(0, self._show_update, info))
         root.after(200, self._poll)
+
+    def _set_icon(self):
+        try:
+            if not IS_MAC and (paths.RES / "assets" / "icon.ico").exists():
+                self.root.iconbitmap(default=str(paths.RES / "assets" / "icon.ico"))
+            self._icon_img = tk.PhotoImage(file=str(paths.RES / "assets" / "icon.png"))
+            self.root.iconphoto(True, self._icon_img)
+        except (tk.TclError, OSError):
+            pass
+
+    def _show_update(self, info):
+        """Có bản mới trên GitHub: hiện nút nhỏ ở thanh trên, bấm để mở trang tải."""
+        self._update_info = info
+        if getattr(self, "update_slot", None) is None or not self.update_slot.winfo_exists():
+            return
+        for w in self.update_slot.winfo_children():
+            w.destroy()
+        import webbrowser
+        b = self.button(self.update_slot, "⬆ " + T("Có bản mới {v}", v=info["version"]),
+                        lambda: webbrowser.open(info["url"]), 9, primary=True)
+        b.pack(side="left")
 
     # ----- tỉ lệ / font -----
     def _apply_zoom(self):
@@ -365,6 +391,10 @@ class App:
         self.search.bind("<Return>", lambda e: self._popup_pick())
         self.search.bind("<FocusOut>", lambda e: self.root.after(200, self._hide_popup), add="+")
 
+        self.update_slot = tk.Frame(top, bg=BG)
+        self.update_slot.pack(side="left", padx=(self.S(8), 0))
+        if self._update_info:
+            self.root.after(0, self._show_update, self._update_info)
         self.button(top, T("Tự động"), self._auto).pack(side="left", padx=(self.S(8), self.S(4)))
         self.button(top, "⚙ " + T("Cài đặt"), self.open_settings).pack(side="left", padx=self.S(4))
         if self.overlay:

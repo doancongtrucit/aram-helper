@@ -115,6 +115,9 @@ EN = {
     "Mặc định": "Defaults", "Đóng": "Close",
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
+    "Có bản mới {v}": "Update {v}",
+    "Báo khi có bản mới (kiểm tra GitHub mỗi ngày 1 lần)": "Tell me about new versions (checks GitHub once a day)",
+    "Thư mục dữ liệu": "Data folder", "Mở": "Open",
 }
 
 # Dòng trạng thái của bộ quét màn hình (scanner.py giữ tiếng Việt, dịch khi hiển thị)

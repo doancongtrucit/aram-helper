@@ -17,12 +17,14 @@
 ![Overlay trên game](docs/images/overlay-ingame.png)
 
 ## Cài đặt
+Tải bản mới nhất ở **[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)** – không cần Python:
+
 | | |
 |---|---|
-| **Windows 10/11** | Tải mã nguồn (Code → Download ZIP), giải nén, bấm đúp **`install-windows.bat`** → mở shortcut **ARAM Helper** |
-| **macOS 11+** | Tải mã nguồn, mở Terminal tại thư mục: **`bash install-macos.sh`** → mở **ARAM Helper** trong `~/Applications` |
+| **Windows 10/11** | `…-Setup.exe` (bộ cài, không cần admin) hoặc `…-win64-portable.zip` (giải nén là chạy) |
+| **macOS 11+** | `…-macos.zip` → kéo `ARAM Helper.app` vào Applications |
 
-Cần Python 3.10+ (script cài tự kiểm tra và hướng dẫn nếu thiếu).
+App tự báo khi có bản mới. Chạy từ mã nguồn (cần Python 3.10+): `install-windows.bat` / `bash install-macos.sh`.
 
 📖 **Hướng dẫn đầy đủ:** [HUONG_DAN.md](HUONG_DAN.md) – cài đặt, cách dùng, hiệu chỉnh đọc màn hình, overlay,
 phím tắt, xử lý sự cố.

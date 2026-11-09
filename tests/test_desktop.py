@@ -59,7 +59,7 @@ class DesktopUI(unittest.TestCase):
         self.desktop = desktop
         self.tmp = tempfile.TemporaryDirectory()
         settings._reset_for_tests(Path(self.tmp.name) / "settings.json")
-        settings.set_many({"top_n": 8}, save=False)
+        settings.set_many({"top_n": 8, "check_updates": False}, save=False)   # không gọi mạng trong test
         self.no_net = mock.patch.object(desktop.App, "_load_champion_list", lambda self: None)
         self.no_net.start()
         self.root = tk.Tk()

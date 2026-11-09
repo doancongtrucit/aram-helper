@@ -1,0 +1,83 @@
+# Build bản cài và đăng lên GitHub Releases.
+# Phát hành: tăng __version__ trong version.py, commit, rồi tạo tag cùng số:  git tag v1.1.0 && git push origin v1.1.0
+# Chạy tay (Actions → Build & Release → Run workflow): chỉ build, tải file ở mục Artifacts, không đăng Release.
+name: Build & Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Cài thư viện
+        run: python -m pip install -r requirements.txt pyinstaller
+      - name: Kiểm tra số phiên bản khớp tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          v=$(python -c "from version import __version__; print(__version__)")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then echo "version.py ($v) khác tag $GITHUB_REF_NAME"; exit 1; fi
+      - name: Test
+        run: python -m unittest discover -s tests
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Build
+        run: python tools/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            dist/*.zip
+            dist/*-Setup.exe
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-14
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Cài thư viện
+        run: python -m pip install -r requirements.txt pyinstaller
+      - name: Build
+        run: python tools/build.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: dist/*.zip
+          if-no-files-found: error
+
+  release:
+    needs: [windows, macos]
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: out/*
+          generate_release_notes: true
+          body: |
+            **Windows 10/11:** tải file `…-Setup.exe` (đề xuất) hoặc `…-win64-portable.zip` (giải nén là chạy, không cần cài).
+            Windows có thể hiện "Windows protected your PC" vì app chưa ký số: bấm **More info → Run anyway**.
+            **macOS 11+:** tải `…-macos.zip`, giải nén, kéo `ARAM Helper.app` vào Applications; lần đầu chuột phải → **Open**.

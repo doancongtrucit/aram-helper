@@ -11,8 +11,10 @@ import time
 import urllib.request
 from pathlib import Path
 
+import paths
+
 CDN = "https://ddragon.leagueoflegends.com"
-CACHE = Path(__file__).parent / "data" / "ddragon.json"
+CACHE = paths.DATA / "ddragon.json"
 CHECK_EVERY = 24 * 3600
 ARAM_MAP = "12"
 KEEP_PREFIX = ("12", "22")

@@ -5,7 +5,9 @@ import json
 import threading
 from pathlib import Path
 
-PATH = Path(__file__).parent / "data" / "settings.json"
+import paths
+
+PATH = paths.DATA / "settings.json"
 
 DEFAULTS = {
     # Chung
@@ -31,6 +33,8 @@ DEFAULTS = {
     "ov_corner": "custom",        # top-right | top-left | bottom-right | bottom-left | custom (kéo thả)
     # ESP32 (PC Control Deck)
     "esp32": True,
+    # Cập nhật: mỗi ngày hỏi GitHub 1 lần xem có bản mới không (chỉ báo, không tự tải)
+    "check_updates": True,
 }
 
 _lock = threading.Lock()

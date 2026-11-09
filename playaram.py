@@ -13,9 +13,11 @@ import time
 import urllib.request
 from pathlib import Path
 
+import paths
+
 BASE = "https://playaram.gg"
 USER_AGENT = "aram-helper/0.1 (personal use)"
-CACHE_DIR = Path(__file__).parent / "data"
+CACHE_DIR = paths.DATA
 CACHE_TTL = 12 * 3600          # giây
 MIN_INTERVAL = 2.0             # giây giữa 2 request tới playaram.gg
 SCHEMA = 2                     # tăng khi đổi cấu trúc JSON để bỏ cache cũ

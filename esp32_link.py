@@ -16,9 +16,10 @@ import unicodedata
 from pathlib import Path
 
 import advice
+import paths
 import settings
 
-CONFIG = Path(__file__).parent / "data" / "esp32.json"
+CONFIG = paths.DATA / "esp32.json"
 MAX_BYTES = 1024          # giới hạn gói UDP của thiết bị (net_notify.h UDP_NOTIFY_MAX)
 HEARTBEAT = 5.0           # đang trong trận: gửi lại mỗi 5 giây (thiết bị coi 15 giây im lặng là hết trận)
 RESOLVE_EVERY = 30.0

@@ -15,7 +15,28 @@ của Liên Minh Huyền Thoại. Nguồn dữ liệu: [playaram.gg](https://pla
 
 ## 1. Cài đặt
 
-### Windows 10 / 11
+### Cách 1 – Bộ cài (đề xuất, không cần Python)
+Vào trang [Releases](https://github.com/doancongtrucit/aram-helper/releases/latest) và tải:
+
+| Máy | File | Cách dùng |
+|---|---|---|
+| Windows 10/11 | `ARAM-Helper-<phiên bản>-Setup.exe` | Bấm đúp → Next → Install. Không cần quyền admin. Có shortcut Desktop / Start Menu, tuỳ chọn mở cùng Windows |
+| Windows (không cài) | `ARAM-Helper-<phiên bản>-win64-portable.zip` | Giải nén, bấm đúp `ARAM Helper.exe`. Dữ liệu nằm luôn trong thư mục đó – chép sang máy khác / USB được |
+| macOS 11+ | `ARAM-Helper-<phiên bản>-macos.zip` | Giải nén, kéo `ARAM Helper.app` vào **Applications** |
+
+- App chưa có chữ ký số nên lần đầu mở:
+  Windows hiện **"Windows protected your PC"** → bấm **More info → Run anyway**;
+  macOS chặn app → chuột phải vào app → **Open** → **Open**
+  (nếu báo app "bị hỏng": mở Terminal, chạy `xattr -cr "/Applications/ARAM Helper.app"`).
+- **Cập nhật**: khi có bản mới, thanh trên của app hiện nút xanh **⬆ Có bản mới** → bấm để mở trang tải.
+  Windows: chạy Setup.exe bản mới đè lên bản cũ (app đang mở sẽ được đóng), giữ nguyên dữ liệu và cài đặt.
+- **Gỡ cài đặt** (Windows): *Settings → Apps → ARAM Helper → Uninstall*; app hỏi có xoá luôn dữ liệu không.
+- Dữ liệu (cache, hiệu chỉnh, cài đặt, log) lưu ở `%LOCALAPPDATA%\ARAM Helper` (Windows) hoặc
+  `~/Library/Application Support/ARAM Helper` (macOS). Mở nhanh: **Cài đặt → Chung → Thư mục dữ liệu → Mở**.
+
+### Cách 2 – Chạy từ mã nguồn (cần Python, dành cho người muốn sửa code)
+
+#### Windows 10 / 11
 1. Tải mã nguồn: trên GitHub bấm **Code → Download ZIP**, giải nén vào một thư mục (vd. `D:\aram-helper`).
 2. Bấm đúp **`install-windows.bat`**.
    - Chưa có Python 3.10+ thì script hỏi cài bằng `winget`; hoặc tự cài từ
@@ -26,7 +47,7 @@ của Liên Minh Huyền Thoại. Nguồn dữ liệu: [playaram.gg](https://pla
 
 Gỡ cài đặt: `powershell -ExecutionPolicy Bypass -File uninstall-windows.ps1`.
 
-### macOS 11+
+#### macOS 11+
 1. Tải và giải nén mã nguồn như trên.
 2. Mở **Terminal** tại thư mục đó và chạy: `bash install-macos.sh`
    - Cần Python 3.10+ có tkinter: bản từ [python.org](https://www.python.org/downloads/macos/) có sẵn,
@@ -94,7 +115,7 @@ Gỡ cài đặt: `bash uninstall-macos.sh`.
 
 ### 2b. Cài đặt
 
-Bấm **⚙ Cài đặt** ở thanh trên. Mọi thay đổi áp dụng ngay và được nhớ cho lần sau (`data/settings.json`).
+Bấm **⚙ Cài đặt** ở thanh trên. Mọi thay đổi áp dụng ngay và được nhớ cho lần sau (`settings.json` trong thư mục dữ liệu).
 **Mặc định** đưa thẻ đang mở về giá trị ban đầu.
 
 ![Cài đặt – Chung](docs/images/settings.png)
@@ -183,7 +204,7 @@ ARAM Helper đẩy luôn tóm tắt trận lên đó qua Wi-Fi (cùng kênh UDP 
   "+3 A" = điểm combo); hoặc **BUILD / TAKEN** giữa các lượt chọn; **COMBO** tốt nhất; **VS ENEMY TEAM** 2 dòng đồ theo đội địch.
 - Hết trận (hoặc 15 giây không nhận gói) → tự quay lại màn trước đó. Bấm nút Home trên CYD → không tự mở lại cho tới ván sau.
 
-Cài đặt (1 lần): cập nhật firmware + bridge PC Control Deck bản có màn ARAM, rồi tạo file `data/esp32.json`:
+Cài đặt (1 lần): cập nhật firmware + bridge PC Control Deck bản có màn ARAM, rồi tạo file `esp32.json` trong thư mục dữ liệu (bản chạy từ mã nguồn: `data/esp32.json`):
 
 ```json
 {"bridge_dir": "<thư mục host của PC Control Deck>"}
@@ -215,4 +236,6 @@ báo đã có Wi-Fi). Hoặc khai báo thẳng `{"host": "<IP>", "port": 4210, "
 - ARAM Helper **chỉ đọc**: Live Client API chính thức của Riot (cổng 2999 trên máy) và ảnh chụp màn hình.
   App **không** đọc/ghi bộ nhớ game, **không** gửi phím/chuột vào game, **không** tự chọn lõi.
   Dù vậy, dùng công cụ bên thứ ba luôn do bạn tự cân nhắc theo chính sách hiện hành của Riot.
-- Dữ liệu của app nằm trong thư mục `data/` (cache, icon, hiệu chỉnh, vị trí overlay, log) – xoá được bất cứ lúc nào.
+- Dữ liệu của app (cache, icon, hiệu chỉnh, vị trí overlay, log) nằm trong **thư mục dữ liệu**: bản cài
+  `%LOCALAPPDATA%\ARAM Helper`, bản portable / mã nguồn `data/` cạnh app. Xoá được bất cứ lúc nào.
+  Trong bảng sự cố ở trên, `data/` nghĩa là thư mục dữ liệu này.

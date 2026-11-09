@@ -66,7 +66,9 @@ class SettingsDialog:
         getattr(self, "_page_" + self.page)()
         foot = tk.Frame(self.win, bg=d.BG, padx=a.S(12), pady=a.S(8))
         foot.pack(fill="x")
+        from version import __version__
         a.button(foot, T("Đóng"), self.close, 9, primary=True).pack(side="right")
+        a.label(foot, f"ARAM Helper {__version__}", 8, d.MUTED).pack(side="left")
         a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
 
     def _go(self, key):
@@ -74,7 +76,7 @@ class SettingsDialog:
         self._build()
 
     def _defaults(self):
-        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top"],
+        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates"],
                 "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k == "overlay"],
                 "esp32": ["esp32"]}[self.page]
         settings.reset(keys)
@@ -172,6 +174,23 @@ class SettingsDialog:
         self._check("app_follow_offer", T("Cửa sổ chính phản ứng khi đang chọn lõi (tô sáng, ô Nên chọn)"))
         self._note(T("Tắt: cửa sổ chính giữ nguyên để xem tổng quát, gợi ý chọn lõi chỉ hiện trên overlay / ESP32."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
+        self._check("check_updates", T("Báo khi có bản mới (kiểm tra GitHub mỗi ngày 1 lần)"))
+        import paths
+        row = self._row(T("Thư mục dữ liệu"))
+        a.label(row, a._fit(str(paths.DATA), a.S(260), 8), 8, self.d.MUTED).pack(side="left")
+        a.button(row, T("Mở"), self._open_data, 8).pack(side="left", padx=a.S(6))
+
+    @staticmethod
+    def _open_data():
+        import os
+        import subprocess
+        import sys
+        import paths
+        paths.DATA.mkdir(parents=True, exist_ok=True)
+        if sys.platform == "win32":
+            os.startfile(paths.DATA)      # noqa: S606 – mở thư mục bằng Explorer
+        else:
+            subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(paths.DATA)])
 
     def _page_overlay(self):
         d, a = self.d, self.app

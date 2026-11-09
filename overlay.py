@@ -20,6 +20,7 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 import advice
+import paths
 import settings
 from advice import TIER_BONUS
 from hotkeys import label
@@ -40,7 +41,7 @@ FONT = "Segoe UI"
 PANEL_ALPHA = 0.74              # mờ hơn để game nổi bật, chữ vẫn đọc được
 BADGE_ALPHA = 0.84
 SHOW_IN_CAPTURE = os.environ.get("ARAM_OVERLAY_IN_CAPTURE") == "1"   # chỉ để thử nghiệm
-PREFS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "overlay.json")
+PREFS = str(paths.DATA / "overlay.json")
 
 
 def _dpi_aware():
