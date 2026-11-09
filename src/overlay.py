@@ -43,6 +43,40 @@ SHOW_IN_CAPTURE = os.environ.get("ARAM_OVERLAY_IN_CAPTURE") == "1"   # chỉ đ�
 PREFS = str(paths.DATA / "overlay.json")
 
 
+# Hiện / ẩn / đưa lên trên cùng bằng Win32 KHÔNG kích hoạt cửa sổ. Lệnh của tkinter (deiconify, lift, -topmost)
+# kích hoạt overlay → game mất focus; khi overlay ẩn đi Windows chuyển focus sang cửa sổ kế tiếp – thường là cửa sổ
+# chính ARAM Helper – nên người chơi 1 màn hình bị "văng" khỏi game ngay sau khi chọn lõi.
+SW_HIDE, SW_SHOWNOACTIVATE = 0, 4
+HWND_TOPMOST = -1
+SWP_NOSIZE, SWP_NOMOVE, SWP_NOACTIVATE, SWP_NOOWNERZORDER = 0x1, 0x2, 0x10, 0x200
+
+
+_win32_ready = False
+
+
+def _win32():
+    """Khai báo kiểu tham số (HWND 64-bit, HWND_TOPMOST = -1) một lần."""
+    global _win32_ready
+    u = ctypes.windll.user32
+    if not _win32_ready:
+        from ctypes import wintypes as wt
+        u.GetParent.restype = wt.HWND
+        u.GetParent.argtypes = [wt.HWND]
+        u.ShowWindow.argtypes = [wt.HWND, ctypes.c_int]
+        u.SetWindowPos.argtypes = [wt.HWND, wt.HWND, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, wt.UINT]
+        _win32_ready = True
+    return u
+
+
+def _hwnd(win) -> int:
+    return _win32().GetParent(win.winfo_id()) or win.winfo_id()
+
+
+def _keep_on_top(win):
+    _win32().SetWindowPos(_hwnd(win), HWND_TOPMOST, 0, 0, 0, 0,
+                                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER)
+
+
 def _dpi_aware():
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -72,6 +106,7 @@ class Overlay:
         self._drag = None
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
+        self._shown: dict = {}
         for alpha in (settings.get("ov_opacity"), settings.get("ov_badge_opacity")):
             win = tk.Toplevel(root)
             win.title("ARAM Helper overlay")
@@ -82,7 +117,8 @@ class Overlay:
             win.geometry("1x1+0+0")
             win.update_idletasks()
             self._style_window(win, alpha)
-            win.withdraw()
+            self._shown[win] = True
+            self._set_shown(win, False)        # ẩn bằng Win32; tkinter vẫn coi là đang hiện (không bao giờ deiconify)
             self.layers.append((win, cv))
         (self.panel, self.pcv), (self.bwin, self.bcv) = self.layers
         settings.on_change(lambda ch: root.after(0, self._on_settings, ch))
@@ -153,19 +189,31 @@ class Overlay:
     def _style_window(win, alpha):
         """Luôn nằm trên, không hiện trên taskbar, bấm vào không cướp focus của game, không lọt vào ảnh chụp."""
         user32 = ctypes.windll.user32
-        hwnd = user32.GetParent(win.winfo_id()) or win.winfo_id()
+        hwnd = _hwnd(win)
         GWL_EXSTYLE = -20
         WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_NOACTIVATE, WS_EX_TOPMOST = 0x80000, 0x80, 0x08000000, 0x8
         style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
         user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST)
         win.attributes("-transparentcolor", KEY)
         win.attributes("-alpha", alpha)
-        win.attributes("-topmost", True)
+        _keep_on_top(win)
         if not SHOW_IN_CAPTURE:
             try:
                 user32.SetWindowDisplayAffinity(hwnd, 0x11)   # WDA_EXCLUDEFROMCAPTURE (Win10 2004+)
             except Exception:
                 pass
+
+    def _set_shown(self, win, on: bool):
+        """Hiện / ẩn overlay mà không lấy focus của game."""
+        if self._shown.get(win) == on:
+            return
+        self._shown[win] = on
+        _win32().ShowWindow(_hwnd(win), SW_SHOWNOACTIVATE if on else SW_HIDE)
+        if on:
+            _keep_on_top(win)
+
+    def is_shown(self, win) -> bool:
+        return bool(self._shown.get(win))
 
     def _font(self, size, bold=False):
         key = (size, bold)
@@ -234,7 +282,7 @@ class Overlay:
     def _hide(self):
         self.visible = False
         for win, _ in self.layers:
-            win.withdraw()
+            self._set_shown(win, False)
         self._sig = None
 
     # kéo thanh tiêu đề để di chuyển khung
@@ -280,9 +328,8 @@ class Overlay:
                     self._draw(d)
                 if time.time() - self._last_top > 3:      # game có thể đẩy cửa sổ khác xuống
                     for win, _ in self.layers:
-                        if win.state() != "withdrawn":
-                            win.attributes("-topmost", True)
-                            win.lift()
+                        if self.is_shown(win):
+                            _keep_on_top(win)         # đưa lên trên mà không kích hoạt (không lấy focus game)
                     self._last_top = time.time()
         except Exception as e:  # không để overlay chết vì một lỗi vẽ
             print("overlay:", repr(e))
@@ -303,17 +350,17 @@ class Overlay:
             cv.delete("all")
         if not d:
             for win, _ in self.layers:
-                win.withdraw()
+                self._set_shown(win, False)
             return
         if settings.get("ov_only_offer") and not d["advice"]:
-            self.panel.withdraw()
+            self._set_shown(self.panel, False)
         else:
             self._draw_panel(d)
         if d["advice"] and d["calib"] and settings.get("ov_badges"):
             self._draw_badges(d)
             self._shrink_wrap(self.bwin, self.bcv)
         else:
-            self.bwin.withdraw()
+            self._set_shown(self.bwin, False)
 
     # ---------- khung chính ----------
     def _draw_panel(self, d):
@@ -420,8 +467,7 @@ class Overlay:
         cv.config(width=W, height=y)
         px, py = self._position(W, y)
         self.panel.geometry(f"{W}x{y}+{px}+{py}")
-        if self.panel.state() == "withdrawn":
-            self.panel.deiconify()
+        self._set_shown(self.panel, True)
 
     def _combo_row(self, cv, y, W, cb):
         """1 combo: hạng, icon các lõi (viền xanh = đang được đưa ra, viền lam = đã có), tên rút gọn."""
@@ -543,19 +589,17 @@ class Overlay:
             self._hover(cv, tag, rect, fill, "#5cf0b0" if top else BG_HOVER)
             cv.tag_bind(tag, "<Button-1>", lambda e, i=b["id"]: self._pick(i))
 
-    @staticmethod
-    def _shrink_wrap(win, cv):
+    def _shrink_wrap(self, win, cv):
         """Nội dung vẽ theo toạ độ màn hình; thu cửa sổ lại vừa khít nội dung rồi đặt đúng chỗ."""
         bb = cv.bbox("all")
         if not bb:
-            win.withdraw()
+            self._set_shown(win, False)
             return
         x0, y0, x1, y1 = bb[0] - 2, bb[1] - 2, bb[2] + 2, bb[3] + 2
         cv.move("all", -x0, -y0)
         cv.config(width=x1 - x0, height=y1 - y0)
         win.geometry(f"{x1 - x0}x{y1 - y0}+{x0}+{y0}")
-        if win.state() == "withdrawn":
-            win.deiconify()
+        self._set_shown(win, True)
 
     def _aug_name(self, i, champ):
         for items in (champ.get("augments") or {}).values():

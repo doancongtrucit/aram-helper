@@ -3,6 +3,14 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.4.3] – 2026-11-09
+
+### Đã sửa
+- **Bị văng khỏi game sau khi chọn lõi (1 màn hình)**: overlay hiện / ẩn / đưa lên trên cùng bằng lệnh của tkinter
+  (deiconify, lift, -topmost) làm overlay lấy focus của game; khi nhãn trên thẻ lõi ẩn đi sau lượt chọn, Windows
+  chuyển focus sang cửa sổ chính ARAM Helper nên nó nhảy lên che game. Giờ dùng lệnh Windows không kích hoạt cửa sổ
+  (SW_SHOWNOACTIVATE, SWP_NOACTIVATE) – overlay không bao giờ lấy focus của game.
+
 ## [1.4.2] – 2026-11-09
 
 ### Thay đổi
@@ -94,6 +102,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.4.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.2...v1.4.3
 [1.4.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.3.0...v1.4.0

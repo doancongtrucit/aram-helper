@@ -65,10 +65,25 @@ class OverlayUI(unittest.TestCase):
         self.root.update()
 
     def test_draws_panel_and_badges(self):
-        self.assertEqual(self.ov.panel.state(), "normal")
-        self.assertEqual(self.ov.bwin.state(), "normal")
+        self.assertTrue(self.ov.is_shown(self.ov.panel))
+        self.assertTrue(self.ov.is_shown(self.ov.bwin))
         tags = {t for i in self.ov.bcv.find_all() for t in self.ov.bcv.gettags(i)}
         self.assertEqual({t for t in tags if t.startswith("badge")}, {"badge0", "badge1", "badge2"})
+
+    def test_never_uses_activating_tk_calls(self):
+        """Overlay không được gọi deiconify / lift / -topmost của tkinter (các lệnh này lấy focus của game;
+        khi overlay ẩn đi, Windows chuyển focus sang cửa sổ chính → người chơi 1 màn hình bị văng khỏi game)."""
+        import tkinter as tk
+        from unittest import mock
+        with mock.patch.object(tk.Toplevel, "deiconify") as dei, mock.patch.object(tk.Toplevel, "lift") as lift,                 mock.patch.object(tk.Toplevel, "withdraw") as wd:
+            self.hub.offer = True
+            self.tick()
+            self.ov._last_top = 0
+            self.tick()
+            self.hub.offer = False
+            self.tick()
+            self.ov._hide()
+        self.assertFalse(dei.called or lift.called or wd.called)
 
     def test_reroll_hint_drawn_on_row_and_badge(self):
         import i18n
@@ -83,7 +98,7 @@ class OverlayUI(unittest.TestCase):
         self.ov._pick(3048)
         self.tick()
         self.assertIn(3048, self.hub.owned)
-        self.assertEqual(self.ov.bwin.state(), "withdrawn")
+        self.assertFalse(self.ov.is_shown(self.ov.bwin))
 
     def test_collapse_shrinks_panel(self):
         full = self.ov.panel.winfo_height()
@@ -105,7 +120,7 @@ class OverlayUI(unittest.TestCase):
         self.ov._hide()
         self.root.update()
         self.assertFalse(self.ov.visible)
-        self.assertEqual(self.ov.panel.state(), "withdrawn")
+        self.assertFalse(self.ov.is_shown(self.ov.panel))
 
 
 if __name__ == "__main__":
