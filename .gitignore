@@ -1,0 +1,21 @@
+# Dữ liệu cục bộ: cache playaram.gg, icon, hiệu chỉnh, vị trí overlay, log
+data/
+*.log
+
+# Trang HTML mẫu của playaram.gg cho test – nội dung của họ, không đăng lại (tải: python tests/fetch_fixtures.py)
+tests/fixture_*.html
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# File do install-macos.sh tạo
+run-macos.command
+
+# Hệ điều hành / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

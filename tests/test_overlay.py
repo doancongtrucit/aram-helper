@@ -1,0 +1,99 @@
+"""Overlay: vẽ được, bấm chọn lõi, thu gọn, kéo khung và nhớ vị trí (dữ liệu mẫu, không cần game)."""
+import os
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+from types import SimpleNamespace
+
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+sys.path.insert(0, str(Path(__file__).parent.parent))
+sys.path.insert(0, str(Path(__file__).parent))
+
+import advice  # noqa: E402
+from test_desktop import CATALOG, CHAMP, HAS_TK, FakeHub  # noqa: E402
+
+CALIB = {"width": 1920, "height": 1080, "size": 128, "centers": [[660, 432], [960, 432], [1260, 432]]}
+
+
+class Hub(FakeHub):
+    offer = True
+
+    def slug(self):
+        return "yasuo"
+
+    def state(self):
+        s = super().state()
+        s["advice"] = advice.rank_offer([[1018], [3048], [1134]], CHAMP, CATALOG, set(self.owned)) if self.offer else None
+        s["scan"] = {"status": "ok", "calibrated": True, "calibration": CALIB}
+        return s
+
+
+class Scan:
+    def __init__(self, hub):
+        self.hub = hub
+
+    def mark_hidden(self):
+        self.hub.offer = False
+
+
+@unittest.skipUnless(HAS_TK and sys.platform == "win32", "cần Windows + tkinter")
+class OverlayUI(unittest.TestCase):
+    def setUp(self):
+        import tkinter as tk
+        import overlay
+        self.tmp = tempfile.TemporaryDirectory()
+        overlay.PREFS = os.path.join(self.tmp.name, "overlay.json")
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.hub = Hub()
+        self.hub.owned = [1058]
+        self.ov = overlay.Overlay(self.hub, Scan(self.hub), self.root)
+        self.tick()
+
+    def tearDown(self):
+        self.root.destroy()
+        self.tmp.cleanup()
+
+    def tick(self):
+        self.ov._sig = None
+        self.ov._tick()
+        self.root.update()
+
+    def test_draws_panel_and_badges(self):
+        self.assertEqual(self.ov.panel.state(), "normal")
+        self.assertEqual(self.ov.bwin.state(), "normal")
+        tags = {t for i in self.ov.bcv.find_all() for t in self.ov.bcv.gettags(i)}
+        self.assertEqual({t for t in tags if t.startswith("badge")}, {"badge0", "badge1", "badge2"})
+
+    def test_pick_marks_owned_and_hides_offer(self):
+        self.ov._pick(3048)
+        self.tick()
+        self.assertIn(3048, self.hub.owned)
+        self.assertEqual(self.ov.bwin.state(), "withdrawn")
+
+    def test_collapse_shrinks_panel(self):
+        full = self.ov.panel.winfo_height()
+        self.ov._set_collapsed(True)
+        self.tick()
+        self.assertLess(self.ov.panel.winfo_height(), full)
+
+    def test_drag_saves_position(self):
+        import overlay
+        x0, y0 = self.ov.panel.winfo_x(), self.ov.panel.winfo_y()
+        self.ov._drag_start(SimpleNamespace(x_root=x0 + 20, y_root=y0 + 10))
+        self.ov._drag_move(SimpleNamespace(x_root=x0 - 180, y_root=y0 + 110))
+        self.root.update()
+        self.ov._drag_end(None)
+        self.assertEqual((self.ov.prefs["x"], self.ov.prefs["y"]), (x0 - 200, y0 + 100))
+        self.assertTrue(os.path.exists(overlay.PREFS))
+
+    def test_hide(self):
+        self.ov._hide()
+        self.root.update()
+        self.assertFalse(self.ov.visible)
+        self.assertEqual(self.ov.panel.state(), "withdrawn")
+
+
+if __name__ == "__main__":
+    unittest.main()

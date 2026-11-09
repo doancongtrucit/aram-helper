@@ -1,0 +1,14 @@
+# Cửa sổ chính (Windows + macOS): tkinter có sẵn trong Python, chỉ cần Pillow để hiện icon.
+pillow
+
+# Tự đọc lõi trên màn hình + overlay + phím tắt: chỉ Windows
+numpy; sys_platform == "win32"
+opencv-python-headless; sys_platform == "win32"
+# OCR có sẵn của Windows, dùng để phân biệt các lõi dùng chung icon
+winrt-runtime; sys_platform == "win32"
+winrt-Windows.Media.Ocr; sys_platform == "win32"
+winrt-Windows.Graphics.Imaging; sys_platform == "win32"
+winrt-Windows.Storage.Streams; sys_platform == "win32"
+winrt-Windows.Foundation; sys_platform == "win32"
+winrt-Windows.Foundation.Collections; sys_platform == "win32"
+winrt-Windows.Globalization; sys_platform == "win32"
