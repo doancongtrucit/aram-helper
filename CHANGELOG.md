@@ -3,6 +3,14 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.7.0] – 2026-11-10
+
+### Thêm
+- **Cập nhật một chạm** (Windows, bản cài bằng Setup.exe): nút **⬆ Cập nhật lên …** tải bộ cài, kiểm tra mã băm
+  SHA-256 (`SHA256SUMS.txt` đăng kèm mỗi bản phát hành), đóng app, cài im lặng rồi tự mở lại. Không cập nhật khi
+  đang trong trận. Bản portable / macOS vẫn mở trang tải.
+- **Cài đặt → Chung → Kiểm tra cập nhật**: kiểm tra bản mới ngay, không phải chờ.
+
 ## [1.6.0] – 2026-11-10
 
 ### Đã đổi
@@ -125,6 +133,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.7.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.3...v1.5.0
 [1.4.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.2...v1.4.3

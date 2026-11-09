@@ -644,9 +644,66 @@ class SettingsDialog:
                         T("App vô tình lấy focus khi đang chơi thì trả lại game ngay và ghi vào log."))
 
         self._section(T("Cập nhật & dữ liệu"))
+        from version import __version__
+        ctl = self._row(T("Phiên bản {v}", v=__version__), T("Bấm để kiểm tra bản mới trên GitHub."))
+        self._upd_desc = ctl.master.grid_slaves(row=0, column=0)[0].winfo_children()[-1]
+        self._upd_ctl = ctl
+        self._btn(ctl, T("Kiểm tra cập nhật"), self._check_update).pack()
+        if getattr(a, "_update_info", None):
+            self._show_new(a._update_info)
         self._check("check_updates", T("Báo khi có bản mới"), T("Tự kiểm tra bản phát hành trên GitHub."))
         ctl = self._row(T("Thư mục dữ liệu"), a._fit(str(paths.DATA), self.body_w - a.S(260), 9))
         self._btn(ctl, T("Mở"), paths.open_data_folder).pack()
+
+    # ----- cập nhật -----
+    def update_note(self, text):
+        """Dòng trạng thái cập nhật (app gọi khi đang tải / cài)."""
+        w = getattr(self, "_upd_desc", None)
+        if w is not None and w.winfo_exists():
+            w.configure(text=text)
+
+    def _check_update(self):
+        import threading
+        import updater
+        self.update_note(T("Đang kiểm tra…"))
+
+        box = {}
+
+        def run():
+            box["res"] = updater.status(force=True)
+
+        def watch():
+            if not self.win.winfo_exists():
+                return
+            if "res" in box:
+                return self._update_result(*box["res"])
+            self.win.after(150, watch)
+        threading.Thread(target=run, daemon=True, name="update-check-now").start()
+        watch()
+
+    def _update_result(self, state, info):
+        if not self.win.winfo_exists():
+            return
+        if state == "new":
+            self.app._show_update(info)
+            self._show_new(info)
+        elif state == "latest":
+            self.update_note(T("Bạn đang dùng bản mới nhất."))
+        else:
+            self.update_note(T("Không kết nối được GitHub – thử lại sau."))
+
+    def _show_new(self, info):
+        import updater
+        ctl = getattr(self, "_upd_ctl", None)
+        if ctl is None or not ctl.winfo_exists():
+            return
+        auto = updater.can_self_update()
+        self.update_note(T("Có bản mới {v}.", v=info["version"]) + ("" if auto else " " + T(
+            "Bản portable / macOS không tự cập nhật được – mở trang tải.")))
+        for w in ctl.winfo_children():
+            w.destroy()
+        self._btn(ctl, T("Cập nhật ngay") if auto else T("Mở trang tải"), lambda: self.app.start_update(info),
+                  primary=True).pack()
 
     def _page_overlay(self):
         a = self.app

@@ -273,6 +273,47 @@ class DesktopUI(unittest.TestCase):
         self.assertTrue(zipped.exists())
         dlg.close()
 
+    def test_one_click_update(self):
+        import time
+        import updater
+        from tkinter import messagebox
+        info = {"version": "v99.0.0", "url": "https://example.invalid/r"}
+        self.app._show_update(info)
+        self.root.update()
+        # bản portable / macOS: chỉ mở trang tải
+        with mock.patch.object(updater, "can_self_update", return_value=False), mock.patch("webbrowser.open") as op:
+            self.app.start_update(info)
+            op.assert_called_once_with(info["url"])
+        with mock.patch.object(updater, "can_self_update", return_value=True), \
+                mock.patch.object(updater, "prepare") as prep:
+            self.app._st = {"game": {"in_game": True}}            # đang trong trận: không cập nhật
+            self.app.start_update(info)
+            prep.assert_not_called()
+        # Cài đặt → Kiểm tra cập nhật
+        self.app.open_settings("general")
+        dlg = self.app._settings_dlg
+        self.root.update()
+        dlg._update_result("latest", None)
+        self.assertEqual(dlg._upd_desc.cget("text"), "Bạn đang dùng bản mới nhất.")
+        dlg._update_result("new", info)
+        self.assertIn("v99.0.0", dlg._upd_desc.cget("text"))
+        # bản cài: tải + kiểm tra (giả lập) → chạy bộ cài → đóng app
+        setup = Path(self.tmp.name) / "ARAM-Helper-99.0.0-Setup.exe"
+        self.app._st = {"game": {"in_game": False}}
+        with mock.patch.object(updater, "can_self_update", return_value=True), \
+                mock.patch.object(updater, "prepare", return_value=setup), \
+                mock.patch.object(updater, "launch_installer") as launch, \
+                mock.patch.object(messagebox, "askyesno", return_value=True), \
+                mock.patch.object(self.root, "destroy") as quit_:
+            self.app.start_update(info)
+            end = time.time() + 5
+            while not quit_.called and time.time() < end:
+                self.root.update()
+                time.sleep(0.05)
+            launch.assert_called_once_with(setup)
+            quit_.assert_called_once()
+        dlg.close()
+
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg

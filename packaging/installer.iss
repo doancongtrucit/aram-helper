@@ -68,8 +68,15 @@ Name: "{userstartup}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"; Tasks: sta
 
 [Run]
 Filename: "{app}\ARAM Helper.exe"; Description: "{cm:LaunchNow}"; Flags: nowait postinstall skipifsilent
+; Tự cập nhật trong app: cài im lặng với /RELAUNCH=1 → mở lại app sau khi cài xong
+Filename: "{app}\ARAM Helper.exe"; Flags: nowait; Check: RelaunchRequested
 
 [Code]
+function RelaunchRequested: Boolean;
+begin
+  Result := ExpandConstant('{param:relaunch|0}') = '1';
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   DataDir: String;

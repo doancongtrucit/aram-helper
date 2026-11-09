@@ -45,6 +45,62 @@ class UpdaterTest(unittest.TestCase):
         with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
             self.assertIsNone(updater.check(force=True))
 
+    def test_status_states(self):
+        with self.fake("v99.0.0"):
+            self.assertEqual(updater.status(force=True)[0], "new")
+        with self.fake("v0.0.1"):
+            self.assertEqual(updater.status(force=True), ("latest", None))
+        with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
+            self.assertEqual(updater.status(force=True), ("error", None))
+
+    def test_parse_sums(self):
+        h = "ab" * 32
+        sums = updater.parse_sums(f"{h}  ARAM-Helper-Setup.exe\n{h.upper()} *other.zip\nrác\n")
+        self.assertEqual(sums, {"ARAM-Helper-Setup.exe": h, "other.zip": h})
+
+    def test_can_self_update(self):
+        exe = Path(self.tmp.name) / "ARAM Helper.exe"
+        exe.write_bytes(b"")
+        with mock.patch.object(updater.sys, "platform", "win32"):
+            self.assertFalse(updater.can_self_update(str(exe)))          # bản portable: không có trình gỡ cài
+            (Path(self.tmp.name) / "unins000.exe").write_bytes(b"")
+            self.assertTrue(updater.can_self_update(str(exe)))
+        with mock.patch.object(updater.sys, "platform", "darwin"):
+            self.assertFalse(updater.can_self_update(str(exe)))
+
+    def _prepare(self, payload: bytes, sums_for: bytes):
+        import hashlib
+        sums = f"{hashlib.sha256(sums_for).hexdigest()}  {updater.SETUP}\n"
+
+        def download(url, dest, progress=None, timeout=30):
+            self.assertTrue(url.endswith("/v9.9.9/" + updater.SETUP))
+            dest.write_bytes(payload)
+            if progress:
+                progress(len(payload), len(payload))
+        seen = []
+        with mock.patch.object(updater, "update_dir", return_value=Path(self.tmp.name) / "upd"), \
+                mock.patch.object(updater, "_read_url", return_value=sums), \
+                mock.patch.object(updater, "_download", side_effect=download):
+            return updater.prepare("v9.9.9", lambda d, t: seen.append(d)), seen
+
+    def test_prepare_verifies_hash(self):
+        path, seen = self._prepare(b"installer", b"installer")
+        self.assertEqual(path.read_bytes(), b"installer")
+        self.assertEqual(seen, [9])
+        cmd = updater.install_command(path)
+        self.assertIn("/VERYSILENT", cmd)
+        self.assertIn("/RELAUNCH=1", cmd)
+
+    def test_prepare_rejects_bad_hash(self):
+        with self.assertRaises(updater.UpdateError):
+            self._prepare(b"tampered", b"installer")
+        self.assertFalse(any((Path(self.tmp.name) / "upd").glob("*.exe")))   # file sai đã bị xoá
+
+    def test_prepare_needs_checksum(self):
+        with mock.patch.object(updater, "_read_url", return_value="nothing here"), \
+                self.assertRaises(updater.UpdateError):
+            updater.prepare("v9.9.9")
+
     def test_data_dir(self):
         self.assertTrue(str(paths.DATA))
         with mock.patch.dict("os.environ", {"ARAM_HELPER_DATA": self.tmp.name}):

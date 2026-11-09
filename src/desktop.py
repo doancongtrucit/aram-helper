@@ -88,16 +88,94 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             pass
 
     def _show_update(self, info):
-        """Có bản mới trên GitHub: hiện nút nhỏ ở thanh trên, bấm để mở trang tải."""
+        """Có bản mới trên GitHub: nút ở thanh trên – bản cài: cập nhật một chạm; bản khác: mở trang tải."""
         self._update_info = info
         if getattr(self, "update_slot", None) is None or not self.update_slot.winfo_exists():
             return
         for w in self.update_slot.winfo_children():
             w.destroy()
+        text = T("Cập nhật lên {v}", v=info["version"]) if updater.can_self_update() \
+            else T("Có bản mới {v}", v=info["version"])
+        self._update_btn = self.button(self.update_slot, "⬆ " + text, lambda: self.start_update(info), 9, primary=True)
+        self._update_btn.pack(side="left")
+        self._update_text = "⬆ " + text
+
+    # ----- cập nhật một chạm -----
+    def start_update(self, info):
+        """Tải bộ cài bản mới (kiểm tra mã băm), đóng app, cài im lặng, bộ cài tự mở lại app."""
         import webbrowser
-        b = self.button(self.update_slot, "⬆ " + T("Có bản mới {v}", v=info["version"]),
-                        lambda: webbrowser.open(info["url"]), 9, primary=True)
-        b.pack(side="left")
+        if not updater.can_self_update():
+            webbrowser.open(info["url"])
+            return
+        if getattr(self, "_updating", False):
+            return
+        if (self._st.get("game") or {}).get("in_game"):
+            self.toast(T("Đang trong trận – cập nhật sau khi hết trận nhé."))
+            return
+        from tkinter import messagebox
+        if not messagebox.askyesno(
+                T("Cập nhật ARAM Helper"),
+                T("Cập nhật lên {v}?\n\nApp tải bộ cài (khoảng 45 MB), đóng lại, cài bản mới rồi tự mở lại. "
+                  "Cài đặt và dữ liệu được giữ nguyên.", v=info["version"]), parent=self.root):
+            return
+        self._updating = True
+        self._update_note(T("Đang tải bản cập nhật…"))
+        job = {"pct": None, "done": None}          # luồng tải ghi vào, luồng giao diện đọc (không gọi Tk từ luồng phụ)
+
+        def progress(done, total):
+            if total:
+                job["pct"] = done * 100 // total
+
+        def run():
+            try:
+                job["done"] = ("ok", updater.prepare(info["version"], progress))
+            except Exception as e:
+                job["done"] = ("err", e)
+
+        def watch(last=None):
+            if job["done"]:
+                kind, val = job["done"]
+                return self._update_install(val) if kind == "ok" else self._update_failed(val)
+            if job["pct"] is not None and job["pct"] != last:
+                self._update_note(T("Đang tải… {p}%", p=job["pct"]))
+            self.root.after(150, watch, job["pct"])
+        threading.Thread(target=run, daemon=True, name="update-download").start()
+        watch()
+
+    def _update_note(self, text):
+        """Hiện tiến độ trên nút cập nhật và trong Cài đặt (nếu đang mở)."""
+        b = getattr(self, "_update_btn", None)
+        if b is not None and b.winfo_exists():
+            b.configure(text="⬇ " + text)
+        dlg = self._settings_dlg
+        if dlg is not None and dlg.win.winfo_exists():
+            dlg.update_note(text)
+
+    def _update_failed(self, e):
+        import diag
+        self._updating = False
+        diag.log(f"cập nhật: lỗi {e}")
+        b = getattr(self, "_update_btn", None)
+        if b is not None and b.winfo_exists():
+            b.configure(text=getattr(self, "_update_text", ""))
+        self._update_note_reset(T("Cập nhật lỗi: {e}", e=e))
+        self.toast(T("Cập nhật lỗi: {e}", e=e))
+
+    def _update_note_reset(self, text):
+        dlg = self._settings_dlg
+        if dlg is not None and dlg.win.winfo_exists():
+            dlg.update_note(text)
+
+    def _update_install(self, path):
+        import diag
+        self._update_note(T("Đang cài – app sẽ tự mở lại…"))
+        try:
+            updater.launch_installer(path)
+        except Exception as e:
+            self._update_failed(e)
+            return
+        diag.log(f"cập nhật: chạy bộ cài {path.name}, đóng app")
+        self.root.after(400, self.root.destroy)
 
     # ----- tỉ lệ / font -----
     def _apply_zoom(self):

@@ -74,9 +74,16 @@ Trang Releases cũng có các file kèm số phiên bản (vd. `ARAM-Helper-1.4.
 
 ### 2.4. Cập nhật
 
-Khi có bản mới, thanh trên của app hiện nút xanh **⬆ Có bản mới** – bấm để mở trang tải.
-Windows: chạy `Setup.exe` của bản mới, cài đè lên bản cũ (app đang mở sẽ được đóng tự động).
-Cài đặt, vị trí bảng lõi và dữ liệu đã lưu được giữ nguyên.
+**Cập nhật một chạm (Windows, bản cài bằng `Setup.exe`, từ 1.7.0):** khi có bản mới, thanh trên của app hiện nút
+xanh **⬆ Cập nhật lên vX.Y.Z**. Bấm → xác nhận → app tải bộ cài, kiểm tra mã băm SHA-256 với file `SHA256SUMS.txt`
+của bản phát hành (không khớp thì huỷ), tự đóng, cài bản mới rồi **tự mở lại** – khoảng 1 phút. Đang trong trận thì
+app không cập nhật, chờ hết trận. Muốn kiểm tra ngay: **Cài đặt → Chung → Kiểm tra cập nhật**.
+
+**Bản portable, macOS hoặc bản cũ hơn 1.7.0:** nút **⬆ Có bản mới** mở trang tải – tải và chạy `Setup.exe` của bản
+mới, cài đè lên bản cũ (app đang mở sẽ được đóng tự động).
+
+Cài đặt, vị trí bảng lõi và dữ liệu đã lưu luôn được giữ nguyên. Nhật ký lần cài gần nhất: `update-install.log`
+trong thư mục dữ liệu.
 
 ### 2.5. Gỡ cài đặt
 
@@ -240,7 +247,7 @@ Bấm **⚙** (bánh răng) ở góc phải thanh trên. Thay đổi áp dụng 
 
 | Thẻ | Tuỳ chọn |
 |---|---|
-| **Chung** | Ngôn ngữ **Tiếng Việt / English** (giao diện, tên lõi, trang bị, tướng) · Cỡ giao diện 70–160% · Số lõi mỗi bậc (mặc định 6, hoặc tự vừa cửa sổ) · Cửa sổ chính phản ứng khi đang chọn lõi · Cửa sổ luôn nằm trên · Báo khi có bản mới · Mở thư mục dữ liệu |
+| **Chung** | Ngôn ngữ **Tiếng Việt / English** (giao diện, tên lõi, trang bị, tướng) · Cỡ giao diện 70–160% · Số lõi mỗi bậc (mặc định 6, hoặc tự vừa cửa sổ) · Cửa sổ chính phản ứng khi đang chọn lõi · Cửa sổ luôn nằm trên · Kiểm tra cập nhật · Báo khi có bản mới · Mở thư mục dữ liệu |
 | **Overlay** | Bật/tắt · Độ đậm khung và nhãn trên thẻ lõi · Cỡ overlay · Bề rộng khung · Vị trí (kéo thả hoặc 4 góc, **Đặt lại vị trí**) · Nhãn ★ trên thẻ lõi · Chỉ hiện khi đang chọn lõi · Mục hiển thị · Số lối lên đồ 1–3 |
 | **Phím tắt** | Đổi phím cho Định vị lõi, đánh dấu lõi ở thẻ 1 / 2 / 3, ẩn / hiện overlay, lưu ảnh chẩn đoán (mục 8) |
 | **Giới thiệu** | Phiên bản, bản quyền, developer, nguồn dữ liệu, giấy phép, thành phần mã nguồn mở |
