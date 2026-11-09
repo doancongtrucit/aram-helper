@@ -20,10 +20,10 @@ import tkinter as tk
 from tkinter import font as tkfont
 
 import advice
+import game_window
 import paths
 import settings
 from advice import TIER_BONUS
-from hotkeys import label
 from i18n import T
 
 KEY = "#010203"                 # màu "trong suốt" (góc bo tròn)
@@ -55,8 +55,6 @@ class Overlay:
         from widgets import Images
         self.hub, self.scanner, self.root = hub, scanner, root
         _dpi_aware()
-        user32 = ctypes.windll.user32
-        self.W, self.H = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
         self.dpi = root.winfo_fpixels("1i") / 96.0
         self.zoom = 1.0
         self.k = self.dpi
@@ -115,17 +113,20 @@ class Overlay:
         self._sig = None
 
     def _position(self, W, H):
+        """Góc chọn sẵn tính theo cửa sổ game; vị trí kéo thả giữ nguyên. Luôn nằm trong các màn hình."""
         corner = settings.get("ov_corner") or "custom"
         m = self.S(24)
         if corner == "custom" and "x" in self.prefs:
             px, py = self.prefs["x"], self.prefs["y"]
         else:
+            gx, gy, gw, gh = game_window.rect()
             left = corner in ("top-left", "bottom-left")
             bottom = corner in ("bottom-right", "bottom-left")
-            px = m if left else self.W - W - m
-            py = self.H - H - self.S(180) if bottom else self.S(90)
-        px = max(0, min(self.W - self.S(60), px))
-        py = max(0, min(self.H - self.S(40), py))
+            px = gx + (m if left else gw - W - m)
+            py = gy + (gh - H - self.S(180) if bottom else self.S(90))
+        vx, vy, vw, vh = game_window.virtual_screen()
+        px = max(vx, min(vx + vw - self.S(60), px))
+        py = max(vy, min(vy + vh - self.S(40), py))
         return int(px), int(py)
 
     # ---------- tiện ích ----------
@@ -327,7 +328,7 @@ class Overlay:
         # Thanh tiêu đề (kéo để di chuyển)
         hh = S(34)
         head_bg = self._round_rect(cv, 0, 0, W, hh, S(10), fill=BG, outline="", tags=("head",))
-        dot_col = GOOD if adv else (OK if scan.get("error") or not scan.get("calibrated") else MUTED)
+        dot_col = GOOD if adv else (OK if scan.get("error") else MUTED)
         try:
             from theme import app_logo
             self._logo = app_logo(self.root, S(20))
@@ -378,8 +379,8 @@ class Overlay:
                     y = self._section(cv, y, T("COMBO – viền xanh: đang được đưa ra · viền lam: đã có"))
                     for cb in combos:
                         y = self._combo_row(cv, y, W, cb)
-            elif not adv and (scan.get("error") or not scan.get("calibrated")):
-                msg = scan.get("error") or T("Chưa hiệu chỉnh: khi bảng chọn lõi hiện ra, bấm {key}.", key=label("calibrate"))
+            elif not adv and scan.get("error"):
+                msg = scan.get("error")
                 t = self._text(cv, x, y + S(6), msg, 8, OK, width=W - 2 * pad)
                 y = cv.bbox(t)[3] + S(6)
 
@@ -505,13 +506,14 @@ class Overlay:
     def _draw_badges(self, d):
         cv, S = self.bcv, self.S
         calib = d["calib"]
-        sx, sy = self.W / calib["width"], self.H / calib["height"]
+        gx, gy, gw, gh = game_window.rect()          # nhãn bám theo cửa sổ game (kể cả ở màn hình phụ)
+        sx, sy = gw / calib["width"], gh / calib["height"]
         size = calib["size"] * sx
         for a in d["advice"]:
             i = a["slot"]
             if i >= len(calib["centers"]):
                 continue
-            cx, cy = calib["centers"][i][0] * sx, calib["centers"][i][1] * sy
+            cx, cy = gx + calib["centers"][i][0] * sx, gy + calib["centers"][i][1] * sy
             b, top = a["best"], a["rank"] == 1
             wr = "?" if b.get("winrate") is None else f"{b['winrate']:.1f}%"
             txt = f"★ {wr}" if top else f"#{a['rank']}  {wr}"
@@ -521,7 +523,7 @@ class Overlay:
             w = max(S(96), self._font(11, True).measure(txt) + S(24), self._font(8).measure(sub) + S(20))
             h = S(40) if sub else S(26)
             bottom = cy - size * 0.68                 # ngay trên icon, ngoài vùng bộ quét đọc
-            if bottom - h < S(4):
+            if bottom - h < gy + S(4):
                 bottom = cy + size * 0.68 + h
             y0 = bottom - h
             tag = f"badge{i}"

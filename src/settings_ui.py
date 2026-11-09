@@ -1,6 +1,7 @@
 """Hộp thoại Cài đặt: 3 thẻ Chung / Overlay / ESP32. Mọi thay đổi áp dụng ngay (settings.set → các phần đăng ký tự cập nhật)."""
 from __future__ import annotations
 
+import sys
 import tkinter as tk
 
 import paths
@@ -9,6 +10,11 @@ from i18n import T
 
 CORNERS = [("custom", "Kéo thả"), ("top-right", "Trên phải"), ("top-left", "Trên trái"),
            ("bottom-right", "Dưới phải"), ("bottom-left", "Dưới trái")]
+HOTKEYS = [("calibrate", "Định vị lõi"), ("pick1", "Đánh dấu lõi ở thẻ 1"), ("pick2", "Đánh dấu lõi ở thẻ 2"),
+           ("pick3", "Đánh dấu lõi ở thẻ 3"), ("overlay", "Ẩn / hiện overlay"), ("diagnose", "Lưu ảnh chẩn đoán")]
+# Windows: mã phím ảo (event.keycode) → tên phím dùng trong hotkeys.parse
+_VK = {**{65 + i: chr(97 + i) for i in range(26)}, **{48 + i: str(i) for i in range(10)},
+       **{111 + i: f"f{i}" for i in range(1, 13)}}
 SECTIONS = [("offer", "Gợi ý lõi"), ("combo", "Combo"), ("owned", "Lõi đã chọn"),
             ("build", "Lối lên đồ"), ("counter", "Theo đội địch")]
 
@@ -25,9 +31,21 @@ class SettingsDialog:
         self.win.protocol("WM_DELETE_WINDOW", self.close)
         self._listener = lambda ch: self.win.after(0, self._on_change, ch)
         settings.on_change(self._listener)
+        self._capture = None
         self._build()
-        x = app.root.winfo_rootx() + app.root.winfo_width() - self.win.winfo_reqwidth() - app.S(30)
-        self.win.geometry(f"+{max(0, x)}+{app.root.winfo_rooty() + app.S(60)}")
+
+    def center(self):
+        """Đặt hộp thoại giữa cửa sổ chính (gọi mỗi lần mở / dựng lại)."""
+        a, w = self.app.root, self.win
+        w.update_idletasks()
+        # geometry đặt góc khung ngoài; trừ viền + thanh tiêu đề để phần nội dung nằm đúng giữa
+        bx, by = max(0, w.winfo_rootx() - w.winfo_x()), max(0, w.winfo_rooty() - w.winfo_y())
+        x = a.winfo_rootx() + (a.winfo_width() - w.winfo_reqwidth()) // 2 - bx
+        y = a.winfo_rooty() + (a.winfo_height() - w.winfo_reqheight()) // 2 - by
+        w.geometry(f"+{max(0, x)}+{max(0, y)}")
+        if not getattr(self, "_recentered", False):          # lần đầu: chưa biết cỡ thanh tiêu đề → đặt lại 1 lần
+            self._recentered = True
+            w.after(60, self.center)
 
     def close(self):
         try:
@@ -53,7 +71,10 @@ class SettingsDialog:
         self.win.title("ARAM Helper – " + T("Cài đặt"))
         tabs = tk.Frame(self.win, bg=d.BG, padx=a.S(12), pady=a.S(8))
         tabs.pack(fill="x")
-        for key, text in (("general", T("Chung")), ("overlay", T("Overlay")), ("esp32", T("ESP32"))):
+        pages = [("general", T("Chung")), ("overlay", T("Overlay"))]
+        if sys.platform == "win32":
+            pages.append(("hotkeys", T("Phím tắt")))
+        for key, text in pages + [("esp32", T("ESP32"))]:
             on = key == self.page
             t = tk.Label(tabs, text=text, fg=d.TEXT if on else d.MUTED, bg=d.BG, font=a.f(10, True),
                          padx=a.S(10), pady=a.S(4), cursor="hand2")
@@ -75,6 +96,7 @@ class SettingsDialog:
             pass
         a.label(foot, f"ARAM Helper {__version__}", 8, d.MUTED).pack(side="left")
         a.button(foot, T("Mặc định"), self._defaults, 9).pack(side="right", padx=a.S(6))
+        self.center()
 
     def _go(self, key):
         self.page = key
@@ -83,6 +105,7 @@ class SettingsDialog:
     def _defaults(self):
         keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates"],
                 "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k == "overlay"],
+                "hotkeys": ["hk_" + k for k, _ in HOTKEYS],
                 "esp32": ["esp32"]}[self.page]
         settings.reset(keys)
 
@@ -216,6 +239,77 @@ class SettingsDialog:
                 w.configure(command=lambda: settings.set("ov_builds", int(var.get())))
         if not a.overlay:
             self._note(T("Overlay chỉ có trên Windows."))
+
+    def _page_hotkeys(self):
+        """Đổi phím tắt: bấm vào ô rồi nhấn tổ hợp mới (cần Ctrl hoặc Alt). Esc huỷ, Backspace về mặc định."""
+        import hotkeys
+        d, a = self.d, self.app
+        self._hk_buttons = {}
+        for name, text in HOTKEYS:
+            row = self._row(T(text))
+            b = tk.Label(row, text=hotkeys.pretty(settings.get("hk_" + name)), bg=d.BG, fg=d.TEXT, font=a.f(9, True),
+                         width=18, padx=a.S(8), pady=a.S(3), cursor="hand2", highlightthickness=1,
+                         highlightbackground=d.LINE)
+            b.pack(side="left")
+            b.bind("<Button-1>", lambda e, n=name: self._start_capture(n))
+            note = a.label(row, "", 8, d.OKC)
+            note.pack(side="left", padx=a.S(8))
+            self._hk_buttons[name] = (b, note)
+        self._note(T("Bấm vào ô rồi nhấn tổ hợp phím mới (cần Ctrl hoặc Alt, ví dụ Ctrl+Shift+L). "
+                     "Esc: huỷ · Backspace: về mặc định. Phím bị app khác dùng thì app tự dùng phím dự phòng."))
+        self._hk_refresh()
+
+    def _hk_refresh(self):
+        """Hiện phím thực tế đang dùng nếu khác phím đã chọn (bị app khác chiếm)."""
+        import hotkeys
+        for name, (b, note) in getattr(self, "_hk_buttons", {}).items():
+            if not b.winfo_exists():
+                return
+            want, got = settings.get("hk_" + name), hotkeys.ACTIVE.get(name)
+            b.configure(text=hotkeys.pretty(want), highlightbackground=self.d.LINE)
+            note.configure(text="" if name not in hotkeys.ACTIVE or got == want
+                           else T("bị app khác dùng – đang dùng {k}", k=hotkeys.pretty(got)))
+
+    def _start_capture(self, name):
+        b, note = self._hk_buttons[name]
+        self._capture = name
+        b.configure(text=T("Nhấn tổ hợp phím…"), highlightbackground=self.d.ACCENT)
+        note.configure(text="")
+        self.win.focus_force()
+        self.win.bind("<KeyPress>", self._on_capture_key)
+
+    def _on_capture_key(self, e):
+        import hotkeys
+        name = self._capture
+        if not name:
+            return
+        b, note = self._hk_buttons[name]
+        if e.keysym == "Escape":
+            return self._end_capture()
+        if e.keysym == "BackSpace":
+            settings.set("hk_" + name, settings.DEFAULTS["hk_" + name])
+            return self._end_capture()
+        key = _VK.get(e.keycode)
+        if key is None:                      # mới nhấn phím bổ trợ (Ctrl/Alt/Shift) – chờ phím chính
+            return "break"
+        mods = [m for m, bit in (("ctrl", 0x4), ("alt", 0x20000), ("shift", 0x1)) if e.state & bit]
+        combo = "+".join(mods + [key])
+        if not hotkeys.valid(combo):
+            note.configure(text=T("Cần có Ctrl hoặc Alt"))
+            return "break"
+        clash = [n for n, _ in HOTKEYS if n != name and settings.get("hk_" + n) == combo]
+        if clash:
+            note.configure(text=T("Trùng với: {a}", a=T(dict(HOTKEYS)[clash[0]])))
+            return "break"
+        settings.set("hk_" + name, combo)
+        return self._end_capture()
+
+    def _end_capture(self):
+        self._capture = None
+        self.win.unbind("<KeyPress>")
+        self._hk_refresh()
+        self.win.after(1200, self._hk_refresh)    # chờ luồng phím tắt đăng ký lại xong
+        return "break"
 
     def _page_esp32(self):
         import esp32_link

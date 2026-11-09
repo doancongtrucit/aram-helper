@@ -11,10 +11,12 @@ EN = {
     "Tìm tướng hoặc lõi (không cần dấu, nhiều lõi cách nhau dấu phẩy)…":
         "Search champion or augment (several augments separated by commas)…",
     "Tự động": "Auto",
-    "Hiệu chỉnh": "Calibrate",
+    "Định vị lõi": "Locate augments",
+    "Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai.":
+        "Find the 3 augment cards on screen. The app usually does this on the first pick – only needed if it misreads.",
     "Cài đặt": "Settings",
     "Quét màn hình: {s}": "Screen scan: {s}",
-    "Hiệu chỉnh sau {n} giây – mở bảng chọn lõi trong game": "Calibrating in {n} s – open the augment choice in game",
+    "Định vị lõi sau {n} giây – mở bảng chọn lõi trong game": "Locating augments in {n} s – open the augment choice in game",
     # Tướng
     "Tỉ lệ thắng {wr}%": "Win rate {wr}%",
     "{n} trận": "{n} games",
@@ -62,7 +64,6 @@ EN = {
     "ĐÃ CHỌN": "TAKEN",
     "LỐI LÊN ĐỒ – viền xanh: món cốt lõi": "BUILDS – green: core items",
     "THEO ĐỘI ĐỊCH": "VS ENEMY TEAM",
-    "Chưa hiệu chỉnh: khi bảng chọn lõi hiện ra, bấm {key}.": "Not calibrated: when the augment choice shows, press {key}.",
     "có {n}/{m}": "have {n}/{m}",
     "1 trong {n}": "1 of {n}",
     # Gợi ý đồ theo đội địch
@@ -108,6 +109,16 @@ EN = {
     "Mặc định": "Defaults", "Đóng": "Close",
     "Phím tắt: Ctrl + / Ctrl - / Ctrl 0 đổi cỡ giao diện.": "Shortcuts: Ctrl + / Ctrl - / Ctrl 0 change the UI size.",
     "Overlay chỉ có trên Windows.": "The overlay is Windows only.",
+    "Phím tắt": "Hotkeys",
+    "Đánh dấu lõi ở thẻ 1": "Mark card 1 as taken", "Đánh dấu lõi ở thẻ 2": "Mark card 2 as taken",
+    "Đánh dấu lõi ở thẻ 3": "Mark card 3 as taken",
+    "Ẩn / hiện overlay": "Show / hide overlay", "Lưu ảnh chẩn đoán": "Save diagnostic image",
+    "Bấm vào ô rồi nhấn tổ hợp phím mới (cần Ctrl hoặc Alt, ví dụ Ctrl+Shift+L). Esc: huỷ · Backspace: về mặc định. Phím bị app khác dùng thì app tự dùng phím dự phòng.":
+        "Click a box, then press the new key combination (needs Ctrl or Alt, e.g. Ctrl+Shift+L). Esc: cancel · Backspace: default. If another app holds a key, a fallback is used.",
+    "bị app khác dùng – đang dùng {k}": "taken by another app – using {k}",
+    "Nhấn tổ hợp phím…": "Press keys…",
+    "Cần có Ctrl hoặc Alt": "Needs Ctrl or Alt",
+    "Trùng với: {a}": "Already used by: {a}",
     "Gợi ý lõi và trang bị cho ARAM Hỗn Loạn": "Augment and item advice for ARAM Mayhem",
     "Có lỗi nhỏ ở giao diện – đã ghi vào app.log. Bấm để mở thư mục dữ liệu.":
         "A small UI error was logged to app.log. Click to open the data folder.",
@@ -119,21 +130,20 @@ EN = {
 # Dòng trạng thái của bộ quét màn hình (scanner.py giữ tiếng Việt, dịch khi hiển thị)
 STATUS = {
     "Đang khởi động bộ quét…": "Starting the scanner…",
-    "Sẽ hiệu chỉnh sau {n} giây – mở bảng chọn lõi trong game.": "Calibrating in {n} s – open the augment choice in game.",
-    "Đang hiệu chỉnh…": "Calibrating…",
-    "Đã xoá hiệu chỉnh.": "Calibration cleared.",
+    "Sẽ định vị bảng lõi sau {n} giây – mở bảng chọn lõi trong game.": "Locating augments in {n} s – open the augment choice in game.",
+    "Đang định vị bảng lõi…": "Locating augments…",
     "Đã ghi nhận lõi đã chọn – chờ lượt chọn tiếp theo.": "Pick recorded – waiting for the next augment choice.",
     "Đang tải danh sách lõi và icon (lần đầu mất khoảng 1 phút)…": "Loading augments and icons (about 1 minute the first time)…",
     "Sẵn sàng.": "Ready.",
-    "Chưa hiệu chỉnh: khi bảng chọn lõi hiện trong game, bấm {key} (hoặc nút Hiệu chỉnh).":
-        "Not calibrated: when the augment choice shows in game, press {key} (or the Calibrate button).",
-    "Đang hiệu chỉnh… (khoảng 10 giây)": "Calibrating… (about 10 s)",
+    "Sẵn sàng – vị trí bảng lõi sẽ tự xác định ở lượt chọn lõi đầu tiên.":
+        "Ready – the augment cards will be located automatically on the first pick.",
+    "Đang định vị bảng lõi… (khoảng 10 giây)": "Locating augments… (about 10 s)",
     "Ảnh chụp màn hình bị đen: chuyển game sang chế độ Không viền (Borderless) rồi thử lại.":
         "The screenshot is black: switch the game to Borderless and try again.",
-    "Không tìm thấy 3 lõi trên màn hình. Thử lại khi bảng chọn lõi đang hiện rõ.":
-        "Could not find the 3 augments on screen. Try again while the augment choice is fully visible.",
-    "Hiệu chỉnh xong – app sẽ tự đọc lõi mỗi khi bảng chọn hiện ra.":
-        "Calibrated – the app now reads the augments whenever the choice shows.",
+    "Không tìm thấy bảng lõi trên màn hình. Thử lại khi bảng chọn lõi đang hiện rõ.":
+        "Could not find the augment cards on screen. Try again while the augment choice is fully visible.",
+    "Đã định vị bảng lõi – app sẽ tự đọc lõi mỗi khi bảng chọn hiện ra.":
+        "Augments located – the app now reads them whenever the choice shows.",
     "Đã thấy bảng chọn lõi.": "Augment choice found.",
     "Đang quét… (chưa thấy bảng chọn lõi · khớp tốt nhất {best})": "Scanning… (no augment choice yet · best match {best})",
     "Đã lưu ảnh chẩn đoán: {name}": "Saved diagnostic image: {name}",

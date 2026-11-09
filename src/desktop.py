@@ -235,7 +235,9 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.scan_lbl = self.label(bar2, "", 9, MUTED, anchor="w")
         self.scan_lbl.pack(side="left", fill="x", expand=True)
         if self.scanner:
-            self.button(bar2, T("Hiệu chỉnh"), lambda: self.scanner.request_calibration(5), 9).pack(side="right")
+            b = self.button(bar2, "⌖ " + T("Định vị lõi"), lambda: self.scanner.request_calibration(5), 9)
+            b.pack(side="right")
+            self.tooltip.bind(b, T("Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai."))
 
         headrow = tk.Frame(self.root, bg=BG, padx=self.S(12), pady=self.S(4))
         headrow.pack(fill="x")
@@ -315,7 +317,7 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         if scan.get("error"):
             s, col = scan["error"], OKC
         elif scan.get("calibrating_in") is not None:
-            s = (T("Hiệu chỉnh sau {n} giây – mở bảng chọn lõi trong game", n=int(scan["calibrating_in"]) + 1)
+            s = (T("Định vị lõi sau {n} giây – mở bảng chọn lõi trong game", n=int(scan["calibrating_in"]) + 1)
                  if scan["calibrating_in"] > 0 else scan.get("status", ""))
             col = OKC
         else:
@@ -506,7 +508,9 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
     # ----- Cài đặt -----
     def open_settings(self):
         if self._settings_dlg is not None and self._settings_dlg.win.winfo_exists():
+            self._settings_dlg.center()
             self._settings_dlg.win.lift()
+            self._settings_dlg.win.focus_force()
             return
         import settings_ui
         self._settings_dlg = settings_ui.SettingsDialog(self)

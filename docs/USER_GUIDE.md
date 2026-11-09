@@ -70,7 +70,7 @@ Vào trang **[Releases](https://github.com/doancongtrucit/aram-helper/releases/l
 
 Khi có bản mới, thanh trên của app hiện nút xanh **⬆ Có bản mới** – bấm để mở trang tải.
 Windows: chạy `Setup.exe` của bản mới, cài đè lên bản cũ (app đang mở sẽ được đóng tự động).
-Cài đặt, hiệu chỉnh và dữ liệu đã lưu được giữ nguyên.
+Cài đặt, vị trí bảng lõi và dữ liệu đã lưu được giữ nguyên.
 
 ### 2.5. Gỡ cài đặt
 
@@ -79,7 +79,7 @@ Cài đặt, hiệu chỉnh và dữ liệu đã lưu được giữ nguyên.
 
 ### 2.6. Thư mục dữ liệu
 
-App lưu cache, icon, hiệu chỉnh, cài đặt và log trong:
+App lưu cache, icon, vị trí bảng lõi, cài đặt và log trong:
 
 | Bản | Thư mục |
 |---|---|
@@ -95,8 +95,8 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 
 1. Mở ARAM Helper **trước hoặc trong lúc** vào trận ARAM Hỗn Loạn.
 2. Khi vào trận, chấm tròn góc trên chuyển **xanh** và app tự hiện dữ liệu tướng bạn đang chơi.
-3. (Windows) Lần đầu, khi bảng chọn 3 lõi **đang hiện** trong game, bấm **Ctrl+Alt+A** để hiệu chỉnh
-   (khoảng 10 giây). Từ đó mỗi lần chọn lõi, overlay tự gợi ý lõi nên chọn.
+3. (Windows) Mỗi lần bảng chọn lõi hiện ra, overlay tự gợi ý lõi nên chọn – **không cần cài đặt gì thêm**:
+   lượt chọn đầu tiên app tự xác định vị trí 3 thẻ lõi và nhớ lại cho các trận sau.
 4. Sau khi chọn lõi trong game, bấm vào dòng gợi ý trên overlay (hoặc **Ctrl+Alt+1 / 2 / 3**) để app biết bạn
    đã lấy lõi nào – các lượt sau sẽ ưu tiên lõi hợp combo.
 
@@ -111,7 +111,7 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 | 1 | Trạng thái | Chấm **xanh** = đang trong trận, app tự nhận tướng |
 | 2 | Ô tìm kiếm | Gõ tên **tướng** → danh sách chọn nhanh; gõ tên **lõi** (nhiều lõi cách nhau dấu phẩy) → tô sáng và xếp hạng |
 | 3 | **Tự động** · **⚙ Cài đặt** | **Tự động** quay lại tướng trong trận; **Cài đặt** mở các tuỳ chọn (mục 7) |
-| 4 | Quét màn hình · **Hiệu chỉnh** | (Windows) trạng thái đọc bảng chọn lõi |
+| 4 | Quét màn hình · **⌖ Định vị lõi** | (Windows) trạng thái đọc bảng chọn lõi; nút tìm lại vị trí 3 thẻ lõi khi app đọc sai |
 | 5 | Tướng | Hạng tướng, tỉ lệ thắng, số trận, phiên bản dữ liệu |
 | 6 | Tab | **Lõi & trang bị** · **Combo lõi** |
 | 7 | Lõi đã chọn | Lõi bạn đã lấy trong trận; bấm ✕ để bỏ |
@@ -166,12 +166,18 @@ Khi đang chọn lõi trong game, cửa sổ chính **giữ nguyên** để bạ
 
 *(Windows)*
 
-1. **Hiệu chỉnh 1 lần** cho mỗi độ phân giải: khi bảng chọn 3 lõi **đang hiện** trong game, bấm **Ctrl+Alt+A**
-   (hoặc nút **Hiệu chỉnh** trong app rồi quay lại game trong 5 giây). Mất khoảng 10 giây.
-2. Từ đó mỗi lần bảng chọn lõi hiện ra, app tự đọc 3 lõi và gợi ý trên overlay.
-   Nếu vị trí thẻ lõi xê dịch so với lúc hiệu chỉnh, app tự dò lại và cập nhật.
-3. Sau khi chọn lõi trong game, bấm vào dòng gợi ý / nhãn trên overlay, hoặc **Ctrl+Alt+1 / 2 / 3**
+1. **Tự định vị:** app ước tính vị trí 3 thẻ lõi theo độ phân giải của cửa sổ game. Lượt chọn lõi đầu tiên đọc được,
+   app lưu vị trí chính xác và dùng cho các trận sau. Thẻ lõi xê dịch (đổi độ phân giải, cập nhật game) thì app
+   tự dò lại.
+2. Mỗi lần bảng chọn lõi hiện ra, app tự đọc 3 lõi và gợi ý trên overlay. App bám theo **cửa sổ game**, nên game
+   chạy ở màn hình phụ vẫn đọc được.
+3. Chỉ khi app vẫn đọc sai: lúc bảng chọn 3 lõi **đang hiện**, bấm **Ctrl+Alt+A** (hoặc nút **⌖ Định vị lõi** trong
+   app rồi quay lại game trong 5 giây) để app tìm lại vị trí thẻ lõi – mất khoảng 10 giây.
+4. Sau khi chọn lõi trong game, bấm vào dòng gợi ý / nhãn trên overlay, hoặc **Ctrl+Alt+1 / 2 / 3**
    (thẻ thứ 1 / 2 / 3 từ trái sang).
+
+Để nhẹ máy, app chỉ chụp vùng quanh 3 thẻ lõi và quét thưa hơn khi lâu không có lượt chọn lõi, nhanh hơn khi
+bảng chọn đang hiện.
 
 **Lõi dùng chung icon và lõi kỹ năng của tướng.** Một số lõi dùng chung một icon; lõi kỹ năng của tướng
 (ví dụ "Theo Đuổi Tốc Độ [Q]") hiện icon kỹ năng riêng của từng tướng. Với những lõi này, app đọc **tên lõi**
@@ -188,7 +194,7 @@ trên thẻ bằng OCR có sẵn của Windows – game để tiếng Việt hay
 
 | # | Phần | Công dụng |
 |:-:|---|---|
-| 1 | Thanh tiêu đề | **Kéo** để di chuyển (app nhớ vị trí). Chấm xanh = đang thấy bảng chọn lõi, cam = chưa hiệu chỉnh |
+| 1 | Thanh tiêu đề | **Kéo** để di chuyển (app nhớ vị trí). Chấm xanh = đang thấy bảng chọn lõi, cam = bộ quét báo lỗi |
 | 2 | Gợi ý | 3 lõi xếp hạng, ★ = nên chọn. **Bấm vào dòng** = đánh dấu đã chọn lõi đó |
 | 3 | Nhãn trên thẻ lõi | `★ 71.0%` lõi nên chọn, `#2`, `#3` lõi còn lại; bấm vào nhãn cũng đánh dấu đã chọn |
 | 4 | **▾ / ▸** · **✕** | Thu gọn còn 1 dòng / ẩn overlay (hiện lại: **Ctrl+Alt+O** hoặc ô **Overlay** trong app) |
@@ -222,6 +228,7 @@ Bấm **⚙ Cài đặt** ở thanh trên. Thay đổi áp dụng ngay và đư�
 |---|---|
 | **Chung** | Ngôn ngữ **Tiếng Việt / English** (giao diện, tên lõi, trang bị, tướng) · Cỡ giao diện 70–160% · Số lõi mỗi bậc (mặc định 6, hoặc tự vừa cửa sổ) · Cửa sổ chính phản ứng khi đang chọn lõi · Cửa sổ luôn nằm trên · Báo khi có bản mới · Mở thư mục dữ liệu |
 | **Overlay** | Bật/tắt · Độ đậm khung và nhãn trên thẻ lõi · Cỡ overlay · Bề rộng khung · Vị trí (kéo thả hoặc 4 góc, **Đặt lại vị trí**) · Nhãn ★ trên thẻ lõi · Chỉ hiện khi đang chọn lõi · Mục hiển thị · Số lối lên đồ 1–3 |
+| **Phím tắt** | Đổi phím cho Định vị lõi, đánh dấu lõi ở thẻ 1 / 2 / 3, ẩn / hiện overlay, lưu ảnh chẩn đoán (mục 8) |
 | **ESP32** | Bật/tắt gửi màn ARAM lên ESP32 (mục 9) |
 
 ![Cài đặt – Overlay](images/settings-overlay.png)
@@ -236,14 +243,17 @@ Bấm **⚙ Cài đặt** ở thanh trên. Thay đổi áp dụng ngay và đư�
 
 | Phím | Việc |
 |---|---|
-| **Ctrl+Alt+A** | Hiệu chỉnh vị trí 3 thẻ lõi |
+| **Ctrl+Alt+A** | Định vị lõi – tìm lại vị trí 3 thẻ lõi |
 | **Ctrl+Alt+1 / 2 / 3** | Đánh dấu đã chọn lõi ở thẻ 1 / 2 / 3 |
 | **Ctrl+Alt+O** | Ẩn / hiện overlay |
 | **Ctrl+Alt+D** | Lưu ảnh chẩn đoán (khi app đọc sai lõi – xem mục 10) |
 | **Ctrl + / Ctrl − / Ctrl 0** | Phóng to / thu nhỏ / về 100% (trong cửa sổ chính) |
 
+**Đổi phím tắt:** **⚙ Cài đặt → Phím tắt** → bấm vào ô của việc cần đổi rồi nhấn tổ hợp mới (cần có Ctrl hoặc Alt,
+ví dụ Ctrl+Shift+L). **Esc** huỷ, **Backspace** về mặc định. Phím mới có tác dụng ngay, không cần mở lại app.
+
 Nếu tổ hợp đã bị app khác dùng, ARAM Helper tự chuyển sang phím dự phòng (Ctrl+Alt+K, Ctrl+Alt+Shift+A,
-Ctrl+Alt+Shift+1/2/3, Ctrl+Alt+Shift+O, Ctrl+Alt+Shift+D) và hiện phím đang dùng trong app / overlay.
+Ctrl+Alt+Shift+1/2/3, Ctrl+Alt+Shift+O, Ctrl+Alt+Shift+D); trang **Phím tắt** ghi rõ phím đang dùng.
 
 ---
 
@@ -275,11 +285,11 @@ Hoặc khai báo trực tiếp `{"host": "<IP>", "port": 4210, "token": "<token>
 | Chấm không xanh khi đang trong trận | App chỉ nhận trận thật (không nhận màn chờ / chọn tướng). Đợi vào bản đồ vài giây. |
 | "Không lấy được dữ liệu" | Kiểm tra mạng. App dùng dữ liệu đã lưu nếu có. |
 | "Ảnh chụp màn hình bị đen" | Đổi game sang **Không viền** hoặc **Cửa sổ**. |
-| Hiệu chỉnh báo không tìm thấy lõi | Bấm khi bảng chọn lõi đang hiện rõ, không bị che. Cần ít nhất 2 trong 3 thẻ là lõi thường (không phải lõi kỹ năng tướng). Đổi độ phân giải thì hiệu chỉnh lại. |
-| Bảng chọn lõi hiện mà overlay không gợi ý | Xem dòng **Quét màn hình** trong app. App tự dò lại khi thẻ lõi xê dịch; vẫn không được thì hiệu chỉnh lại (**Ctrl+Alt+A**) khi bảng chọn đang hiện. |
+| Bảng chọn lõi hiện mà overlay không gợi ý | Xem dòng **Quét màn hình** trong app. App tự dò lại khi thẻ lõi xê dịch; vẫn không được thì bấm **Ctrl+Alt+A** (Định vị lõi) khi bảng chọn đang hiện. |
+| Định vị lõi báo không tìm thấy bảng lõi | Bấm khi bảng chọn lõi đang hiện rõ, không bị che. Cần ít nhất 2 trong 3 thẻ là lõi thường (không phải lõi kỹ năng tướng). |
 | Đọc sai lõi | Khi bảng chọn lõi **đang hiện**, bấm **Ctrl+Alt+D** → app lưu ảnh + kết quả quét vào thư mục `debug` trong thư mục dữ liệu. Gửi các file đó kèm `app.log` khi báo lỗi. |
 | Overlay không hiện | Overlay chỉ hiện khi đang trong trận; kiểm tra ô **Overlay** trong app và chế độ hiển thị Không viền của game. |
-| Phím tắt không hoạt động | Xem phím đang dùng trong app hoặc `app.log` (có thể đã đổi sang phím dự phòng). |
+| Phím tắt không hoạt động | Xem **Cài đặt → Phím tắt** (có thể đã đổi sang phím dự phòng) hoặc đổi sang tổ hợp khác. |
 | Windows chặn khi mở app | App chưa có chữ ký số: **More info → Run anyway**. |
 
 Log của app: `app.log` trong thư mục dữ liệu (mục 2.6). Báo lỗi tại

@@ -4,7 +4,7 @@ Chạy từ mã nguồn: python app.py   (người dùng cài bản exe / .app t
       python app.py --no-overlay --champion yasuo
 
 Phím tắt (cả khi đang trong game; nếu bị app khác chiếm thì tự dùng phím dự phòng, hiện trong app):
-  Ctrl+Alt+A      hiệu chỉnh vị trí 3 ô lõi (dự phòng: Ctrl+Alt+K, Ctrl+Alt+Shift+A)
+  Ctrl+Alt+A      định vị lõi: tìm lại vị trí 3 thẻ lõi (dự phòng: Ctrl+Alt+K, Ctrl+Alt+Shift+A)
   Ctrl+Alt+1/2/3  đánh dấu đã chọn lõi ở ô 1/2/3 (dự phòng: Ctrl+Alt+Shift+1/2/3)
   Ctrl+Alt+O      ẩn / hiện overlay (dự phòng: Ctrl+Alt+Shift+O)
 """
@@ -249,20 +249,29 @@ def main():
             print(f"Không bật được overlay: {e}")
 
     # Mỗi việc có phím dự phòng nếu app khác đã chiếm tổ hợp đầu
-    keys = {f"pick{i + 1}": ([f"ctrl+alt+{i + 1}", f"ctrl+alt+shift+{i + 1}"], (lambda i=i: HUB.pick_slot(i)))
-            for i in range(3)}
+    def combos(name):
+        return hotkeys.combos_for(name, settings.get("hk_" + name))
+
+    keys = {f"pick{i + 1}": (combos(f"pick{i + 1}"), (lambda i=i: HUB.pick_slot(i))) for i in range(3)}
     if SCANNER:
         SCANNER.in_game_fn = lambda: HUB.game.get("in_game", False)   # dùng chung, không gọi Live API 2 lần
         SCANNER.start()
-        keys["calibrate"] = (["ctrl+alt+a", "ctrl+alt+k", "ctrl+alt+shift+a"], lambda: SCANNER.request_calibration(0))
-        keys["diagnose"] = (["ctrl+alt+d", "ctrl+alt+shift+d"], SCANNER.request_diagnostic)
+        keys["calibrate"] = (combos("calibrate"), lambda: SCANNER.request_calibration(0))
+        keys["diagnose"] = (combos("diagnose"), SCANNER.request_diagnostic)
     else:
         print(SCANNER_ERROR)
     if overlay:
-        keys["overlay"] = (["ctrl+alt+o", "ctrl+alt+shift+o"], overlay.toggle)
+        keys["overlay"] = (combos("overlay"), overlay.toggle)
     if IS_WINDOWS:
         hotkeys.start(keys)
-        print(f"Phím tắt: {hotkeys.label('calibrate')} hiệu chỉnh · {hotkeys.label('pick1')}/2/3 đánh dấu lõi đã chọn · "
+
+        def on_hotkey_change(changed):         # đổi phím trong Cài đặt → đăng ký lại ngay (luồng nền, không chặn UI)
+            for k in changed:
+                if k.startswith("hk_"):
+                    name = k[3:]
+                    threading.Thread(target=hotkeys.update, args=(name, combos(name)), daemon=True).start()
+        settings.on_change(on_hotkey_change)
+        print(f"Phím tắt: {hotkeys.label('calibrate')} định vị lõi · {hotkeys.label('pick1')}/2/3 đánh dấu lõi đã chọn · "
               f"{hotkeys.label('overlay')} ẩn/hiện overlay")
 
     import esp32_link

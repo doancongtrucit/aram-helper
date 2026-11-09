@@ -45,9 +45,31 @@ class OcrMatching(unittest.TestCase):
 try:
     import cv2  # noqa: F401
     import screen_scan as ss
+    HAS_SS = True
     HAS_CV = (ss.ICON_DIR / f"{CATALOG[0]['id']}.png").exists()
 except Exception:
-    HAS_CV = False
+    HAS_SS = HAS_CV = False
+
+
+class EstimatedPosition(unittest.TestCase):
+    """Vị trí bảng lõi ước tính theo độ phân giải (khi chưa định vị) – so với số đo trên game thật."""
+
+    @unittest.skipUnless(HAS_SS, "cần opencv")
+    def test_matches_measured_1440p(self):
+        est = ss.Calibration.estimate(2560, 1440)
+        self.assertTrue(est.estimated)
+        self.assertLess(abs(est.size - 215), 3)
+        for (x, y), (mx, my) in zip(est.centers, [(792, 416), (1280, 416), (1771, 416)]):
+            self.assertLess(abs(x - mx), 6)
+            self.assertLess(abs(y - my), 3)
+
+    @unittest.skipUnless(HAS_SS, "cần opencv")
+    def test_fits_same_aspect_only(self):
+        c = ss.Calibration(2560, 1440, 215, [(792, 416), (1280, 416), (1771, 416)])
+        self.assertTrue(c.fits(1920, 1080))          # cùng 16:9 → tự co giãn
+        self.assertFalse(c.fits(2560, 1080))         # 21:9 → dùng vị trí ước tính
+
+
 
 
 class ResolveRarity(unittest.TestCase):

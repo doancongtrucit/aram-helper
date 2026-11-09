@@ -189,10 +189,32 @@ class DesktopUI(unittest.TestCase):
         self.tick()                              # app vẫn chạy bình thường
         self.assertEqual(len(self.app.cards), 48)
 
+    @unittest.skipUnless(sys.platform == "win32", "phím tắt chỉ có trên Windows")
+    def test_hotkey_capture_in_settings(self):
+        from types import SimpleNamespace as E
+        self.app.open_settings()
+        dlg = self.app._settings_dlg
+        dlg._go("hotkeys")
+        self.root.update()
+        dlg._start_capture("calibrate")
+        dlg._on_capture_key(E(keysym="l", keycode=76, state=0x4 | 0x1))          # Ctrl+Shift+L
+        self.assertEqual(settings.get("hk_calibrate"), "ctrl+shift+l")
+        dlg._start_capture("overlay")
+        dlg._on_capture_key(E(keysym="l", keycode=76, state=0x4 | 0x1))          # trùng với Định vị lõi
+        self.assertEqual(settings.get("hk_overlay"), "ctrl+alt+o")
+        dlg._on_capture_key(E(keysym="BackSpace", keycode=8, state=0))
+        dlg._start_capture("calibrate")
+        dlg._on_capture_key(E(keysym="BackSpace", keycode=8, state=0))           # về mặc định
+        self.assertEqual(settings.get("hk_calibrate"), "ctrl+alt+a")
+        dlg._start_capture("pick1")
+        dlg._on_capture_key(E(keysym="q", keycode=81, state=0x1))                # thiếu Ctrl/Alt → bỏ qua
+        self.assertEqual(settings.get("hk_pick1"), "ctrl+alt+1")
+        dlg.close()
+
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg
-        for page in ("overlay", "esp32", "general"):
+        for page in ("overlay", "hotkeys", "esp32", "general"):
             dlg._go(page)
             self.root.update()
         settings.set("lang", "en")                  # hộp thoại dựng lại theo ngôn ngữ mới

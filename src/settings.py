@@ -33,7 +33,14 @@ DEFAULTS = {
     "ov_corner": "custom",        # top-right | top-left | bottom-right | bottom-left | custom (kéo thả)
     # ESP32 (PC Control Deck)
     "esp32": True,
-    # Cập nhật: mỗi ngày hỏi GitHub 1 lần xem có bản mới không (chỉ báo, không tự tải)
+    # Phím tắt toàn cục (Windows); phím dự phòng nằm trong hotkeys.DEFAULTS
+    "hk_calibrate": "ctrl+alt+a",
+    "hk_pick1": "ctrl+alt+1",
+    "hk_pick2": "ctrl+alt+2",
+    "hk_pick3": "ctrl+alt+3",
+    "hk_overlay": "ctrl+alt+o",
+    "hk_diagnose": "ctrl+alt+d",
+    # Cập nhật: hỏi GitHub xem có bản mới không (chỉ báo, không tự tải)
     "check_updates": True,
 }
 

@@ -5,7 +5,16 @@
 
 ## [Chưa phát hành]
 
+### Thêm
+- **Tự định vị bảng lõi**: không cần bấm phím lần đầu – app ước tính vị trí 3 thẻ lõi theo độ phân giải và tự lưu
+  ở lượt chọn đầu tiên.
+- Bộ quét và overlay bám theo **cửa sổ game**, đọc được khi game chạy ở màn hình phụ.
+- **Đổi phím tắt** trong Cài đặt → Phím tắt (có tác dụng ngay).
+
 ### Thay đổi
+- Nút "Hiệu chỉnh" đổi thành **⌖ Định vị lõi** (có chú thích khi rê chuột).
+- Tần suất quét thích ứng: 0,6 giây khi đang chọn lõi, 1,5 giây khi lâu không có lượt chọn (nhẹ CPU hơn).
+- Hộp Cài đặt luôn mở ở giữa cửa sổ chính.
 - Lỗi trong giao diện được ghi đủ vào `app.log` và hiện thông báo nhỏ (bấm để mở thư mục dữ liệu) thay vì im lặng.
 - Tách cửa sổ chính thành `theme.py`, `widgets.py` và `views/` (tìm kiếm, lõi, trang bị, combo) cho dễ bảo trì.
 

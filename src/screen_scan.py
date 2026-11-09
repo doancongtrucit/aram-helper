@@ -26,6 +26,7 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+import game_window
 import paths
 import playaram
 
@@ -40,6 +41,7 @@ WIDE_SHIFT = 10       # dò rộng ±25% khi gần khớp mà chưa chắc (th�
 NEAR_MIN = 0.40       # điểm từ mức này = "gần khớp": đáng dò rộng + lưu ảnh chẩn đoán
 MATCH_MIN = 0.55      # điểm tối thiểu để coi là khớp
 MARGIN_MIN = 0.02     # cách biệt tối thiểu với icon khác (ngoài nhóm dễ nhầm)
+EST_SIZE, EST_Y, EST_GAP = 0.1493, 0.2889, 2.27   # icon / chiều cao, tâm y / chiều cao, khoảng cách thẻ / icon
 NAME_MIN = 0.75       # độ giống tên (OCR) tối thiểu khi nhận lõi chỉ bằng tên
 GAP_MIN, GAP_MAX = 1.8, 3.0   # khoảng cách tâm 2 thẻ lõi kề nhau / cỡ icon (trong game ~2.3)
 CLOSE_DELTA = 0.045   # icon có điểm cách icon tốt nhất ≤ mức này được coi là dễ nhầm → ứng viên (OCR phân xử)
@@ -175,10 +177,27 @@ class Calibration:
     height: int
     size: int                       # cạnh icon trên màn hình (px)
     centers: list[tuple[int, int]]  # tâm 3 icon (px)
+    estimated: bool = False         # vị trí ước tính theo độ phân giải, chưa xác nhận bằng bảng chọn thật
 
     def save(self):
         DATA.mkdir(parents=True, exist_ok=True)
-        CALIB_FILE.write_text(json.dumps(self.__dict__), encoding="utf-8")
+        d = {k: v for k, v in self.__dict__.items() if k != "estimated"}
+        CALIB_FILE.write_text(json.dumps(d), encoding="utf-8")
+
+    @staticmethod
+    def estimate(width: int, height: int) -> "Calibration":
+        """Vị trí 3 thẻ lõi suy từ độ phân giải (giao diện game co giãn theo chiều cao, bảng chọn nằm giữa).
+        Đo trên game thật 2560×1440: icon 215 px, tâm y = 416, 3 thẻ cách nhau 488 px."""
+        size = int(round(EST_SIZE * height))
+        cy = int(round(EST_Y * height))
+        gap = EST_GAP * size
+        cx = width / 2
+        return Calibration(width, height, size, [(int(round(cx - gap)), cy), (int(round(cx)), cy),
+                                                 (int(round(cx + gap)), cy)], estimated=True)
+
+    def fits(self, width: int, height: int) -> bool:
+        """Dùng được cho vùng game (width × height): cùng tỉ lệ khung hình (khác độ phân giải thì tự co giãn)."""
+        return abs(self.width / self.height - width / height) < 0.02
 
     @staticmethod
     def load() -> "Calibration | None":
@@ -508,14 +527,13 @@ FAKE_SCREEN = os.environ.get("ARAM_FAKE_SCREEN")   # thử nghiệm: đọc ản
 
 
 def screen_size() -> tuple[int, int]:
-    """(W, H) màn hình chính theo điểm ảnh thật."""
+    """(W, H) vùng game theo điểm ảnh thật (cửa sổ game, không thấy thì màn hình chính).
+    Mọi toạ độ của bộ quét (hiệu chỉnh, vùng chụp) tính trong vùng này."""
     if FAKE_SCREEN:
         from PIL import Image
         with Image.open(FAKE_SCREEN) as im:     # chỉ đọc kích thước, không giải mã cả ảnh
             return im.size
-    import ctypes
-    _dpi_aware()
-    return ctypes.windll.user32.GetSystemMetrics(0), ctypes.windll.user32.GetSystemMetrics(1)
+    return tuple(game_window.rect()[2:])
 
 
 _gdi = None
@@ -570,16 +588,19 @@ def _gdi_grab(x0: int, y0: int, x1: int, y1: int) -> np.ndarray:
 
 
 def grab_screen(bbox: tuple[int, int, int, int] | None = None) -> np.ndarray:
-    """Chụp màn hình chính, hoặc chỉ vùng bbox = (x0, y0, x1, y1) – nhẹ hơn nhiều so với cả màn."""
+    """Chụp cả vùng game, hoặc chỉ bbox = (x0, y0, x1, y1) tính trong vùng game – nhẹ hơn nhiều so với cả màn."""
     if FAKE_SCREEN:
         im = read_image(FAKE_SCREEN)
         return im[bbox[1]:bbox[3], bbox[0]:bbox[2]].copy() if bbox else im
     _dpi_aware()
+    gx, gy, gw, gh = game_window.rect()
+    x0, y0, x1, y1 = bbox or (0, 0, gw, gh)
     try:
-        return _gdi_grab(*(bbox or (0, 0, *screen_size())))
+        return _gdi_grab(gx + x0, gy + y0, gx + x1, gy + y1)
     except Exception:                       # dự phòng
         from PIL import ImageGrab
-        return cv2.cvtColor(np.asarray(ImageGrab.grab(bbox=bbox)), cv2.COLOR_RGB2BGR)
+        img = ImageGrab.grab(bbox=(gx + x0, gy + y0, gx + x1, gy + y1), all_screens=True)
+        return cv2.cvtColor(np.asarray(img), cv2.COLOR_RGB2BGR)
 
 
 def read_image(path: str) -> np.ndarray:

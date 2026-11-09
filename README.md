@@ -21,7 +21,8 @@
 - **Lõi Kim Cương / Vàng / Bạc** (6 lõi mạnh nhất mỗi bậc, xem thêm tới 16) và **trang bị** trên cùng một màn,
   tự xếp bố cục theo cỡ cửa sổ và mức phóng to.
 - **Combo lõi** kèm lý do, 3 lối lên đồ, giày, phép bổ trợ, **đồ nên lên theo đội hình + trang bị của đội địch**.
-- **Tự đọc lõi trên màn hình** (Windows): nhận icon, đọc tên bằng OCR cho lõi dùng chung icon và lõi kỹ năng tướng.
+- **Tự đọc lõi trên màn hình** (Windows), tự định vị không cần cài đặt, bám theo cửa sổ game (cả màn hình phụ);
+  đọc tên bằng OCR cho lõi dùng chung icon và lõi kỹ năng tướng.
 - **Overlay** gọn, trong suốt trên game; bấm để đánh dấu lõi đã chọn mà không làm game mất focus.
 - Tìm nhanh tướng / lõi, giao diện **Tiếng Việt / English**, nhiều tuỳ chọn hiển thị, tự báo khi có bản mới.
 - Tuỳ chọn: hiển thị tóm tắt trận trên màn ESP32 (PC Control Deck).
@@ -44,7 +45,7 @@ macOS → chuột phải vào app → **Open**.
 
 | | |
 |---|---|
-| 📖 [Hướng dẫn sử dụng](docs/USER_GUIDE.md) | Cài đặt, cách dùng, hiệu chỉnh đọc màn hình, overlay, phím tắt, xử lý sự cố |
+| 📖 [Hướng dẫn sử dụng](docs/USER_GUIDE.md) | Cài đặt, cách dùng, đọc lõi trên màn hình, overlay, phím tắt, xử lý sự cố |
 | 📝 [Nhật ký thay đổi](CHANGELOG.md) | Thay đổi qua từng phiên bản |
 | 🛠 [Phát triển](CONTRIBUTING.md) | Cấu trúc mã nguồn, chạy từ mã nguồn, test, build và phát hành |
 

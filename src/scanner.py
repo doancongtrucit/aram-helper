@@ -1,6 +1,8 @@
-"""Luồng nền: khi đang trong trận và đã hiệu chỉnh, chụp màn hình mỗi giây để đọc 3 lõi đang được đưa ra.
+"""Luồng nền: khi đang trong trận, chụp vùng 3 thẻ lõi để đọc các lõi đang được đưa ra.
 
-Hiệu chỉnh: phím tắt toàn cục (mặc định Ctrl+Alt+A, xem app.py) khi đang hiện bảng chọn lõi trong game.
+Vị trí bảng lõi: chưa có thì ước tính theo độ phân giải của cửa sổ game và tự lưu lại ở lượt chọn lõi đầu tiên
+đọc được. Định vị thủ công (phím tắt, mặc định Ctrl+Alt+A) chỉ cần khi ước tính sai.
+Tần suất quét thích ứng: nhanh khi bảng chọn lõi đang hiện / gần khớp, thưa khi lâu không thấy.
 """
 from __future__ import annotations
 
@@ -9,12 +11,14 @@ import time
 import traceback
 
 import diag
-import hotkeys
 import live_client
 import playaram
 import screen_scan as ss
 
-SCAN_INTERVAL = 1.0
+SCAN_INTERVAL = 1.0      # giây giữa 2 lần quét bình thường
+SCAN_FAST = 0.6          # đang thấy / gần thấy bảng chọn lõi
+SCAN_IDLE = 1.5          # lâu không thấy bảng chọn lõi (giữa các lượt chọn) → nhẹ CPU hơn
+IDLE_AFTER = 120.0
 MISS_TO_HIDE = 2          # số lần quét liên tiếp không thấy bảng lõi thì coi như bảng đã đóng
 WIDE_EVERY = 3.0          # chưa thấy bảng lõi: cứ ~3 giây dò thô vùng rộng một lần (~70 ms) phòng thẻ xê dịch
 
@@ -42,6 +46,8 @@ class Scanner:
         self._diag_req = False
         self._was_in_game = False
         self._last_wide = 0.0
+        self._last_seen = 0.0        # lần cuối thấy / gần thấy bảng chọn lõi
+        self._est = None             # vị trí ước tính theo độ phân giải (khi chưa định vị)
 
     # ---------- public ----------
     def snapshot(self) -> dict:
@@ -49,7 +55,8 @@ class Scanner:
             return {
                 "ready": self.ready,
                 "calibrated": self.calib is not None,
-                "calibration": self.calib.__dict__ if self.calib else None,
+                "estimated": self.calib is None,
+                "calibration": (self.calib or self._est).__dict__ if (self.calib or self._est) else None,
                 "status": self.status,
                 "error": self.error,
                 "ocr": _ocr_available(),
@@ -60,7 +67,8 @@ class Scanner:
     def request_calibration(self, delay: float = 0.0):
         with self.lock:
             self.calibrating_at = time.time() + delay
-            self.status = f"Sẽ hiệu chỉnh sau {delay:.0f} giây – mở bảng chọn lõi trong game." if delay else "Đang hiệu chỉnh…"
+            self.status = (f"Sẽ định vị bảng lõi sau {delay:.0f} giây – mở bảng chọn lõi trong game." if delay
+                           else "Đang định vị bảng lõi…")
 
     def start(self):
         threading.Thread(target=self._run, daemon=True, name="scanner").start()
@@ -90,7 +98,7 @@ class Scanner:
         self.icons = ss.load_icons(self.catalog)
         self.bank = ss.bank_for(self.icons)
         self._set(ready=True, status="Sẵn sàng." if self.calib else
-                  f"Chưa hiệu chỉnh: khi bảng chọn lõi hiện trong game, bấm {hotkeys.label('calibrate')} (hoặc nút Hiệu chỉnh).")
+                  "Sẵn sàng – vị trí bảng lõi sẽ tự xác định ở lượt chọn lõi đầu tiên.")
 
     def _check_game(self):
         if ss.FAKE_SCREEN:
@@ -103,7 +111,7 @@ class Scanner:
         return self._in_game
 
     def _calibrate_now(self):
-        self._set(calibrating_at=None, status="Đang hiệu chỉnh… (khoảng 10 giây)")
+        self._set(calibrating_at=None, status="Đang định vị bảng lõi… (khoảng 10 giây)")
         img = ss.grab_screen()
         if img.max() < 10:
             self._set(status="Ảnh chụp màn hình bị đen: chuyển game sang chế độ Không viền (Borderless) rồi thử lại.")
@@ -115,12 +123,12 @@ class Scanner:
                 calib = None
         if not calib:
             diag.save(img, {"note": "hiệu chỉnh thất bại"}, "calibration-failed")
-            diag.log("hiệu chỉnh thất bại – đã lưu ảnh màn hình vào data/debug/")
-            self._set(status="Không tìm thấy 3 lõi trên màn hình. Thử lại khi bảng chọn lõi đang hiện rõ.")
+            diag.log("định vị bảng lõi thất bại – đã lưu ảnh màn hình vào thư mục debug")
+            self._set(status="Không tìm thấy bảng lõi trên màn hình. Thử lại khi bảng chọn lõi đang hiện rõ.")
             return
-        diag.log(f"hiệu chỉnh xong {calib.__dict__}")
+        diag.log(f"đã định vị bảng lõi {calib.__dict__}")
         calib.save()
-        self._set(calib=calib, status="Hiệu chỉnh xong – app sẽ tự đọc lõi mỗi khi bảng chọn hiện ra.")
+        self._set(calib=calib, status="Đã định vị bảng lõi – app sẽ tự đọc lõi mỗi khi bảng chọn hiện ra.")
         self._publish(res)
         del img
 
@@ -134,30 +142,45 @@ class Scanner:
             else:
                 self.offer = {"slots": slots, "at": time.time(), "visible": True}
 
+    def _active_calib(self, full) -> ss.Calibration:
+        """Vị trí đã định vị (nếu cùng tỉ lệ khung hình với vùng game), không thì ước tính theo độ phân giải."""
+        if self.calib and self.calib.fits(*full):
+            return self.calib
+        if not self._est or (self._est.width, self._est.height) != tuple(full):
+            self._est = ss.Calibration.estimate(*full)
+        return self._est
+
     def _scan_once(self):
-        # Chỉ chụp vùng quanh 3 thẻ lõi (~1/5 màn hình) thay vì cả màn hình
+        # Chỉ chụp vùng quanh 3 thẻ lõi (~1/5 vùng game) thay vì cả màn hình
         full = ss.screen_size()
-        x0, y0, x1, y1 = ss.scan_region(self.calib, full)
+        calib = self._active_calib(full)
+        x0, y0, x1, y1 = ss.scan_region(calib, full)
         img = ss.grab_screen((x0, y0, x1, y1))
         kw = dict(origin=(x0, y0), full=full, ocr_cache=self._ocr_cache, alt_names=self.alt_names)
-        res = ss.read_offer(img, self.calib, self.bank, self.catalog, **kw)
+        res = ss.read_offer(img, calib, self.bank, self.catalog, **kw)
         near = max(r["score"] for r in res) >= ss.NEAR_MIN
         since = time.time() - self._last_wide
         if not ss.confident(res) and ((near and since > 2) or since > WIDE_EVERY):
             # Thẻ lõi có thể đã xê dịch so với lúc hiệu chỉnh (khi đó điểm ở vị trí cũ rơi về ~0, không chỉ
             # "gần khớp") → định kỳ dò thô vùng rộng ±25%, thấy thì dời tâm rồi xác nhận lại bằng dò thường.
             self._last_wide = time.time()
-            coarse = ss.detect(img, self.calib, self.bank, (x0, y0), full, ss.WIDE_SHIFT, step=2)
+            coarse = ss.detect(img, calib, self.bank, (x0, y0), full, ss.WIDE_SHIFT, step=2)
             if max(r["score"] for r in coarse) >= ss.NEAR_MIN:
-                moved = ss.recenter(self.calib, coarse, full)
+                moved = ss.recenter(calib, coarse, full)
                 again = ss.read_offer(img, moved, self.bank, self.catalog, **kw)
                 if ss.confident(again):
-                    self.calib = ss.recenter(moved, again, full)
-                    self.calib.save()
-                    diag.log(f"thẻ lõi xê dịch → cập nhật vị trí hiệu chỉnh {self.calib.centers}")
+                    calib = ss.recenter(moved, again, full)
+                    diag.log(f"thẻ lõi lệch so với vị trí cũ → cập nhật {calib.centers}")
                     res = again
-        self._diagnose(res, img, (x0, y0))
+        if ss.confident(res) and (calib.estimated or calib is not self.calib):
+            calib.estimated = False                   # lượt chọn đầu tiên đọc được → lưu làm vị trí chuẩn
+            calib.save()
+            diag.log(f"tự định vị bảng lõi {calib.__dict__}")
+            self._set(calib=calib)
+        self._diagnose(res, img, (x0, y0), calib)
         del img
+        if ss.confident(res) or max(r["score"] for r in res) >= ss.NEAR_MIN:
+            self._last_seen = time.time()
         if ss.confident(res):
             self._misses = 0
             self._publish(res)
@@ -173,7 +196,7 @@ class Scanner:
                 self._set(status=f"Đang quét… (chưa thấy bảng chọn lõi · khớp tốt nhất {best:.2f})")
 
     # ---------- chẩn đoán ----------
-    def _diagnose(self, res, img, origin):
+    def _diagnose(self, res, img, origin, calib):
         """Ghi điểm khớp vào log (thưa) và lưu ảnh vùng quét khi gần khớp mà chưa chắc – để tìm lỗi trong game thật."""
         conf = ss.confident(res)
         scores = [round(r["score"], 2) for r in res]
@@ -188,7 +211,7 @@ class Scanner:
             diag.log(f"quét: chưa chắc · điểm {scores} · cách biệt {margins} · ngưỡng {ss.MATCH_MIN}/{ss.MARGIN_MIN}")
         if not conf and max(scores) >= ss.NEAR_MIN and now - self._diag_last_save > 10:
             self._diag_last_save = now
-            diag.save(img, {"origin": origin, "calibration": self.calib.__dict__, "scores": scores, "margins": margins,
+            diag.save(img, {"origin": origin, "calibration": calib.__dict__, "scores": scores, "margins": margins,
                             "best": [[names.get(c, c) for c in r["candidates"]] for r in res]}, "near-match")
 
     def request_diagnostic(self):
@@ -198,10 +221,11 @@ class Scanner:
     def save_diagnostic(self):
         """Phím tắt: lưu ảnh cả màn hình + kết quả quét hiện tại vào data/debug/ để gửi khi báo lỗi."""
         img = ss.grab_screen()
-        info = {"calibration": self.calib.__dict__ if self.calib else None}
-        if self.calib and self.bank is not None:
-            res = ss.read_offer(img, self.calib, self.bank, self.catalog, use_ocr=True, alt_names=self.alt_names)
-            wide = ss.read_offer(img, self.calib, self.bank, self.catalog, use_ocr=False, shift=ss.WIDE_SHIFT)
+        calib = self._active_calib((img.shape[1], img.shape[0]))
+        info = {"calibration": calib.__dict__, "game_area": ss.screen_size()}
+        if self.bank is not None:
+            res = ss.read_offer(img, calib, self.bank, self.catalog, use_ocr=True, alt_names=self.alt_names)
+            wide = ss.read_offer(img, calib, self.bank, self.catalog, use_ocr=False, shift=ss.WIDE_SHIFT)
             names = {a["id"]: a["name"] for a in self.catalog}
             info.update({
                 "confident": ss.confident(res),
@@ -224,22 +248,29 @@ class Scanner:
                 in_game = self._check_game()
                 if in_game != self._was_in_game:
                     self._was_in_game = in_game
-                    diag.log(("vào trận – " + (f"bắt đầu quét, hiệu chỉnh {self.calib.__dict__}" if self.calib
-                                               else "CHƯA hiệu chỉnh nên chưa quét")) if in_game else "ra khỏi trận")
+                    diag.log(("vào trận – vùng game " + str(ss.screen_size()) + ", " +
+                              (f"vị trí bảng lõi {self.calib.__dict__}" if self.calib else "dùng vị trí ước tính"))
+                             if in_game else "ra khỏi trận")
                 if self._diag_req:
                     self._diag_req = False
                     self.save_diagnostic()
                 if self.calibrating_at and time.time() >= self.calibrating_at:
                     self._calibrate_now()
-                elif self.calib and in_game:
+                elif in_game:
                     self._scan_once()
-                elif self.calib:
+                else:
                     self._set(status="Chờ vào trận để quét.")
                 self._set(error=None)
             except Exception as e:
                 traceback.print_exc()
                 self._set(error=str(e))
-            time.sleep(0.25 if self.calibrating_at else SCAN_INTERVAL)
+            time.sleep(self._interval())
+
+    def _interval(self) -> float:
+        if self.calibrating_at:
+            return 0.25
+        since = time.time() - self._last_seen
+        return SCAN_FAST if since < 5 else SCAN_IDLE if since > IDLE_AFTER else SCAN_INTERVAL
 
 
 def _ocr_available() -> bool:
