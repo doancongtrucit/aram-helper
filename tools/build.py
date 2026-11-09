@@ -83,6 +83,17 @@ def find_iscc() -> str | None:
     return None
 
 
+def stable_copies(kinds: list[str]):
+    """Bản sao tên cố định (không kèm số phiên bản) để link
+    https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe
+    luôn tải bản mới nhất – hướng dẫn không phải sửa link mỗi lần phát hành."""
+    for kind in kinds:
+        src = DIST / f"ARAM-Helper-{__version__}-{kind}"
+        if src.exists():
+            shutil.copyfile(src, DIST / f"ARAM-Helper-{kind}")
+            print(f"đã tạo ARAM-Helper-{kind} (link cố định)")
+
+
 def main():
     DIST.mkdir(exist_ok=True)
     if sys.platform == "win32":
@@ -100,12 +111,14 @@ def main():
             print(f"đã tạo ARAM-Helper-{__version__}-Setup.exe")
         else:
             print("Không thấy Inno Setup 6 (ISCC.exe) – bỏ qua bộ cài, chỉ có bản portable.")
+        stable_copies(["Setup.exe", "win64-portable.zip"])
     elif sys.platform == "darwin":
         out = DIST / f"ARAM-Helper-{__version__}-macos.zip"
         out.unlink(missing_ok=True)
         # ditto giữ nguyên symlink + quyền chạy trong .app (zipfile của Python thì không)
         subprocess.run(["ditto", "-c", "-k", "--keepParent", str(DIST / "ARAM Helper.app"), str(out)], check=True)
         print(f"đã tạo {out.name}")
+        stable_copies(["macos.zip"])
 
 
 if __name__ == "__main__":

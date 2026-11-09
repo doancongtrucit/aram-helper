@@ -86,6 +86,7 @@ jobs:
           files: out/*
           generate_release_notes: true
           body: |
-            **Windows 10/11:** tải file `…-Setup.exe` (đề xuất) hoặc `…-win64-portable.zip` (giải nén là chạy, không cần cài).
+            **Windows 10/11:** tải `ARAM-Helper-Setup.exe` (đề xuất) hoặc `ARAM-Helper-win64-portable.zip` (giải nén là chạy, không cần cài).
+            Các file kèm số phiên bản có nội dung giống hệt; file tên cố định dùng cho link "luôn tải bản mới nhất".
             Windows có thể hiện "Windows protected your PC" vì app chưa ký số: bấm **More info → Run anyway**.
             **macOS 11+:** tải `…-macos.zip`, giải nén, kéo `ARAM Helper.app` vào Applications; lần đầu chuột phải → **Open**.

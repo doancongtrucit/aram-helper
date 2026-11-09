@@ -9,6 +9,9 @@
 - **Tạo gói báo lỗi** (Cài đặt → Giới thiệu): file zip gồm log, ảnh chẩn đoán, vị trí bảng lõi, cài đặt, thông tin hệ
   thống – tự che đường dẫn thư mục người dùng và địa chỉ IP, không gồm cấu hình ESP32. Kèm mẫu báo lỗi trên GitHub.
 
+- Link tải **luôn trỏ tới bản mới nhất** (`…/releases/latest/download/ARAM-Helper-Setup.exe`) trong README và hướng dẫn;
+  mỗi bản phát hành có thêm file tên cố định bên cạnh file kèm số phiên bản. Huy hiệu phiên bản mới nhất / test.
+
 ### Phát triển
 - Test dùng trang mẫu dựng từ `tests/sample_data.json` (số liệu tự đặt) thay cho trang thật không commit được:
   87/89 test chạy được trên GitHub Actions (trước chỉ ~60%). Thêm workflow chạy test ở mỗi push / pull request;

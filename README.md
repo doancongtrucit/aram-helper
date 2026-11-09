@@ -31,12 +31,17 @@
 
 ## Tải về
 
-Tải bản mới nhất tại **[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)** – không cần cài Python.
+[![Phiên bản mới nhất](https://img.shields.io/github/v/release/doancongtrucit/aram-helper?label=b%E1%BA%A3n%20m%E1%BB%9Bi%20nh%E1%BA%A5t&color=e8b84a)](https://github.com/doancongtrucit/aram-helper/releases/latest)
+[![Tests](https://github.com/doancongtrucit/aram-helper/actions/workflows/tests.yml/badge.svg)](https://github.com/doancongtrucit/aram-helper/actions/workflows/tests.yml)
 
-| Hệ điều hành | File |
+Không cần cài Python. Các link dưới đây luôn tải **bản mới nhất**:
+
+| Hệ điều hành | Tải trực tiếp |
 |---|---|
-| Windows 10 / 11 (64-bit) | `ARAM-Helper-<phiên bản>-Setup.exe` (khuyên dùng) hoặc `…-win64-portable.zip` |
-| macOS 11+ | `ARAM-Helper-<phiên bản>-macos.zip` (cửa sổ chính; chưa có đọc màn hình / overlay) |
+| Windows 10 / 11 (64-bit) | **[⬇ Bộ cài – ARAM-Helper-Setup.exe](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe)** (khuyên dùng) · [Bản portable (zip)](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-win64-portable.zip) |
+| macOS 11+ | [⬇ ARAM-Helper-macos.zip](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip) (cửa sổ chính; chưa có đọc màn hình / overlay) |
+
+Các phiên bản trước và ghi chú phát hành: [Releases](https://github.com/doancongtrucit/aram-helper/releases).
 
 App chưa có chữ ký số: Windows hiện "Windows protected your PC" → **More info → Run anyway**;
 macOS → chuột phải vào app → **Open**.

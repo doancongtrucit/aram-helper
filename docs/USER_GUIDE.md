@@ -46,17 +46,22 @@ Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg) · Dữ li�
 
 ### 2.1. Tải về
 
-Vào trang **[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)** và chọn file phù hợp:
+![Phiên bản mới nhất](https://img.shields.io/github/v/release/doancongtrucit/aram-helper?label=b%E1%BA%A3n%20m%E1%BB%9Bi%20nh%E1%BA%A5t&color=e8b84a)
 
-| File | Dành cho | Ghi chú |
+Các link dưới đây luôn tải **bản mới nhất** (số phiên bản xem ở huy hiệu trên hoặc trang
+[Releases](https://github.com/doancongtrucit/aram-helper/releases/latest)):
+
+| Tải về | Dành cho | Ghi chú |
 |---|---|---|
-| `ARAM-Helper-<phiên bản>-Setup.exe` | Windows – **khuyên dùng** | Bộ cài, không cần quyền admin, có shortcut Desktop / Start Menu |
-| `ARAM-Helper-<phiên bản>-win64-portable.zip` | Windows – không cài | Giải nén là chạy; dữ liệu nằm ngay trong thư mục đó (chép sang USB / máy khác được) |
-| `ARAM-Helper-<phiên bản>-macos.zip` | macOS | Giải nén, kéo `ARAM Helper.app` vào **Applications** |
+| **[ARAM-Helper-Setup.exe](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe)** | Windows – **khuyên dùng** | Bộ cài, không cần quyền admin, có shortcut Desktop / Start Menu |
+| [ARAM-Helper-win64-portable.zip](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-win64-portable.zip) | Windows – không cài | Giải nén là chạy; dữ liệu nằm ngay trong thư mục đó (chép sang USB / máy khác được) |
+| [ARAM-Helper-macos.zip](https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip) | macOS | Giải nén, kéo `ARAM Helper.app` vào **Applications** |
+
+Trang Releases cũng có các file kèm số phiên bản (vd. `ARAM-Helper-1.4.0-Setup.exe`) – nội dung giống hệt.
 
 ### 2.2. Cài trên Windows
 
-1. Bấm đúp `ARAM-Helper-<phiên bản>-Setup.exe`.
+1. Bấm đúp `ARAM-Helper-Setup.exe` vừa tải.
 2. Nếu Windows hiện **"Windows protected your PC"** (app chưa có chữ ký số): bấm **More info → Run anyway**.
 3. Chọn có tạo biểu tượng Desktop / mở cùng Windows hay không → **Install**.
 4. Mở **ARAM Helper** từ Start Menu hoặc Desktop.
