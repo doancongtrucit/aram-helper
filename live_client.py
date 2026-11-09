@@ -43,11 +43,27 @@ def current_game() -> dict:
     me = next((p for p in players if _same_player(p, active)), None)
     if me is None:
         return {"in_game": True, "error": "Không xác định được tướng của bạn", "player": active}
+    my_team = me.get("team")
     return {
         "in_game": True,
         "player": active,
         "champion_raw": me.get("rawChampionName", ""),
         "champion_name": me.get("championName", ""),
+        "team": my_team,
+        "my_items": _player_brief(me)["items"],
+        # Đội địch: thông tin này đều xem được trên bảng điểm (phím Tab) trong game
+        "enemies": [_player_brief(p) for p in players if my_team and p.get("team") and p.get("team") != my_team],
         "game_mode": stats.get("gameMode"),
         "game_time": stats.get("gameTime"),
+    }
+
+
+def _player_brief(p: dict) -> dict:
+    raw = str(p.get("rawChampionName", ""))
+    return {
+        "champion_raw": raw,
+        "champion_name": p.get("championName", ""),
+        "slug": "".join(ch for ch in raw.replace("game_character_displayname_", "").lower() if ch.isalnum()),
+        "level": p.get("level"),
+        "items": [int(it["itemID"]) for it in p.get("items") or [] if isinstance(it, dict) and it.get("itemID")],
     }

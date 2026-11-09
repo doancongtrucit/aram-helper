@@ -32,6 +32,24 @@ class CurrentGame(unittest.TestCase):
         self.assertEqual(g["champion_raw"], "game_character_displayname_MonkeyKing")
         self.assertEqual(g["game_mode"], "KIWI")
 
+    def test_enemies_from_other_team(self):
+        players = [
+            {**PLAYERS[1], "team": "ORDER"},
+            {**PLAYERS[0], "team": "CHAOS", "level": 7,
+             "items": [{"itemID": 3165, "displayName": "Morello"}, {"itemID": 1001, "displayName": "Giày"}]},
+            {"championName": "Ngộ Không 2", "rawChampionName": "game_character_displayname_DrMundo", "team": "CHAOS",
+             "riotId": "X#1", "items": []},
+            {"championName": "Đồng đội", "rawChampionName": "game_character_displayname_Lux", "team": "ORDER",
+             "riotId": "Y#1"},
+        ]
+        r = {"/activeplayername": "Player1#VN2", "/playerlist": players, "/gamestats": {}}
+        with mock.patch.object(live_client, "_get", side_effect=fake(r)):
+            g = live_client.current_game()
+        self.assertEqual(g["team"], "ORDER")
+        self.assertEqual([e["slug"] for e in g["enemies"]], ["ahri", "drmundo"])
+        self.assertEqual(g["enemies"][0]["items"], [3165, 1001])
+        self.assertEqual(g["enemies"][0]["level"], 7)
+
     def test_matches_name_without_tag(self):
         r = {"/activeplayername": "Player1", "/playerlist": PLAYERS, "/gamestats": {}}
         with mock.patch.object(live_client, "_get", side_effect=fake(r)):

@@ -87,6 +87,26 @@ class DetectSynthetic(unittest.TestCase):
             self.assertLess(abs(got - want), 8)
         self.assertLess(abs(self.calib.size - 128), 10)
 
+    def test_wide_search_recovers_shifted_cards(self):
+        """Thẻ lõi xê dịch ~20% cỡ icon so với lúc hiệu chỉnh: dò thường trượt, dò rộng tìm lại và dời tâm."""
+        bank = ss.bank_for(self.icons)
+        offer = [BY_NAME["Rút Kiếm Ra"], BY_NAME["Cú Đấm Thần Bí"], BY_NAME["Bầy Ong Nảy Bật"]]
+        img = self.make(self.icons, offer, "prismatic", seed=9, names=self.names)
+        import numpy as np
+        shift = 26                                            # px, ~20% của icon 128 px
+        moved = np.roll(img, (shift, -shift), axis=(0, 1))    # xuống 26, sang trái 26
+        normal = ss.read_offer(moved, self.calib, bank, CATALOG)
+        wide = ss.read_offer(moved, self.calib, bank, CATALOG, shift=ss.WIDE_SHIFT)
+        self.assertFalse(ss.confident(normal))
+        self.assertTrue(ss.confident(wide))
+        for slot, want in zip(wide, offer):
+            self.assertIn(want, slot["candidates"])
+        fixed = ss.recenter(self.calib, wide, (1920, 1080))
+        for (x0, y0), (x1, y1) in zip(self.calib.centers, fixed.centers):
+            self.assertLess(abs((x1 - x0) + shift), 8)
+            self.assertLess(abs((y1 - y0) - shift), 8)
+        self.assertTrue(ss.confident(ss.read_offer(moved, fixed, bank, CATALOG)))
+
     def test_detects_offers_with_names(self):
         bank = ss.bank_for(self.icons)
         rng = random.Random(3)

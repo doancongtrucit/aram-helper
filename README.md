@@ -6,7 +6,10 @@
 ![ARAM Helper](docs/images/main-window.png)
 
 - Tự nhận tướng khi vào trận (Live Client API chính thức của Riot).
-- Lõi Kim Cương / Vàng / Bạc (top 8 + xem thêm), combo lõi kèm lý do, build trang bị, giày, phép bổ trợ.
+- Lõi Kim Cương / Vàng / Bạc và trang bị **cạnh nhau trên cùng một màn**, tự vừa mọi cỡ cửa sổ / zoom (Ctrl + / Ctrl −).
+- Combo lõi kèm lý do, build trang bị, giày, phép bổ trợ, đồ nên lên theo đội địch.
+- Ô tìm kiếm lọc nhanh tướng (↑ ↓ Enter) và lõi; giao diện **Tiếng Việt / English**.
+- **Cài đặt**: ngôn ngữ, cỡ chữ, số lõi mỗi bậc, độ mờ / cỡ / vị trí / mục hiển thị của overlay, bật/tắt ESP32.
 - Đánh dấu lõi đã chọn → gợi ý lõi hợp combo cho lượt sau.
 - **Windows**: tự đọc 3 lõi đang được đưa ra trên màn hình, overlay gọn trên game, phím tắt khi đang chơi.
 - **macOS**: cửa sổ chính (chưa có đọc màn hình / overlay).

@@ -14,13 +14,19 @@ python app.py --champion yasuo    # chạy có log trong Terminal
 | File | Vai trò |
 |---|---|
 | `app.py` | Khởi động, `Hub` (trạng thái dùng chung: trận, tướng, lõi đã chọn), phím tắt |
-| `desktop.py` | Cửa sổ chính (tkinter) |
+| `desktop.py` | Cửa sổ chính (tkinter): 2 cột lõi \| trang bị, tự vừa cửa sổ, zoom, tìm tướng nhanh |
+| `settings.py`, `settings_ui.py` | Tuỳ chọn (`data/settings.json`, `on_change` báo các phần đang chạy) + hộp thoại Cài đặt |
+| `i18n.py`, `localize.py` | Chuỗi giao diện Anh / Việt (`T("chuỗi tiếng Việt")`) + đổi tên lõi / đồ / tướng theo ngôn ngữ |
 | `overlay.py` | Overlay trên game (Windows) |
-| `advice.py` | Công thức chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý |
+| `advice.py` | Công thức chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý lõi |
+| `counter_items.py` | Phân tích đội hình + trang bị địch → 2 dòng gợi ý đồ (luật + danh sách tướng hồi máu / khống chế) |
+| `esp32_link.py` | Đẩy tóm tắt trận lên màn ARAM của PC Control Deck (ESP32) qua Wi-Fi UDP; cấu hình `data/esp32.json` |
+| `ddragon.py` | Dữ liệu tướng / trang bị / phép chính thức của Riot (Data Dragon vi_VN, en_US), rút gọn, cache `data/ddragon*.json` |
 | `playaram.py` | Tải + tách dữ liệu từ trang nguồn, cache `data/` |
 | `live_client.py` | Đọc Live Client Data API của Riot |
 | `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR, luồng quét nền (Windows) |
 | `hotkeys.py` | Phím tắt toàn cục (Windows) |
+| `diag.py` | Log chẩn đoán bộ quét + ảnh vùng quét khi gần khớp / hiệu chỉnh lỗi / Ctrl+Alt+D (`data/debug/`, giữ 30 ảnh) |
 | `tests/` | Unit test + `synthetic.py`/`bench_scan.py` (ảnh giả lập để đo độ chính xác nhận diện) |
 | `tools/make_screenshots.py` | Tạo lại ảnh trong `docs/images/` từ dữ liệu mẫu + màn chọn lõi giả lập (không chụp màn hình thật) |
 
@@ -39,9 +45,12 @@ python app.py --champion yasuo    # chạy có log trong Terminal
    email, IP... Commit bằng email noreply của GitHub.
 6. **Test trước khi commit**: `python -m unittest discover -s tests`. Đổi phần nhận diện thì chạy thêm
    `python tests/bench_scan.py 40` và so độ chính xác với trước.
-7. Giao diện, thông báo và comment viết **tiếng Việt**; tên biến/hàm tiếng Anh.
+7. Giao diện, thông báo và comment viết **tiếng Việt**; tên biến/hàm tiếng Anh. Chuỗi hiện lên giao diện bọc
+   trong `T("…")` và thêm bản tiếng Anh vào `i18n.EN` (test `test_settings_i18n` + kiểm tra đủ khoá).
 
 ## Thêm / sửa
 - Trang nguồn đổi giao diện → sửa hàm `parse_*` trong `playaram.py`, chạy lại `fetch_fixtures.py` và test.
 - Đổi công thức gợi ý → chỉ sửa `advice.py` (cửa sổ chính và overlay cùng dùng), cập nhật `tests/test_advice.py`.
 - Phím tắt mới → thêm vào `keys` trong `app.main()` kèm phím dự phòng.
+- Tuỳ chọn mới → thêm khoá vào `settings.DEFAULTS`, ô điều khiển trong `settings_ui.py`, phần dùng nó đọc
+  `settings.get()` (đổi ngay thì đăng ký `settings.on_change`).

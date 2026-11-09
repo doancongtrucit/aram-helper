@@ -19,8 +19,11 @@ import time
 import tkinter as tk
 from tkinter import font as tkfont
 
+import advice
+import settings
 from advice import TIER_BONUS
 from hotkeys import label
+from i18n import T
 
 KEY = "#010203"                 # màu "trong suốt" (góc bo tròn)
 BG = "#0d111c"
@@ -31,10 +34,11 @@ MUTED = "#8c93aa"
 GOOD = "#3ddc97"
 GOOD_BG = "#123a2a"
 OK = "#f5a53a"
+ACCENT = "#6aa8ff"
 TIER_COLOR = {"S+": "#ff8a5c", "S": "#ff8a5c", "A": "#f5c451", "B": "#6aa8ff", "C": MUTED, "D": MUTED}
 FONT = "Segoe UI"
-PANEL_ALPHA = 0.86              # nền mờ: nhìn xuyên được game nhưng chữ vẫn rõ
-BADGE_ALPHA = 0.92
+PANEL_ALPHA = 0.74              # mờ hơn để game nổi bật, chữ vẫn đọc được
+BADGE_ALPHA = 0.84
 SHOW_IN_CAPTURE = os.environ.get("ARAM_OVERLAY_IN_CAPTURE") == "1"   # chỉ để thử nghiệm
 PREFS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "overlay.json")
 
@@ -54,21 +58,24 @@ class Overlay:
         _dpi_aware()
         user32 = ctypes.windll.user32
         self.W, self.H = user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
-        self.k = root.winfo_fpixels("1i") / 96.0
+        self.dpi = root.winfo_fpixels("1i") / 96.0
+        self.zoom = 1.0
+        self.k = self.dpi
+        self._fonts: dict = {}
         self.img = Images(root, self.k)
+        self._apply_scale()
         self.img.listeners.append(self._redraw)
         self.prefs = self._load_prefs()
         self.collapsed = bool(self.prefs.get("collapsed"))
-        self.visible = True
+        self.visible = bool(settings.get("overlay"))
         self._toggle_req = False
         self._sig = None
         self._last_top = 0.0
-        self._fonts: dict = {}
         self._drag = None
         self._d = None
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
-        for alpha in (PANEL_ALPHA, BADGE_ALPHA):
+        for alpha in (settings.get("ov_opacity"), settings.get("ov_badge_opacity")):
             win = tk.Toplevel(root)
             win.title("ARAM Helper overlay")
             win.overrideredirect(True)
@@ -81,6 +88,47 @@ class Overlay:
             win.withdraw()
             self.layers.append((win, cv))
         (self.panel, self.pcv), (self.bwin, self.bcv) = self.layers
+        settings.on_change(lambda ch: root.after(0, self._on_settings, ch))
+
+    # ---------- cài đặt ----------
+    def _apply_scale(self):
+        self.zoom = max(0.6, min(1.8, float(settings.get("ov_scale") or 1.0)))
+        self.k = self.dpi * self.zoom
+        self.img.scale = self.k
+        self._fonts = {}
+
+    def _on_settings(self, ch: dict):
+        if "ov_opacity" in ch:
+            self.panel.attributes("-alpha", max(0.2, min(1.0, float(ch["ov_opacity"]))))
+        if "ov_badge_opacity" in ch:
+            self.bwin.attributes("-alpha", max(0.2, min(1.0, float(ch["ov_badge_opacity"]))))
+        if "ov_scale" in ch:
+            self._apply_scale()
+        if "overlay" in ch:
+            self.set_visible(bool(ch["overlay"]))
+        self._sig = None
+
+    def reset_position(self):
+        """Về góc phải trên, bỏ vị trí đã kéo."""
+        self.prefs.pop("x", None)
+        self.prefs.pop("y", None)
+        self._save_prefs()
+        settings.set("ov_corner", "top-right")
+        self._sig = None
+
+    def _position(self, W, H):
+        corner = settings.get("ov_corner") or "custom"
+        m = self.S(24)
+        if corner == "custom" and "x" in self.prefs:
+            px, py = self.prefs["x"], self.prefs["y"]
+        else:
+            left = corner in ("top-left", "bottom-left")
+            bottom = corner in ("bottom-right", "bottom-left")
+            px = m if left else self.W - W - m
+            py = self.H - H - self.S(180) if bottom else self.S(90)
+        px = max(0, min(self.W - self.S(60), px))
+        py = max(0, min(self.H - self.S(40), py))
+        return int(px), int(py)
 
     # ---------- tiện ích ----------
     def S(self, px) -> int:
@@ -122,7 +170,8 @@ class Overlay:
     def _font(self, size, bold=False):
         key = (size, bold)
         if key not in self._fonts:
-            self._fonts[key] = tkfont.Font(family=FONT, size=size, weight="bold" if bold else "normal")
+            self._fonts[key] = tkfont.Font(family=FONT, size=max(6, int(round(size * self.zoom))),
+                                           weight="bold" if bold else "normal")
         return self._fonts[key]
 
     def _fit(self, text, width, size, bold=False):
@@ -139,6 +188,8 @@ class Overlay:
         return cv.create_polygon(pts, smooth=True, **kw)
 
     def _text(self, cv, x, y, s, size=10, color=TEXT, bold=False, anchor="nw", **kw):
+        if "width" in kw:
+            kw["width"] = int(kw["width"])
         return cv.create_text(x, y, text=s, fill=color, anchor=anchor, font=self._font(size, bold), **kw)
 
     def _image(self, cv, x, y, src, size, anchor="nw", **kw):
@@ -200,6 +251,8 @@ class Overlay:
             self._drag = None
             self.prefs["x"], self.prefs["y"] = self.panel.winfo_x(), self.panel.winfo_y()
             self._save_prefs()
+            if settings.get("ov_corner") != "custom":
+                settings.set("ov_corner", "custom")
 
     # ---------- vòng cập nhật ----------
     def _gather(self) -> dict | None:
@@ -208,7 +261,7 @@ class Overlay:
         if not (game.get("in_game") or os.environ.get("ARAM_FAKE_SCREEN")):
             return None
         return {"champ": champ, "scan": scan, "advice": st.get("advice"), "owned": st.get("owned", []),
-                "calib": scan.get("calibration")}
+                "calib": scan.get("calibration"), "counter": st.get("counter") or []}
 
     def _tick(self):
         try:
@@ -221,7 +274,7 @@ class Overlay:
                     self._sig = None
             if self.visible and not self._drag:
                 d = self._gather()
-                sig = repr(self._signature(d)) + repr(self.collapsed)
+                sig = repr(self._signature(d)) + repr(self.collapsed) + repr(settings.all_values())
                 if sig != self._sig:
                     self._sig = sig
                     self._d = d
@@ -244,7 +297,7 @@ class Overlay:
         adv = [(a["slot"], a["rank"], [c["id"] for c in a["candidates"]]) for a in (d["advice"] or [])]
         sc = d["scan"]
         return (champ.get("slug"), champ.get("fetched_at"), sc.get("status"), sc.get("error"), sc.get("calibrated"),
-                adv, tuple(d["owned"]), repr(d["calib"]))
+                adv, tuple(d["owned"]), repr(d["calib"]), repr(d.get("counter")))
 
     def _draw(self, d):
         for _, cv in self.layers:
@@ -253,8 +306,11 @@ class Overlay:
             for win, _ in self.layers:
                 win.withdraw()
             return
-        self._draw_panel(d)
-        if d["advice"] and d["calib"]:
+        if settings.get("ov_only_offer") and not d["advice"]:
+            self.panel.withdraw()
+        else:
+            self._draw_panel(d)
+        if d["advice"] and d["calib"] and settings.get("ov_badges"):
             self._draw_badges(d)
             self._shrink_wrap(self.bwin, self.bcv)
         else:
@@ -264,7 +320,10 @@ class Overlay:
     def _draw_panel(self, d):
         cv, S = self.pcv, self.S
         champ, scan, adv = d["champ"] or {}, d["scan"], d["advice"] or []
-        W, pad = S(272), S(10)
+        W, pad = S(int(settings.get("ov_width") or 272)), S(10)
+
+        def show(k):
+            return bool(settings.get("ov_show_" + k))
         x, right = pad, W - pad
         y = 0
 
@@ -275,7 +334,7 @@ class Overlay:
         cv.create_oval(x, hh / 2 - S(4), x + S(8), hh / 2 + S(4), fill=dot_col, outline="", tags=("head",))
         name = champ.get("name") or "ARAM Helper"
         tier = champ.get("tier", "")
-        t = self._text(cv, x + S(16), hh / 2, self._fit(name, S(130), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
+        t = self._text(cv, x + S(16), hh / 2, self._fit(name, W - S(142), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
         tx = cv.bbox(t)[2] + S(6)
         if tier:
             self._text(cv, tx, hh / 2, tier, 10, TIER_COLOR.get(tier, OK), True, anchor="w", tags=("head",))
@@ -299,46 +358,48 @@ class Overlay:
 
         body_items_start = y
         if self.collapsed:
-            if adv:
+            if adv and show("offer"):
                 best = min(adv, key=lambda a: a["rank"])
                 y = self._row(cv, y, W, best, compact=True)
         else:
-            if adv:
-                y = self._section(cv, y, "GỢI Ý – bấm để đánh dấu đã chọn")
+            if adv and show("offer"):
+                y = self._section(cv, y, T("GỢI Ý – bấm để đánh dấu đã chọn"))
                 for a in sorted(adv, key=lambda a: a["rank"]):
                     y = self._row(cv, y, W, a)
                 y += S(2)
-            elif scan.get("error") or not scan.get("calibrated"):
-                msg = scan.get("error") or f"Chưa hiệu chỉnh: khi bảng chọn lõi hiện ra, bấm {label('calibrate')}."
+                # Cặp combo liên quan tới các lõi đang được đưa ra (ưu tiên combo hoàn thành với lõi đã có)
+                offered = [c["id"] for a in adv for c in a["candidates"]]
+                combos = advice.offer_combos(champ, offered, set(d["owned"]), limit=3) if show("combo") else []
+                if combos:
+                    y = self._section(cv, y, T("COMBO – viền xanh: đang được đưa ra · viền lam: đã có"))
+                    for cb in combos:
+                        y = self._combo_row(cv, y, W, cb)
+            elif not adv and (scan.get("error") or not scan.get("calibrated")):
+                msg = scan.get("error") or T("Chưa hiệu chỉnh: khi bảng chọn lõi hiện ra, bấm {key}.", key=label("calibrate"))
                 t = self._text(cv, x, y + S(6), msg, 8, OK, width=W - 2 * pad)
                 y = cv.bbox(t)[3] + S(6)
 
-            if d["owned"]:
-                y = self._section(cv, y, "ĐÃ CHỌN")
+            if d["owned"] and show("owned"):
+                y = self._section(cv, y, T("ĐÃ CHỌN"))
                 ix = x
-                for i in d["owned"][:9]:
+                for i in d["owned"][:max(1, (W - 2 * pad) // S(26))]:
                     self._image(cv, ix, y, i, 22)
                     ix += S(26)
                 names = ", ".join(self._aug_name(i, champ) for i in d["owned"])
                 t = self._text(cv, x, y + S(26), names, 8, MUTED, width=W - 2 * pad)
                 y = cv.bbox(t)[3] + S(6)
 
-            builds = champ.get("builds") or []
+            builds = (champ.get("builds") or [])[:int(settings.get("ov_builds") or 3)] if show("build") else []
             if builds:
-                b = builds[0]
-                y = self._section(cv, y, f"BUILD · thắng {b.get('winrate', '?')}%")
-                ix = x
-                for it in b.get("items", [])[:6] + b.get("boots", [])[:1]:
-                    size = 28 if it.get("core") else 24
-                    if it.get("core"):
-                        cv.create_rectangle(ix - S(1), y - S(1), ix + S(size) + S(1), y + S(size) + S(1), outline=GOOD, width=S(2))
-                    self._image(cv, ix, y + (0 if it.get("core") else S(2)), it.get("icon"), size)
-                    ix += S(size) + S(5)
-                y += S(30)
-                core = [i["name"] for i in b.get("items", []) if i.get("core")]
-                if core:
-                    t = self._text(cv, x, y, " → ".join(core), 8, GOOD, True, width=W - 2 * pad)
-                    y = cv.bbox(t)[3] + S(6)
+                y = self._section(cv, y, T("LỐI LÊN ĐỒ – viền xanh: món cốt lõi"))
+                for b in builds:
+                    y = self._build_row(cv, y, W, b)
+
+            # 2 dòng cuối: đồ nên lên theo đội hình + trang bị của đội địch
+            if d.get("counter") and show("counter"):
+                y = self._section(cv, y, T("THEO ĐỘI ĐỊCH"))
+                for line in d["counter"][:2]:
+                    y = self._counter_row(cv, y, W, line)
         # nền thân (nối liền dưới thanh tiêu đề), đặt dưới cùng để chữ nằm trên
         if y > body_items_start:
             y += S(4)
@@ -351,13 +412,63 @@ class Overlay:
             cv.tag_lower(head_bg)
 
         cv.config(width=W, height=y)
-        px = self.prefs.get("x", self.W - W - S(24))
-        py = self.prefs.get("y", S(90))
-        px = max(0, min(self.W - S(60), px))
-        py = max(0, min(self.H - S(40), py))
+        px, py = self._position(W, y)
         self.panel.geometry(f"{W}x{y}+{px}+{py}")
         if self.panel.state() == "withdrawn":
             self.panel.deiconify()
+
+    def _combo_row(self, cv, y, W, cb):
+        """1 combo: hạng, icon các lõi (viền xanh = đang được đưa ra, viền lam = đã có), tên rút gọn."""
+        S = self.S
+        x = S(10)
+        self._text(cv, x, y + S(11), cb["tier"], 9, TIER_COLOR.get(cb["tier"], MUTED), True, anchor="w")
+        ix = x + S(20)
+        for k, a in enumerate(cb["augments"]):
+            if k:
+                self._text(cv, ix + S(1), y + S(11), "+", 8, MUTED, anchor="w")
+                ix += S(10)
+            edge = GOOD if a["offered"] else ACCENT if a["owned"] else None
+            if edge:
+                cv.create_rectangle(ix - S(1), y, ix + S(21), y + S(22), outline=edge, width=S(2))
+            self._image(cv, ix, y + S(1), a["id"], 20)
+            ix += S(24)
+        if cb["owned_count"]:
+            self._text(cv, W - S(10), y + S(11), T("có {n}/{m}", n=cb["owned_count"], m=len(cb["augments"])), 8, ACCENT, True, anchor="e")
+        names = " + ".join(a["name"] for a in cb["augments"])
+        self._text(cv, x + S(20), y + S(25), self._fit(names, W - S(40), 8), 8, MUTED)
+        return y + S(42)
+
+    def _build_row(self, cv, y, W, b):
+        """1 lối lên đồ: tên ngắn + tỉ lệ thắng, rồi icon 5–6 món + giày (món cốt lõi viền xanh)."""
+        S = self.S
+        x = S(10)
+        wr = b.get("winrate")
+        self._text(cv, W - S(10), y, f"{wr:.1f}%" if wr is not None else "?", 8, GOOD, True, anchor="ne")
+        self._text(cv, x, y, self._fit(b.get("name", ""), W - S(70), 8, True), 8, TEXT, True)
+        y += S(16)
+        ix = x
+        for it in b.get("items", [])[:6] + b.get("boots", [])[:1]:
+            size = 24 if it.get("core") else 22
+            if it.get("core"):
+                cv.create_rectangle(ix - S(1), y - S(1), ix + S(size) + S(1), y + S(size) + S(1), outline=GOOD, width=S(2))
+            self._image(cv, ix, y + (0 if it.get("core") else S(1)), it.get("icon"), size)
+            ix += S(size) + S(5)
+        return y + S(30)
+
+    def _counter_row(self, cv, y, W, line):
+        """1 dòng: icon món + tên món (đậm) + lý do ngắn; dòng tóm tắt đội địch thì chỉ có chữ."""
+        S = self.S
+        x = S(10)
+        if line.get("icon"):
+            cv.create_rectangle(x - S(1), y - S(1), x + S(21), y + S(21), outline=OK, width=S(1))
+            self._image(cv, x, y, line["icon"], 20)
+            name = self._fit(line["name"], S(120), 9, True)
+            t = self._text(cv, x + S(28), y + S(10), name, 9, OK, True, anchor="w")
+            wx = cv.bbox(t)[2] + S(6)
+            self._text(cv, wx, y + S(10), self._fit(line["why"], W - S(10) - wx, 8), 8, MUTED, anchor="w")
+        else:
+            self._text(cv, x, y + S(10), self._fit(line["why"], W - S(20), 8), 8, MUTED, anchor="w")
+        return y + S(26)
 
     def _section(self, cv, y, title):
         y += self.S(8)
@@ -375,8 +486,8 @@ class Overlay:
         self._text(cv, S(16), y + h / 2, "★" if top else str(a["rank"]), 10, GOOD if top else MUTED, True,
                    anchor="center", tags=(tag,))
         self._image(cv, S(28), y + h / 2, b["id"], 22, anchor="w", tags=(tag,))
-        nm = b["name"] + (f" (1 trong {len(a['candidates'])})" if len(a["candidates"]) > 1 else "")
-        self._text(cv, S(56), y + h / 2, self._fit(nm, S(130 if not compact else 120), 10, top), 10,
+        nm = b["name"] + (" (" + T("1 trong {n}", n=len(a["candidates"])) + ")" if len(a["candidates"]) > 1 else "")
+        self._text(cv, S(56), y + h / 2, self._fit(nm, W - S(142 if not compact else 152), 10, top), 10,
                    GOOD if top else TEXT, top, anchor="w", tags=(tag,))
         wr = "?" if b.get("winrate") is None else f"{b['winrate']:.1f}%" + ("*" if b.get("source") == "chung" else "")
         self._text(cv, W - S(12), y + h / 2 - (S(6) if b.get("fit") else 0), wr, 9, TEXT if not top else GOOD, True,
@@ -404,7 +515,7 @@ class Overlay:
             txt = f"★ {wr}" if top else f"#{a['rank']}  {wr}"
             sub = f"+{TIER_BONUS[b['fit']]} combo {b['fit']}" if b.get("fit") else ""
             if len(a["candidates"]) > 1:
-                sub = (sub + " · " if sub else "") + f"1 trong {len(a['candidates'])}"
+                sub = (sub + " · " if sub else "") + T("1 trong {n}", n=len(a["candidates"]))
             w = max(S(96), self._font(11, True).measure(txt) + S(24), self._font(8).measure(sub) + S(20))
             h = S(40) if sub else S(26)
             bottom = cy - size * 0.68                 # ngay trên icon, ngoài vùng bộ quét đọc

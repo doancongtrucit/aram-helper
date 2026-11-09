@@ -36,6 +36,24 @@ class Advice(unittest.TestCase):
         self.assertEqual(best["best"]["id"], BAY_ONG)                  # 71% + 3 (combo A)
         self.assertEqual(best["best"]["fit"], "A")
 
+    def test_offer_combos_prefers_owned_partner(self):
+        # Đang được đưa ra Bầy Ong + Khổng Nhân, đã có Cú Đấm Thần Bí
+        res = advice.offer_combos(CHAMP, [BAY_ONG, KHONG_NHAN, RUT_KIEM], {CU_DAM})
+        self.assertLessEqual(len(res), 3)
+        self.assertTrue(res)
+        top = res[0]
+        self.assertGreaterEqual(top["owned_count"], 1)                       # combo dùng được lõi đã có lên đầu
+        self.assertEqual(top["tier"], "S")                                   # Cú Đấm + Khổng Nhân + Quăng Quật
+        self.assertIn(KHONG_NHAN, top["offered"])
+        flags = {a["id"]: (a["offered"], a["owned"]) for a in top["augments"]}
+        self.assertEqual(flags[CU_DAM], (False, True))
+        self.assertEqual(flags[KHONG_NHAN], (True, False))
+        for c in res:                                                        # combo nào cũng chứa lõi đang được đưa ra
+            self.assertTrue(c["offered"])
+
+    def test_offer_combos_none_when_unrelated(self):
+        self.assertEqual(advice.offer_combos(CHAMP, [RUT_KIEM], set()), [])
+
     def test_ambiguous_slot_picks_best_candidate(self):
         res = advice.rank_offer([[RUT_KIEM, BAY_ONG]], CHAMP, CATALOG, set())
         self.assertEqual(res[0]["best"]["id"], BAY_ONG)

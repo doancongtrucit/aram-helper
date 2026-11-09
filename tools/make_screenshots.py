@@ -22,6 +22,11 @@ import numpy as np  # noqa: E402
 import tkinter as tk  # noqa: E402
 from PIL import Image, ImageDraw, ImageFont  # noqa: E402
 
+import settings  # noqa: E402
+import tempfile  # noqa: E402
+
+# Ảnh hướng dẫn luôn dùng cài đặt mặc định (tiếng Việt, tự vừa cửa sổ), không đụng data/settings.json của máy
+settings._reset_for_tests(Path(tempfile.mkdtemp()) / "settings.json")
 import advice  # noqa: E402
 import desktop  # noqa: E402
 import overlay  # noqa: E402
@@ -35,6 +40,14 @@ CHAMP["fetched_at"] = time.time() - 600
 OFFER = [[1018], [3048], [1134]]          # Khổng Nhân Can Đảm, Bầy Ong Nảy Bật, Rút Kiếm Ra
 OWNED = [1058]                            # Cú Đấm Thần Bí
 FONT = "C:/Windows/Fonts/segoeuib.ttf"
+
+# Đội địch mẫu (Soraka, Aatrox, Vladimir, Lux, Malphite – Malphite đã lên Giáp Gai) → 2 dòng gợi ý đồ
+import counter_items  # noqa: E402
+import ddragon  # noqa: E402
+_DD = ddragon.get()
+_ENEMIES = [{"slug": s, "champion_name": s, "items": it} for s, it in
+            (("soraka", []), ("aatrox", []), ("vladimir", []), ("lux", []), ("malphite", [3075]))]
+COUNTER = counter_items.two_lines(CHAMP, _ENEMIES, _DD) if _DD else []
 
 
 # ---------- chụp nội dung 1 cửa sổ (không lấy gì phía sau) ----------
@@ -118,6 +131,7 @@ class Hub(FakeHub):
         s["advice"] = advice.rank_offer(OFFER, CHAMP, CATALOG, set(self.owned)) if self.offer else None
         s["scan"] = {"status": "Đã thấy bảng chọn lõi.", "calibrated": True, "offer": {"visible": self.offer},
                      "calibration": self.calib}
+        s["counter"] = COUNTER
         return s
 
 
@@ -127,27 +141,33 @@ class Dummy:
     def set_visible(self, v): pass
     def request_calibration(self, d=0): pass
     def mark_hidden(self): pass
+    def reset_position(self): pass
 
 
 def main_window_shots(root):
     hub = Hub()
     hub.owned = list(OWNED)
+    hub.offer = False                         # mặc định cửa sổ chính không đổi khi đang chọn lõi
     win = tk.Toplevel(root)
     app = desktop.App(win, hub, Dummy(), Dummy())
-    win.geometry("1500x1100+20+20")
+    app._champs = [(s, n, desktop.fold(n)) for s, n in (("yasuo", "Yasuo"), ("yone", "Yone"), ("yuumi", "Yuumi"),
+                                                        ("masteryi", "Master Yi"), ("kayle", "Kayle"))]
+    win.geometry("1500x900+20+20")
     for _ in range(4):
         app._poll()
         wait(root, 500)
     wait(root, 2500)                          # đợi tải icon
+    app._full_sig = None
     app._poll()
-    wait(root, 400)
+    wait(root, 600)
 
-    # 1) Tổng quan tab Lõi & trang bị (có ô Nên chọn) + chú thích
+    # 1) Tổng quan tab Lõi & trang bị: lõi bên trái, trang bị bên phải + chú thích
     img = print_window(win)
     first_card = app.cards[3048]["w"]
     section = first_card.master.master
     more_btn = [w for w in section.winfo_children()[0].winfo_children() if w.cget("text").startswith("Xem thêm")][0]
-    # Số chú thích đặt vào chỗ trống cạnh từng phần, không đè lên chữ
+    items_head = app._right.inner.winfo_children()[1 if COUNTER else 0]
+    settings_btn = [w for w in app.search.master.winfo_children() if isinstance(w, tk.Label) and "Cài đặt" in w.cget("text")][0]
     R = 20
 
     def after(w):          # ngay sau nội dung (theo bề rộng nội dung, không theo khung giãn)
@@ -162,41 +182,53 @@ def main_window_shots(root):
         x, y, ww, hh = rel(w, img)
         return x + ww - R - 6, y + int(hh * frac)
 
-    def top_mid(w):
-        x, y, ww, hh = rel(w, img)
-        return x + ww // 2, y
-
-    pts = [(1, *after(app.status)), (2, *inside_right(app.search)), (3, *inside_right(app.pick, 0.5)),
-           (4, *after(app.scan_lbl)), (5, *after(app.head)), (6, *after(app.tabs)),
-           (7, *after(app.owned_bar)), (8, *top_mid(app.advice_box)), (9, *before(more_btn)),
-           (10, *rel(first_card, img)[:2])]
-    pts[2] = (3, pts[2][1] - 40, pts[2][2])          # tránh mũi tên của ô chọn tướng
+    pts = [(1, *after(app.status)), (2, *inside_right(app.search)), (3, *before(settings_btn)),
+           (4, *after(app.scan_lbl)), (5, *after(app.head.winfo_children()[1])), (6, *before(app.tabs)),
+           (7, *after(app.owned_bar)), (8, *before(more_btn)), (9, *rel(first_card, img)[:2]),
+           (10, *after(items_head))]
+    bx, by, _, bh = rel(settings_btn, img)
+    pts[2] = (3, bx - 3, by + bh + R - 2)            # ngay dưới, giữa nút Tự động và Cài đặt
     save(annotate(img, pts, 1.1), "main-window.png")
 
-    # 2) Trang bị gợi ý
-    target = [w for w in app.scroll.inner.winfo_children() if isinstance(w, tk.Label) and w.cget("text") == "Trang bị gợi ý"][0]
-    total = app.scroll.inner.winfo_height()
-    app.scroll.canvas.yview_moveto(max(0, (target.winfo_y() - 10) / total))
-    wait(root, 400)
-    img = print_window(win)
-    save(img, "items.png")
-
-    # 3) Tab Combo lõi
+    # 2) Tab Combo lõi
     app._set_tab("combo")
     app._poll()
     wait(root, 1200)
     save(print_window(win), "combo.png")
 
-    # 4) Tìm lõi bằng tay
-    hub.offer = False
+    # 3) Tìm tướng nhanh: gõ vài chữ → danh sách chọn (↑ ↓ Enter)
     app._set_tab("aug")
     app._poll()
-    app.search.event_generate("<FocusIn>")
+    wait(root, 600)
+    app.search.focus_force()
+    app.search_var.set("y")
+    wait(root, 500)
+    img = print_window(win)
+    if app._popup is not None:
+        pop = print_window(app._popup[0])
+        ox, oy = img.info["origin"]
+        px, py = pop.info["origin"]
+        img.paste(pop, (px - ox, py - oy))
+    save(img.crop((0, 0, img.width, int(img.height * 0.45))), "search-champion.png")
+
+    # 4) Tìm lõi bằng tay
+    app._hide_popup()
     app.search_var.set("bay ong, vu luc, nhanh")
     app._light_update()
     wait(root, 800)
     img = print_window(win)
-    save(img.crop((0, 0, img.width, int(img.height * 0.62))), "search.png")
+    save(img.crop((0, 0, int(img.width * 0.62), int(img.height * 0.75))), "search.png")
+    app.search_var.set("")
+    win.focus_force()
+
+    # 5) Cài đặt (2 thẻ Chung / Overlay)
+    app.open_settings()
+    dlg = app._settings_dlg
+    for page, name in (("general", "settings.png"), ("overlay", "settings-overlay.png")):
+        dlg._go(page)
+        wait(root, 500)
+        save(print_window(dlg.win), name, 900)
+    dlg.close()
     win.destroy()
 
 
@@ -212,15 +244,24 @@ def overlay_shots(root):
     gap, cy = int(W * 300 / 1920), int(H * 0.40)
     calib = {"width": W, "height": H, "size": int(s), "centers": [[W // 2 - gap, cy], [W // 2, cy], [W // 2 + gap, cy]]}
 
-    # Màn chọn lõi giả lập phủ toàn màn hình (che màn hình thật), overlay nằm trên, rồi chụp vùng cần
+    # Màn chọn lõi giả lập chỉ phủ đúng vùng sẽ chụp (che màn hình thật ở vùng đó), overlay nằm trên
     from PIL import ImageGrab, ImageTk
     stage = tk.Toplevel(root)
     stage.overrideredirect(True)
-    stage.geometry(f"{W}x{H}+0+0")
-    photo = ImageTk.PhotoImage(bg)
-    tk.Label(stage, image=photo, bd=0).pack()
-    stage.attributes("-topmost", True)                   # che kín màn hình thật
-    wait(root, 300)
+    stage.withdraw()
+    stage_label = tk.Label(stage, bd=0)
+    stage_label.pack()
+    stage.attributes("-topmost", True)
+    photos = []
+
+    def show_stage(box):
+        x0, y0, x1, y1 = box
+        ph = ImageTk.PhotoImage(bg.crop(box))
+        photos.append(ph)
+        stage_label.configure(image=ph)
+        stage.geometry(f"{x1 - x0}x{y1 - y0}+{x0}+{y0}")
+        stage.deiconify()
+        stage.attributes("-topmost", True)
 
     def raise_overlay():
         """Ép 2 cửa sổ overlay lên trên màn nền (cả hai đều 'luôn trên cùng')."""
@@ -231,10 +272,11 @@ def overlay_shots(root):
             hwnd = u.GetParent(win.winfo_id()) or win.winfo_id()
             u.SetWindowPos(hwnd, wt.HWND(-1), 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010)   # TOPMOST, NOSIZE|NOMOVE|NOACTIVATE
 
-    def screen_is_clean(img):
-        """Chắc chắn ảnh chỉ có màn giả lập + overlay: góc trái dưới phải trùng ảnh nền."""
-        a = np.asarray(img.crop((0, H - 200, 300, H))).astype(int)
-        b = np.asarray(bg.crop((0, H - 200, 300, H))).astype(int)
+    def screen_is_clean(img, box):
+        """Chắc chắn ảnh chỉ có màn giả lập + overlay: dải mép trái của vùng chụp phải trùng ảnh nền."""
+        x0, y0, x1, y1 = box
+        a = np.asarray(img.crop((0, 0, 20, y1 - y0))).astype(int)
+        b = np.asarray(bg.crop((x0, y0, x0 + 20, y1))).astype(int)
         return np.abs(a - b).mean() < 3
 
     hub = Hub()
@@ -245,34 +287,41 @@ def overlay_shots(root):
     ov = overlay.Overlay(hub, Dummy(), root)
     ov.prefs = {"x": int(W * 0.70), "y": int(H * 0.12)}
 
-    for collapsed, name in ((False, "overlay-ingame.png"), (True, "overlay-collapsed.png")):
+    def draw(collapsed):
+        """Vẽ overlay ngay (ép trạng thái thu gọn, không phụ thuộc chuột người dùng)."""
         ov.collapsed = collapsed
         ov._sig = None
-        for _ in range(3):
-            ov._tick()
-            ov._last_top = 0
-            wait(root, 900)
+        ov._draw(ov._gather())
+        wait(root, 50)
+
+    for collapsed, name in ((False, "overlay-ingame.png"), (True, "overlay-collapsed.png")):
+        draw(collapsed)
+        wait(root, 2000)                                 # đợi tải icon
+        draw(collapsed)
+        px, py, pw, ph = ov.panel.winfo_x(), ov.panel.winfo_y(), ov.panel.winfo_width(), ov.panel.winfo_height()
+        if collapsed:
+            box = (px - 30, py - 30, px + pw + 30, py + ph + 30)
+        else:
+            box = (calib["centers"][0][0] - int(2.2 * s), max(0, min(py, cy - int(1.6 * s)) - 40),
+                   min(W, px + pw + 70), max(cy + int(2.8 * s), py + ph + 30))
+        show_stage(box)
+        wait(root, 200)
+        draw(collapsed)                                  # vẽ lại ngay trước khi chụp
         raise_overlay()
-        wait(root, 400)
-        img = ImageGrab.grab(bbox=(0, 0, W, H))
-        if not screen_is_clean(img):
+        wait(root, 250)
+        img = ImageGrab.grab(bbox=box)
+        stage.withdraw()
+        if not screen_is_clean(img, box):
             raise SystemExit("Ảnh chụp lẫn màn hình thật – dừng, không lưu.")
         if collapsed:
-            x, y = ov.panel.winfo_x(), ov.panel.winfo_y()
-            img = img.crop((x - 30, y - 30, x + ov.panel.winfo_width() + 30, y + ov.panel.winfo_height() + 30))
             save(img, name, 800)
         else:
-            x0 = calib["centers"][0][0] - int(2.2 * s)
-            x1 = min(W, ov.panel.winfo_x() + ov.panel.winfo_width() + 70)
-            y0 = max(0, min(ov.panel.winfo_y(), cy - int(1.6 * s)) - 40)
-            y1 = cy + int(2.8 * s)
-            pb = (ov.panel.winfo_x(), ov.panel.winfo_y(), ov.panel.winfo_width())
+            ox, oy = box[:2]
             # số chú thích nằm ngoài mép khung / nhãn để không che chữ
-            marks = [(1, pb[0] - 26, pb[1] + int(17 * ov.k)), (2, pb[0] - 26, pb[1] + int(80 * ov.k)),
-                     (3, calib["centers"][1][0] - int(0.95 * s), cy - int(1.0 * s)),
-                     (4, pb[0] + pb[2] + 26, pb[1] + int(17 * ov.k))]
-            img = annotate(img, marks, 1.4).crop((x0, y0, x1, y1))
-            save(img, name, 1500)
+            marks = [(1, px - 26 - ox, py + int(17 * ov.k) - oy), (2, px - 26 - ox, py + int(80 * ov.k) - oy),
+                     (3, calib["centers"][1][0] - int(0.95 * s) - ox, cy - int(1.0 * s) - oy),
+                     (4, px + pw + 26 - ox, py + int(17 * ov.k) - oy)]
+            save(annotate(img, marks, 1.4), name, 1500)
     for win, _ in ov.layers:
         win.destroy()
     stage.destroy()

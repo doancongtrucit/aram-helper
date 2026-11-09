@@ -78,21 +78,25 @@ def read_lines(bgr: np.ndarray) -> list[str]:
         return []
 
 
-def best_name(lines: list[str], candidates: dict[int, str], min_ratio: float = 0.6) -> tuple[int | None, float]:
-    """Chọn ứng viên có tên giống một dòng OCR nhất. Trả (id, độ giống) hoặc (None, điểm)."""
+def best_name(lines: list[str], candidates: dict, min_ratio: float = 0.6) -> tuple[int | None, float]:
+    """Chọn ứng viên có tên giống một dòng OCR nhất. Trả (id, độ giống) hoặc (None, điểm).
+    candidates: id → tên, hoặc id → [tên tiếng Việt, tên tiếng Anh...] (game có thể để ngôn ngữ nào cũng được)."""
     folded = [fold(l) for l in lines if l.strip()]
     if not folded:
         return None, 0.0
     scores = {}
-    for aug_id, name in candidates.items():
-        n = fold(name)
+    for aug_id, names in candidates.items():
         best = 0.0
-        for line in folded:
-            # so cả dòng và đoạn con cùng độ dài (tên có thể nằm chung dòng với chữ khác)
-            best = max(best, difflib.SequenceMatcher(None, n, line).ratio())
-            if len(line) > len(n):
-                for i in range(0, len(line) - len(n) + 1):
-                    best = max(best, difflib.SequenceMatcher(None, n, line[i:i + len(n)]).ratio())
+        for name in ([names] if isinstance(names, str) else names):
+            n = fold(name)
+            if not n:
+                continue
+            for line in folded:
+                # so cả dòng và đoạn con cùng độ dài (tên có thể nằm chung dòng với chữ khác)
+                best = max(best, difflib.SequenceMatcher(None, n, line).ratio())
+                if len(line) > len(n):
+                    for i in range(0, len(line) - len(n) + 1):
+                        best = max(best, difflib.SequenceMatcher(None, n, line[i:i + len(n)]).ratio())
         scores[aug_id] = best
     ranked = sorted(scores.items(), key=lambda kv: -kv[1])
     top_id, top = ranked[0]

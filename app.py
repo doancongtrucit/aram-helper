@@ -21,7 +21,12 @@ import threading  # noqa: E402
 import time  # noqa: E402
 
 import advice  # noqa: E402
+import counter_items  # noqa: E402
+import ddragon  # noqa: E402
 import hotkeys  # noqa: E402
+import i18n  # noqa: E402
+import localize  # noqa: E402
+import settings  # noqa: E402
 import live_client  # noqa: E402
 import playaram  # noqa: E402
 
@@ -52,15 +57,48 @@ class Hub:
         self.owned: dict[str, list[int]] = {}
         self._catalog: dict[int, dict] | None = None
         self._wake = threading.Event()
+        self._dds: dict[str, dict] = {}     # Data Dragon theo ngôn ngữ (tải ở luồng nền)
+        self._aug_names: dict[str, dict[int, str]] = {}   # tên lõi theo ngôn ngữ ("en")
+        self._counter_key = None
+        self._counter: list[dict] = []
+        self._loc_key = None
+        self._loc_champ = None
+        settings.on_change(lambda ch: self._wake.set() if "lang" in ch else None)   # đổi ngôn ngữ: tải ngay
 
     # ----- dữ liệu -----
     def catalog(self) -> dict[int, dict]:
+        """Danh mục lõi theo ngôn ngữ đang chọn (id → lõi)."""
         if self._catalog is None:
             try:
                 self._catalog = {a["id"]: a for a in playaram.get_augment_catalog()}
             except Exception:
                 return {}
-        return self._catalog
+        return localize.catalog(self._catalog, i18n.lang(), self._aug_names.get(i18n.lang(), {}))
+
+    def dd(self) -> dict | None:
+        return self._dds.get(i18n.ddragon_locale())
+
+    def _load_lang_data(self, in_game: bool):
+        """Ở luồng nền: Data Dragon (cần khi trong trận hoặc khi giao diện tiếng Anh) + tên lõi tiếng Anh."""
+        loc, lang = i18n.ddragon_locale(), i18n.lang()
+        if loc not in self._dds and (in_game or lang != "vi"):
+            d = ddragon.get(loc)               # lần đầu ~0,5 s, sau đó đọc từ cache
+            if d:
+                self._dds[loc] = d
+        if lang != "vi" and lang not in self._aug_names:
+            try:
+                self._aug_names[lang] = {a["id"]: a["name"] for a in playaram.get_augment_catalog(lang=lang)}
+            except Exception:
+                pass
+
+    def champion_view(self) -> dict | None:
+        """Dữ liệu tướng đã đổi sang ngôn ngữ đang chọn (lưu lại theo tướng + thời điểm tải + ngôn ngữ)."""
+        champ, lang = self.champion, i18n.lang()
+        key = (id(champ), (champ or {}).get("fetched_at"), lang, lang in self._aug_names, bool(self.dd()))
+        if key != self._loc_key:
+            self._loc_key = key
+            self._loc_champ = localize.champion(champ, lang, self._aug_names.get(lang, {}), self.dd())
+        return self._loc_champ
 
     def refresh(self):
         game = live_client.current_game()
@@ -72,10 +110,29 @@ class Hub:
                 champ = playaram.get_champion(slug)
             except Exception as e:
                 err = f"Không lấy được dữ liệu cho {slug}: {e}"
+        self._load_lang_data(bool(game.get("in_game")))
+        if game.get("in_game") and not self.game.get("in_game"):
+            enemies = game.get("enemies") or []
+            print(f"[{time.strftime('%H:%M:%S')}] vào trận: {game.get('champion_name')} · đội địch: "
+                  + (", ".join(f"{e['slug']}({len(e['items'])} món)" for e in enemies)
+                     if enemies else "KHÔNG đọc được (kiểm tra trường 'team' của Live API)"), flush=True)
         with self.lock:
             if game.get("in_game") and not self.game.get("in_game") and game_slug:
                 self.owned[game_slug] = []     # vừa vào trận mới: xoá lõi đã chọn của trận trước
             self.game, self.champion, self.error = game, champ, err
+
+    def counter(self) -> list[dict]:
+        """2 dòng gợi ý đồ theo đội hình + trang bị địch (rỗng nếu không trong trận)."""
+        g, champ, dd = self.game, self.champion_view(), self.dd()
+        enemies = g.get("enemies") or []
+        if not (g.get("in_game") and enemies and champ and dd):
+            return []
+        key = (champ.get("slug"), tuple((e["slug"], tuple(e["items"])) for e in enemies),
+               tuple(g.get("my_items") or ()), i18n.lang())
+        if key != self._counter_key:
+            self._counter_key = key
+            self._counter = counter_items.two_lines(champ, enemies, dd, g.get("my_items") or [])
+        return self._counter
 
     def loop(self):
         while True:
@@ -131,15 +188,16 @@ class Hub:
         if not offer or not offer.get("slots") or not self.champion:
             return None
         slots = [s["candidates"] for s in offer["slots"]]
-        return advice.rank_offer(slots, self.champion, self.catalog(), set(self.owned_ids()))
+        return advice.rank_offer(slots, self.champion_view(), self.catalog(), set(self.owned_ids()))
 
     def state(self) -> dict:
         scan = self.scanner.snapshot() if self.scanner else {"error": SCANNER_ERROR}
         with self.lock:
-            out = {"game": self.game, "champion": self.champion, "error": self.error,
+            out = {"game": self.game, "champion": self.champion_view(), "error": self.error,
                    "owned": self.owned_ids(), "focus": self.focus_slug, "scan": scan}
         offer = scan.get("offer") or {}
         out["advice"] = self.offer_advice(offer) if offer.get("visible") else None
+        out["counter"] = self.counter()
         return out
 
 
@@ -189,6 +247,7 @@ def main():
         SCANNER.in_game_fn = lambda: HUB.game.get("in_game", False)   # dùng chung, không gọi Live API 2 lần
         SCANNER.start()
         keys["calibrate"] = (["ctrl+alt+a", "ctrl+alt+k", "ctrl+alt+shift+a"], lambda: SCANNER.request_calibration(0))
+        keys["diagnose"] = (["ctrl+alt+d", "ctrl+alt+shift+d"], SCANNER.request_diagnostic)
     else:
         print(SCANNER_ERROR)
     if overlay:
@@ -197,6 +256,11 @@ def main():
         hotkeys.start(keys)
         print(f"Phím tắt: {hotkeys.label('calibrate')} hiệu chỉnh · {hotkeys.label('pick1')}/2/3 đánh dấu lõi đã chọn · "
               f"{hotkeys.label('overlay')} ẩn/hiện overlay")
+
+    import esp32_link
+    if esp32_link.Esp32Link.enabled():          # data/esp32.json có thì đẩy màn ARAM lên ESP32 (bật/tắt trong Cài đặt)
+        esp32_link.Esp32Link(HUB.state, log=print).start()
+        print("ESP32: bật màn ARAM qua Wi-Fi.")
 
     desktop.App(root, HUB, SCANNER, overlay)
     if overlay:

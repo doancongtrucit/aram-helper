@@ -293,7 +293,7 @@ def icon_asset_path(url: str | None) -> str | None:
 def parse_augment_catalog(page: str) -> list[dict]:
     """Toàn bộ lõi ARAM Hỗn Loạn từ /loi-aram-hon-loan (tier chung, tỉ lệ thắng chung)."""
     out = []
-    pos = [(m.start(), m.group(1)) for m in re.finditer(r'<h2 aria-label="Bậc ([^"]+)"', page)]
+    pos = [(m.start(), m.group(1)) for m in re.finditer(r'<h2 aria-label="(?:Bậc|Tier) ([^"]+)"', page)]
     for li in re.finditer(r'<li data-core-name="[^"]*" data-core-rarity="(\w+)" data-core-cats="([^"]*)" '
                           r'data-tooltip-id="(\d+)"[^>]*>(.*?)</li>', page, re.S):
         rarity, cats, aug_id, body = li.groups()
@@ -318,14 +318,15 @@ def parse_augment_catalog(page: str) -> list[dict]:
     return out
 
 
-def get_augment_catalog(force: bool = False) -> list[dict]:
-    name = "_augments"
+def get_augment_catalog(force: bool = False, lang: str = "vi") -> list[dict]:
+    """Tier list lõi; lang = "en" lấy bản tiếng Anh (cùng id lõi, tên tiếng Anh)."""
+    name = "_augments" if lang == "vi" else f"_augments_{lang}"
     if not force:
         cached = _read_cache(name, 24 * 3600)
         if cached and cached.get("schema") == SCHEMA:
             return cached["augments"]
     try:
-        augs = parse_augment_catalog(_get("/loi-aram-hon-loan"))
+        augs = parse_augment_catalog(_get("/loi-aram-hon-loan" if lang == "vi" else f"/{lang}/loi-aram-hon-loan"))
         _write_cache(name, {"augments": augs, "schema": SCHEMA})
         return augs
     except Exception:

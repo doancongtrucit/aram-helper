@@ -39,7 +39,9 @@ CALIB_FILE = DATA / "calibration.json"
 CDRAGON = "https://raw.communitydragon.org/latest/game/"
 
 ID_SIZE = 40          # cỡ icon (px) khi nhận diện
-ID_SHIFT = 3          # dò lệch ±px quanh vị trí đã hiệu chỉnh (ở cỡ ID_SIZE)
+ID_SHIFT = 3          # dò lệch ±px quanh vị trí đã hiệu chỉnh (ở cỡ ID_SIZE) – ±7% cỡ icon
+WIDE_SHIFT = 10       # dò rộng ±25% khi gần khớp mà chưa chắc (thẻ lõi có thể đã xê dịch)
+NEAR_MIN = 0.40       # điểm từ mức này = "gần khớp": đáng dò rộng + lưu ảnh chẩn đoán
 MATCH_MIN = 0.55      # điểm tối thiểu để coi là khớp
 MARGIN_MIN = 0.02     # cách biệt tối thiểu với icon khác (ngoài nhóm dễ nhầm)
 CLOSE_DELTA = 0.045   # icon có điểm cách icon tốt nhất ≤ mức này được coi là dễ nhầm → ứng viên (OCR phân xử)
@@ -304,14 +306,16 @@ def scan_region(calib: Calibration, full: tuple[int, int]) -> tuple[int, int, in
 
 
 def detect(screen_bgr: np.ndarray, calib: Calibration, bank: Bank,
-           origin: tuple[int, int] = (0, 0), full: tuple[int, int] | None = None) -> list[dict]:
+           origin: tuple[int, int] = (0, 0), full: tuple[int, int] | None = None,
+           shift: int = ID_SHIFT, step: int = 1) -> list[dict]:
     """Nhận diện lõi ở 3 vị trí đã hiệu chỉnh. Luôn trả 3 kết quả (kể cả điểm thấp).
-    screen_bgr có thể chỉ là một vùng của màn hình: origin = góc trái trên của vùng, full = (W, H) cả màn."""
+    screen_bgr có thể chỉ là một vùng của màn hình: origin = góc trái trên của vùng, full = (W, H) cả màn.
+    shift: dò lệch ±shift px (ở cỡ ID_SIZE) quanh vị trí đã hiệu chỉnh; WIDE_SHIFT khi thẻ có thể đã xê dịch."""
     W, H = full or (screen_bgr.shape[1], screen_bgr.shape[0])
     ox, oy = origin
     sx, sy = W / calib.width, H / calib.height
     out = []
-    S, R = ID_SIZE, ID_SHIFT
+    S, R = ID_SIZE, shift
     for cx, cy in calib.centers:
         size = calib.size * sx
         half = size / 2 * (S + 2 * R) / S
@@ -323,8 +327,8 @@ def detect(screen_bgr: np.ndarray, calib: Calibration, bank: Bank,
             continue
         crop = cv2.resize(crop, (S + 2 * R, S + 2 * R), interpolation=cv2.INTER_AREA).astype(np.float32)
         wins, shifts = [], []
-        for dy in range(2 * R + 1):
-            for dx in range(2 * R + 1):
+        for dy in range(0, 2 * R + 1, step):            # step 2 = dò thô, nhanh gấp ~4 lần
+            for dx in range(0, 2 * R + 1, step):
                 wins.append(crop[dy:dy + S, dx:dx + S].ravel())
                 shifts.append((dx - R, dy - R))
         sc = bank.score(np.stack(wins))           # N x K
@@ -349,13 +353,14 @@ def detect(screen_bgr: np.ndarray, calib: Calibration, bank: Bank,
 
 def read_offer(screen_bgr: np.ndarray, calib: Calibration, bank: Bank, catalog: list[dict],
                use_ocr: bool = True, origin: tuple[int, int] = (0, 0), full: tuple[int, int] | None = None,
-               ocr_cache: dict | None = None) -> list[dict]:
+               ocr_cache: dict | None = None, shift: int = ID_SHIFT,
+               alt_names: dict[int, list[str]] | None = None) -> list[dict]:
     """Nhận diện đầy đủ: icon → ứng viên → lọc độ hiếm → OCR tên nếu còn nhiều ứng viên.
     ocr_cache: {(ô, ứng viên)} → kết quả OCR; bảng chọn còn nguyên thì không OCR lại mỗi giây."""
     import ocr
     rarity_of = {a["id"]: a["rarity"] for a in catalog}
     names = {a["id"]: a["name"] for a in catalog}
-    res = resolve_rarity(detect(screen_bgr, calib, bank, origin, full), rarity_of)
+    res = resolve_rarity(detect(screen_bgr, calib, bank, origin, full, shift), rarity_of)
     # Chỉ OCR khi icon đã khớp chắc chắn (bảng chọn lõi thật sự đang hiện) – lúc đánh nhau thì bỏ qua
     if not use_ocr or not ocr.AVAILABLE or not confident(res):
         return res
@@ -375,7 +380,8 @@ def read_offer(screen_bgr: np.ndarray, calib: Calibration, bank: Bank, catalog: 
                 x0, x1 = max(0, int(cx - 1.4 * s) - ox), min(w, int(cx + 1.4 * s) - ox)
                 y0, y1 = max(0, int(cy - 1.3 * s) - oy), min(h, int(cy + 2.4 * s) - oy)
                 lines = ocr.read_lines(screen_bgr[y0:y1, x0:x1])
-                pick, ratio = ocr.best_name(lines, {c: names.get(c, "") for c in r["candidates"]})
+                pick, ratio = ocr.best_name(lines, {c: [names.get(c, "")] + (alt_names or {}).get(c, [])
+                                                    for c in r["candidates"]})
                 info = {"lines": lines, "ratio": round(ratio, 2)}
                 if ocr_cache is not None:
                     ocr_cache[key] = (pick, info)
@@ -385,6 +391,14 @@ def read_offer(screen_bgr: np.ndarray, calib: Calibration, bank: Bank, catalog: 
                 r["id"] = pick
         out.append(r)
     return out
+
+
+def recenter(calib: Calibration, results: list[dict], full: tuple[int, int]) -> Calibration:
+    """Dời tâm hiệu chỉnh theo độ lệch (dx, dy) tìm được – dùng khi thẻ lõi đã xê dịch."""
+    k = calib.size / ID_SIZE                    # 1 px ở cỡ ID_SIZE = k px trong hệ toạ độ hiệu chỉnh
+    centers = [(int(round(cx + r.get("dx", 0) * k)), int(round(cy + r.get("dy", 0) * k)))
+               for (cx, cy), r in zip(calib.centers, results)]
+    return Calibration(calib.width, calib.height, calib.size, centers)
 
 
 def confident(results: list[dict]) -> bool:

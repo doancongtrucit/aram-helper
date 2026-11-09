@@ -53,6 +53,30 @@ def score(aug_id: int, champion: dict, catalog: dict[int, dict], owned: set[int]
             "fit": tier, "score": round(wr + _rank(tier), 2)}
 
 
+def offer_combos(champion: dict, offered: list[int], owned: set[int], limit: int = 3) -> list[dict]:
+    """Combo lõi liên quan tới các lõi đang được đưa ra để chọn.
+
+    Mỗi combo: {tier, augments: [{id, name, offered, owned}], offered: [id], owned_count}.
+    Ưu tiên combo hoàn thành được với lõi đã có, rồi hạng combo cao, rồi có nhiều lõi đang được đưa ra."""
+    offered_set = set(offered)
+    seen, out = set(), []
+    for c in combos(champion):
+        ids = tuple(a["id"] for a in c["augments"])
+        hit = [i for i in ids if i in offered_set]
+        if not hit or ids in seen:
+            continue
+        seen.add(ids)
+        out.append({
+            "tier": c["tier"],
+            "augments": [{"id": a["id"], "name": a["name"], "offered": a["id"] in offered_set,
+                          "owned": a["id"] in owned} for a in c["augments"]],
+            "offered": hit,
+            "owned_count": sum(i in owned for i in ids),
+        })
+    out.sort(key=lambda c: (-c["owned_count"], -_rank(c["tier"]), -len(c["offered"])))
+    return out[:limit]
+
+
 def rank_offer(slots: list[list[int]], champion: dict, catalog: dict[int, dict], owned: set[int]) -> list[dict]:
     """slots: 3 ô, mỗi ô là danh sách id ứng viên. Trả về mỗi ô {slot, best, candidates, rank}
     theo thứ tự ô gốc; rank 1 = nên chọn."""
