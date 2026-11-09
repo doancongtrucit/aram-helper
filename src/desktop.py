@@ -181,13 +181,6 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             text = text[:-1]
         return text.rstrip() + "…"
 
-    @staticmethod
-    def bind_tree(widget, fn):
-        widget.bind("<Button-1>", lambda e: fn())
-        widget.configure(cursor="hand2")
-        for ch in widget.winfo_children():
-            App.bind_tree(ch, fn)
-
     def _wheel(self, e):
         """Cuộn vùng nằm dưới con trỏ (có 2 vùng cuộn song song khi cửa sổ rộng)."""
         w = self.root.winfo_containing(e.x_root, e.y_root)
@@ -288,8 +281,6 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.head = tk.Frame(headrow, bg=BG)
         self.head.pack(side="left", fill="x", expand=True)
         tk.Frame(self.root, bg=LINE, height=1).pack(fill="x", padx=self.S(12))
-        self.owned_bar = tk.Frame(self.root, bg=BG, padx=self.S(12))
-        self.owned_bar.pack(fill="x")
         self.body = tk.Frame(self.root, bg=BG)
         self.body.pack(fill="both", expand=True, padx=(self.S(12), self.S(4)), pady=(self.S(4), self.S(6)))
 
@@ -375,11 +366,11 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self._update_bars(st)
             champ = st.get("champion")
             full = ((champ or {}).get("slug"), (champ or {}).get("fetched_at"), (champ or {}).get("name"), self.tab,
-                    tuple(sorted(self.expanded)), tuple(st.get("owned", [])), self._size, st.get("focus"),
-                    repr(st.get("counter")), i18n.lang())
+                    tuple(sorted(self.expanded)), self._size, st.get("focus"), i18n.lang())
             if full != self._full_sig:
                 self._full_sig = full
                 self._render(st)
+            self._refresh_counter(st)
             self._light_update()
         except Exception:       # không để giao diện chết vì 1 lỗi
             self._on_ui_error(*sys.exc_info())
@@ -433,7 +424,6 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             w.destroy()
         self._left = self._right = self._single = None
         self.cards, self.advice_box, self._light_sig = {}, None, None
-        self._render_owned(st)
         if not champ:
             msg = (T("Đang tải dữ liệu {name}…", name=st["focus"]) if st.get("focus") and not st.get("error")
                    else st.get("error") or T("Vào một trận ARAM Hỗn Loạn để app tự nhận tướng, hoặc tìm tướng ở ô tìm kiếm phía trên."))
@@ -456,14 +446,14 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
                 right_w = int(W * 2 / 5) - self.S(18)
                 self._fit_args = (left_w, H)
                 self._render_augments(self._left.inner, champ, st, left_w, H)
-                self._render_counter(self._right.inner, st.get("counter") or [], right_w)
+                self._counter_slot(self._right.inner, right_w)
                 self._render_items(self._right.inner, champ, right_w)
             else:
                 self._single = Scroll(self.body, self.S(30))
                 self._single.pack(fill="both", expand=True)
                 self._fit_args = (W - self.S(26), H)
                 self._render_augments(self._single.inner, champ, st, W - self.S(26), H)
-                self._render_counter(self._single.inner, st.get("counter") or [], W - self.S(26))
+                self._counter_slot(self._single.inner, W - self.S(26))
                 self._render_items(self._single.inner, champ, W - self.S(26))
         else:
             self._single = Scroll(self.body, self.S(30))
@@ -535,42 +525,6 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self._scroll_top = True
         self.tab = k
         self._full_sig = None
-
-    def _render_owned(self, st):
-        for w in self.owned_bar.winfo_children():
-            w.destroy()
-        ids = st.get("owned", [])
-        champ = st.get("champion")
-        if not champ or not ids:
-            self.owned_bar.configure(pady=0)
-            return
-        self.owned_bar.configure(pady=self.S(3))
-        self.label(self.owned_bar, T("Lõi đã chọn:"), 9, MUTED).pack(side="left", padx=(0, self.S(6)))
-        names = self._names(champ)
-        for i in ids:
-            chip = tk.Frame(self.owned_bar, bg=PANEL2, padx=self.S(4), pady=self.S(1))
-            chip.pack(side="left", padx=self.S(3))
-            self.icon(chip, i, 18).pack(side="left")
-            self.label(chip, names.get(i, f"#{i}"), 9).pack(side="left", padx=self.S(4))
-            x = self.label(chip, "✕", 9, MUTED, cursor="hand2")
-            x.pack(side="left")
-            x.bind("<Button-1>", lambda e, i=i: self._own(remove=i))
-        self.button(self.owned_bar, T("Xoá hết"), lambda: self._own(clear=True), 8).pack(side="left", padx=self.S(8))
-
-    def _names(self, champ) -> dict[int, str]:
-        names = {i: a["name"] for i, a in self.hub.catalog().items()}
-        for items in champ.get("augments", {}).values():
-            for a in items:
-                names[a["id"]] = a["name"]
-        return names
-
-    def _own(self, **kw):
-        slug = (self._st.get("champion") or {}).get("slug")
-        if slug:
-            self.hub.update_owned(slug, **kw)
-            if kw.get("add") and self.scanner:
-                self.scanner.mark_hidden()
-            self._full_sig = None
 
     # ----- lỗi giao diện -----
     def _on_ui_error(self, exc, val, tb):

@@ -5,19 +5,18 @@ from __future__ import annotations
 import tkinter as tk
 
 from i18n import T
-from theme import PANEL, PANEL2, LINE, TEXT, MUTED, GOOD, ACCENT, RARITY_COLOR, TIER_COLOR
+from theme import PANEL, PANEL2, LINE, TEXT, MUTED, RARITY_COLOR, TIER_COLOR
 
 
 class CombosMixin:
     """Tab Combo lõi: lối chơi, combo kèm lý do, đồ khuyên dùng, mẹo."""
 
     def _render_combos(self, root, c, st, wrap):
-        owned = set(st.get("owned", []))
         styles = c.get("playstyles") or []
         if not styles:
             self.label(root, T("Chưa có lối chơi / combo cho tướng này."), 11, MUTED).pack(pady=self.S(40))
             return
-        self.label(root, T("Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng. Bấm vào lõi để đánh dấu đã chọn; combo chứa lõi đã chọn được tô xanh."),
+        self.label(root, T("Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng."),
                    8, MUTED, wraplength=wrap, justify="left").pack(anchor="w", pady=(self.S(2), self.S(8)))
         for s in styles:
             card = tk.Frame(root, bg=PANEL, highlightthickness=1, highlightbackground=LINE)
@@ -30,10 +29,8 @@ class CombosMixin:
             if s.get("description"):
                 self.label(card, s["description"], 9, "#c9cddb", wraplength=wrap, justify="left",
                            padx=self.S(10)).pack(anchor="w", pady=(0, self.S(6)))
-            combos = sorted(s.get("combos", []), key=lambda x: -sum(a["id"] in owned for a in x["augments"]))
-            for cb in combos:
-                n = sum(a["id"] in owned for a in cb["augments"])
-                bg = "#132a20" if n else PANEL
+            for cb in s.get("combos", []):
+                bg = PANEL
                 tk.Frame(card, bg=LINE, height=1).pack(fill="x")
                 row = tk.Frame(card, bg=bg, padx=self.S(10), pady=self.S(6))
                 row.pack(fill="x")
@@ -43,15 +40,10 @@ class CombosMixin:
                 for k, a in enumerate(cb["augments"]):
                     if k:
                         self.label(line, "+", 10, MUTED).pack(side="left", padx=self.S(3))
-                    have = a["id"] in owned
-                    chip = tk.Frame(line, bg=PANEL2, padx=self.S(4), pady=self.S(1), highlightthickness=1,
-                                    highlightbackground=ACCENT if have else PANEL2)
+                    chip = tk.Frame(line, bg=PANEL2, padx=self.S(4), pady=self.S(1))
                     chip.pack(side="left")
                     self.icon(chip, a["id"], 18).pack(side="left")
                     self.label(chip, a["name"], 9, RARITY_COLOR.get(a.get("rarity"), TEXT)).pack(side="left", padx=self.S(4))
-                    self.bind_tree(chip, lambda i=a["id"]: self._own(toggle=i))
-                if n:
-                    self.label(line, T("đã có {n}/{m}", n=n, m=len(cb["augments"])), 9, GOOD).pack(side="left", padx=self.S(8))
                 if cb.get("why"):
                     self.label(row, cb["why"], 9, "#c9cddb", wraplength=wrap, justify="left").pack(anchor="w", pady=(self.S(3), 0))
             if s.get("items"):

@@ -11,6 +11,27 @@ from theme import BG, PANEL, LINE, TEXT, MUTED, GOOD, OKC
 class ItemsMixin:
     """Cột trang bị: đồ theo đội địch, lối lên đồ, trang bị khác, giày, phép."""
 
+    def _counter_slot(self, root, pane_w):
+        """Chỗ riêng cho 2 dòng đồ theo đội địch: đồ của địch đổi (mua món mới) chỉ vẽ lại chỗ này,
+        không vẽ lại cả trang – trang không giật / nhảy khi đang xem."""
+        self._counter_box = tk.Frame(root, bg=BG)
+        self._counter_box.pack(fill="x")
+        self._counter_w, self._counter_sig = pane_w, None
+        self._refresh_counter(self._st)
+
+    def _refresh_counter(self, st):
+        box = getattr(self, "_counter_box", None)
+        if box is None or not box.winfo_exists():
+            return
+        lines = st.get("counter") or []
+        sig = repr(lines)
+        if sig == self._counter_sig:
+            return
+        self._counter_sig = sig
+        for w in box.winfo_children():
+            w.destroy()
+        self._render_counter(box, lines, self._counter_w)
+
     def _render_counter(self, root, lines, pane_w):
         if not lines:
             return

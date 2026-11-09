@@ -31,7 +31,8 @@ Nguồn dữ liệu thống kê: [playaram.gg](https://playaram.gg) · Dữ li�
 |---|:-:|:-:|
 | Tự nhận tướng khi vào trận | ✅ | ✅ |
 | Lõi Kim Cương / Vàng / Bạc, combo lõi, trang bị gợi ý, đồ theo đội địch | ✅ | ✅ |
-| Tìm tướng / lõi, đánh dấu lõi đã chọn, gợi ý lõi hợp combo | ✅ | ✅ |
+| Tìm tướng / lõi, combo lõi, xếp hạng lõi | ✅ | ✅ |
+| Ghi nhận lõi đã chọn, gợi ý lõi hợp combo khi đang chọn (overlay) | ✅ | – |
 | Tự đọc 3 lõi đang được đưa ra trên màn hình | ✅ | – |
 | Overlay trên game, phím tắt khi đang chơi | ✅ | – |
 
@@ -120,10 +121,12 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 | 4 | Thanh trạng thái (đáy) | (Windows) trạng thái đọc bảng chọn lõi · **⌖ Định vị lõi** để tìm lại vị trí 3 thẻ lõi khi app đọc sai · phiên bản |
 | 5 | Tướng | Hạng tướng, tỉ lệ thắng, số trận, phiên bản dữ liệu |
 | 6 | Tab | **Lõi & trang bị** · **Combo lõi** |
-| 7 | Lõi đã chọn | Lõi bạn đã lấy trong trận; bấm ✕ để bỏ |
-| 8 | **Xem thêm** | Mở đủ 16 lõi của bậc đó (mặc định hiện 6 lõi mạnh nhất) |
-| 9 | Thẻ lõi | Bấm để đánh dấu đã chọn; nền xanh dương = đã chọn |
-| 10 | Trang bị | Đồ theo đội địch, 3 lối lên đồ, trang bị khác, giày, phép bổ trợ |
+| 7 | **Xem thêm** | Mở đủ 16 lõi của bậc đó (mặc định hiện 6 lõi mạnh nhất) |
+| 8 | Thẻ lõi | Tỉ lệ thắng, tỉ lệ chọn, nhãn combo; viền xanh = khớp từ khoá đang tìm |
+| 9 | Trang bị | Đồ theo đội địch, 3 lối lên đồ, trang bị khác, giày, phép bổ trợ |
+
+Cửa sổ chính dùng để **xem và tìm kiếm** – không theo dõi lõi bạn đã chọn trong trận. Việc gợi ý lõi lúc chọn và
+ghi nhận lõi đã lấy diễn ra trên **overlay** (mục 6).
 
 ### 4.1. Lõi và trang bị
 
@@ -131,7 +134,7 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
   để xem đủ 16. Có thể đổi số lõi hoặc chọn "Tự vừa cửa sổ" trong **Cài đặt → Chung**.
 - Màu tỉ lệ thắng so với tỉ lệ thắng chung của tướng: **xanh** cao hơn, **cam** ngang, **đỏ** thấp hơn.
   Dấu `*` sau tỉ lệ chọn = ít trận, số liệu chưa ổn định.
-- Nhãn `combo S/A/B` = lõi nằm trong combo được đề xuất; `hợp combo …` = hợp với lõi bạn đã chọn.
+- Nhãn `combo S/A/B` = lõi nằm trong combo được đề xuất cho tướng (xem chi tiết ở tab **Combo lõi**).
 - **Trang bị** (bên phải): 2 dòng **đồ theo đội địch** (khi đang trong trận), **3 lối lên đồ** 6 món
   (2 món viền xanh là cốt lõi), rồi trang bị khác, giày, phép bổ trợ. Rê chuột lên icon để xem tên món.
 - Cửa sổ rất hẹp (dưới ~640 px) thì 2 phần xếp chồng thành 1 cột.
@@ -139,8 +142,8 @@ Mở nhanh: **⚙ Cài đặt → Chung → Thư mục dữ liệu → Mở**. X
 
 ### 4.2. Tab Combo lõi
 
-Các lối chơi của tướng, combo lõi kèm lý do, đồ khuyên dùng và mẹo. Combo có lõi bạn đã chọn được tô xanh
-kèm "đã có 1/3". Hạng combo là đánh giá của biên tập viên nguồn dữ liệu, không phải tỉ lệ thắng.
+Các lối chơi của tướng, combo lõi kèm lý do, đồ khuyên dùng và mẹo. Hạng combo là đánh giá của biên tập viên
+nguồn dữ liệu, không phải tỉ lệ thắng.
 
 ![Tab Combo lõi](images/combo.png)
 
@@ -160,8 +163,8 @@ xếp hạng các lõi đó, lõi ngoài top 6 cũng được hiện ra.
 
 ### 4.5. Cách xếp hạng lõi
 
-**Điểm gợi ý** = tỉ lệ thắng của lõi với tướng này + thưởng nếu hợp combo với lõi đã chọn
-(S +4, A +3, B +2, C +1). Lõi ngoài top 16 của tướng dùng tỉ lệ thắng chung của mọi tướng (ghi "chung").
+**Điểm gợi ý** (trên overlay khi đang chọn lõi) = tỉ lệ thắng của lõi với tướng này + thưởng nếu hợp combo với lõi
+bạn đã lấy trong trận (S +4, A +3, B +2, C +1). Lõi ngoài top 16 của tướng dùng tỉ lệ thắng chung của mọi tướng (ghi "chung").
 
 Khi đang chọn lõi trong game, cửa sổ chính **giữ nguyên** để bạn xem tổng quát – gợi ý hiện trên overlay
 (và ESP32). Muốn cửa sổ chính cũng tô sáng + hiện ô **Nên chọn**, bật trong **Cài đặt → Chung**.

@@ -117,10 +117,13 @@ class DesktopUI(unittest.TestCase):
         self.assertIsNone(self.app._left)
         self.assertIsNotNone(self.app._single)
 
-    def test_click_marks_owned_and_combo_fit(self):
-        self.app._own(toggle=1058)                # Cú Đấm Thần Bí
+    def test_view_only_ignores_taken_augments(self):
+        """Cửa sổ chính chỉ để xem / tìm: không hiện, không đánh dấu lõi đã chọn trong trận."""
+        before = len(self.app.cards)
+        self.hub.owned = [1058]                         # overlay đã ghi nhận 1 lõi
         self.tick()
-        self.assertEqual(self.hub.owned, [1058])
+        self.assertEqual(len(self.app.cards), before)
+        self.assertFalse(hasattr(self.app, "owned_bar"))
         bay_ong = self.app.cards[3048]
 
         def texts(w):
@@ -128,7 +131,12 @@ class DesktopUI(unittest.TestCase):
             for ch in w.winfo_children():
                 out += texts(ch)
             return out
-        self.assertTrue({"hợp combo A", "◆A"} & set(texts(bay_ong["w"])))   # thẻ hẹp: nhãn rút gọn
+        shown = set(texts(bay_ong["w"]))
+        self.assertTrue({"combo A", "◆A"} & shown)       # nhãn combo chung của tướng vẫn có
+        self.assertFalse({"hợp combo A"} & shown)        # không còn "hợp combo" theo lõi đã chọn
+        bay_ong["w"].event_generate("<Button-1>")        # bấm vào thẻ không đổi gì
+        self.root.update()
+        self.assertEqual(self.hub.owned, [1058])
 
     def test_search_augment_shows_extra_card_and_advice(self):
         self.app.search.event_generate("<FocusIn>")
@@ -179,6 +187,24 @@ class DesktopUI(unittest.TestCase):
         self.hub.state = orig
         self.tick()
         self.assertEqual(self.app.back_btn.winfo_manager(), "")
+
+    def test_enemy_item_change_does_not_redraw_whole_page(self):
+        """Đồ của địch đổi trong trận: chỉ khối "đồ theo đội địch" vẽ lại, trang không giật / nhảy."""
+        self.fake_size(1400, 800)
+        renders = []
+        orig_render, orig_state = self.app._render, self.hub.state
+        self.app._render = lambda st: (renders.append(1), orig_render(st))
+        line = {"item_id": 3033, "name": "Lời Nhắc Tử Vong", "why": "3/5 địch hồi máu", "icon": None}
+        self.hub.state = lambda: {**orig_state(), "counter": [line]}
+        self.tick()
+        self.assertEqual(renders, [])
+        texts = [w.cget("text") for w in self.app._counter_box.winfo_children()[0].winfo_children()
+                 if isinstance(w, tk.Label)]
+        self.assertTrue(texts)
+        self.hub.owned = [1058]                                     # overlay ghi nhận lõi: cũng không vẽ lại
+        self.tick()
+        self.assertEqual(renders, [])
+        self.hub.state = orig_state
 
     def test_combo_tab(self):
         self.app._set_tab("combo")

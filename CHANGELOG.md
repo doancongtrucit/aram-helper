@@ -3,6 +3,19 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [Chưa phát hành]
+
+### Thay đổi
+- Cửa sổ chính chỉ để **xem và tìm kiếm**: bỏ thanh "Lõi đã chọn", bấm thẻ lõi không còn đánh dấu đã chọn, bỏ nhãn
+  "hợp combo" và nút "Đã chọn" trong ô gợi ý, tab Combo không tô theo lõi đã chọn. Ghi nhận lõi đã lấy và gợi ý
+  combo lúc chọn lõi vẫn chạy trên overlay.
+
+### Đã sửa
+- Gợi ý trên overlay nhảy qua lại mỗi giây khi một thẻ lúc đọc được tên (OCR), lúc không ("1 trong N lõi"):
+  giữ kết quả đã đọc được tên cho tới khi thẻ đổi thật.
+- Cửa sổ chính vẽ lại cả trang (giật / nhảy) mỗi khi đồ của đội địch đổi hoặc ghi nhận lõi mới: giờ chỉ vẽ lại
+  khối "đồ theo đội địch".
+
 ## [1.4.1] – 2026-11-09
 
 ### Thêm

@@ -8,7 +8,7 @@ import advice
 import settings
 from i18n import T
 from theme import (
-    BG, PANEL, PANEL2, CARD, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, ACCENT, HIT_BG, OWNED_BG, RARITY,
+    BG, PANEL, PANEL2, CARD, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, HIT_BG, RARITY,
     TIER_COLOR, LOW_PICK, CARD_MIN_W, CARD_H, CARD_GAP, fold)
 
 
@@ -46,8 +46,7 @@ class AugmentsMixin:
     def _render_augments(self, root, champ, st, pane_w, pane_h):
         self.advice_box = tk.Frame(root, bg=BG)
         self.advice_box.pack(fill="x", padx=(0, self.S(6)))
-        owned = set(st.get("owned", []))
-        fit = advice.combo_fit(champ, owned)
+        # Cửa sổ chính chỉ để xem và tìm: không theo lõi đã chọn trong trận (việc đó ở overlay)
         any_tier = {}
         for c in advice.combos(champ):
             for a in c["augments"]:
@@ -77,10 +76,10 @@ class AugmentsMixin:
             shown = len(items) if open_ else min(len(items), top_n)
             self._secs.append((sec, -(-shown // cols)))
             for i, a in enumerate(items):
-                card = self._aug_card(body, a, i, color, base, fit.get(a["id"]), any_tier.get(a["id"]), a["id"] in owned)
+                card = self._aug_card(body, a, i, color, base, any_tier.get(a["id"]))
                 card["extra"], card["rarity"], card["pos"] = i >= top_n, key, (i // cols, i % cols)
                 self.cards[a["id"]] = card
-                if not card["extra"] or open_ or card["owned"]:
+                if not card["extra"] or open_:
                     card["w"].grid(row=card["pos"][0], column=card["pos"][1], sticky="nsew",
                                    padx=self.S(CARD_GAP // 2), pady=self.S(CARD_GAP // 2))
             if not items:
@@ -90,7 +89,7 @@ class AugmentsMixin:
         self.expanded.symmetric_difference_update({key})
         self._full_sig = None
 
-    def _aug_card(self, parent, a, i, color, base, fit, any_tier, owned):
+    def _aug_card(self, parent, a, i, color, base, any_tier):
         outer = tk.Frame(parent, bg=color)                       # viền trái màu theo bậc
         inner = tk.Frame(outer, bg=CARD, padx=self.S(6), pady=self.S(3))
         inner.pack(fill="both", expand=True, padx=(self.S(2), 0))
@@ -112,23 +111,20 @@ class AugmentsMixin:
         low = a.get("pickrate") is not None and a["pickrate"] < LOW_PICK
         self.label(stats, f"{a.get('pickrate', '?')}%{'*' if low else ''}", 8, MUTED, mono=True).pack(side="left", padx=self.S(6))
         roomy = self._name_w >= self.S(150)        # thẻ hẹp: nhãn combo rút gọn còn "◆A"
-        if fit:
-            self.badge(stats, T("hợp combo {t}", t=fit) if roomy else f"◆{fit}", GOOD, filled=True).pack(side="left")
-        elif any_tier:
+        if any_tier:
             self.badge(stats, T("combo {t}", t=any_tier) if roomy else f"◆{any_tier}",
                        TIER_COLOR.get(any_tier, MUTED)).pack(side="left")
-        card = {"w": outer, "inner": inner, "name": name, "color": color, "fold": fold(a["name"]), "owned": owned}
-        self.bind_tree(outer, lambda: self._own(toggle=a["id"]))
-        self._style_card(card, "owned" if owned else "normal")
+        card = {"w": outer, "inner": inner, "name": name, "color": color, "fold": fold(a["name"])}
+        self._style_card(card, "normal")
         return card
 
     def _style_card(self, card, state):
-        bg = {"hit": HIT_BG, "owned": OWNED_BG}.get(state, CARD)
-        edge = {"hit": GOOD, "owned": ACCENT}.get(state, card["color"])
+        bg = HIT_BG if state == "hit" else CARD
+        edge = GOOD if state == "hit" else card["color"]
         card["w"].configure(bg=edge)
 
         def paint(w):
-            if isinstance(w, (tk.Frame, tk.Label)) and w["bg"] in (CARD, HIT_BG, OWNED_BG):
+            if isinstance(w, (tk.Frame, tk.Label)) and w["bg"] in (CARD, HIT_BG):
                 w.configure(bg=bg)
             for ch in w.winfo_children():
                 paint(ch)
@@ -144,8 +140,7 @@ class AugmentsMixin:
         text = self.search_text()
         terms = [] if self.champion_matches(text) else [t.strip() for t in fold(text).split(",") if t.strip()]
         adv = st.get("advice") if self._follow_offer() else None    # mặc định: cửa sổ chính giữ nguyên
-        sig = (tuple(terms), repr([(a["slot"], [c["id"] for c in a["candidates"]]) for a in adv or []]),
-               tuple(st.get("owned", [])))
+        sig = (tuple(terms), repr([(a["slot"], [c["id"] for c in a["candidates"]]) for a in adv or []]))
         if sig == self._light_sig:
             return
         self._light_sig = sig
@@ -154,9 +149,9 @@ class AugmentsMixin:
         active = bool(terms or offer_ids)
         for i, c in self.cards.items():
             hit = i in offer_ids or i in hits
-            self._style_card(c, "hit" if hit else "owned" if c["owned"] else "dim" if active else "normal")
-            if c["extra"]:   # lõi ngoài top N đang được tìm / đọc ra / đã chọn thì vẫn hiện
-                if hit or c["owned"] or c["rarity"] in self.expanded:
+            self._style_card(c, "hit" if hit else "dim" if active else "normal")
+            if c["extra"]:   # lõi ngoài top N đang được tìm / đọc ra thì vẫn hiện
+                if hit or c["rarity"] in self.expanded:
                     c["w"].grid(row=c["pos"][0], column=c["pos"][1], sticky="nsew",
                                 padx=self.S(CARD_GAP // 2), pady=self.S(CARD_GAP // 2))
                 else:
@@ -169,7 +164,7 @@ class AugmentsMixin:
             cat = self.hub.catalog()
             ids = list(dict.fromkeys(hits + [i for i, a in cat.items() if any(t in fold(a["name"]) for t in terms)]))[:6]
             if ids:
-                self._advice(advice.rank_offer([[i] for i in ids], champ, cat, set(st.get("owned", []))), "search")
+                self._advice(advice.rank_offer([[i] for i in ids], champ, cat, set()), "search")
 
     def _advice(self, ranked, source):
         box = tk.Frame(self.advice_box, bg=PANEL, highlightthickness=1, highlightbackground=GOOD,
@@ -190,7 +185,7 @@ class AugmentsMixin:
             mid = tk.Frame(row, bg=PANEL)
             mid.pack(side="left", fill="x", expand=True, padx=self.S(8))
             if len(r["candidates"]) > 1:
-                self.label(mid, T("Một trong (icon giống nhau) – bấm lõi bạn đã chọn:"), 8, MUTED).pack(anchor="w")
+                self.label(mid, T("Một trong (icon giống nhau):"), 8, MUTED).pack(anchor="w")
                 line = tk.Frame(mid, bg=PANEL)
                 line.pack(anchor="w")
                 for c in r["candidates"]:
@@ -198,7 +193,6 @@ class AugmentsMixin:
                     chip.pack(side="left", padx=(0, self.S(4)), pady=self.S(2))
                     self.icon(chip, c["id"], 16).pack(side="left")
                     self.label(chip, c["name"], 8).pack(side="left", padx=self.S(3))
-                    self.bind_tree(chip, lambda c=c: self._pick_aug(c["id"], source))
             else:
                 self.label(mid, b["name"], 9, GOOD if r["rank"] == 1 else TEXT, r["rank"] == 1).pack(anchor="w")
             wr = (T("chưa có số liệu") if b["winrate"] is None
@@ -207,12 +201,3 @@ class AugmentsMixin:
             if r.get("reroll"):
                 extra += T(" · ↻ nên đổi")
             self.label(mid, T("Thắng {wr}{extra}", wr=wr, extra=extra), 8, OKC if r.get("reroll") else MUTED).pack(anchor="w")
-            if len(r["candidates"]) == 1:
-                self.button(row, T("Đã chọn"), lambda i=b["id"]: self._pick_aug(i, source), 8,
-                            primary=r["rank"] == 1).pack(side="right")
-
-    def _pick_aug(self, aug_id, source):
-        self._own(add=aug_id)
-        if source == "search":
-            self.search_var.set("")
-            self.search.event_generate("<FocusOut>")

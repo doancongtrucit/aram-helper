@@ -100,6 +100,22 @@ class ScannerAutoPick(unittest.TestCase):
         sc._offer_closed()                          # đã ghi nhận lượt này → không ghi lại
         self.assertEqual(sc.picked["id"], first)
 
+    def test_offer_does_not_flip_back_when_ocr_misses(self):
+        """Lỗi thấy trong trận thật: thẻ 2 nhảy qua lại giữa 1 lõi (đọc được tên) và "1 trong 3" mỗi giây."""
+        import scanner
+        sc = scanner.Scanner()
+        narrow = [{"candidates": [1], "score": 0.9}, {"candidates": [5], "score": 0.96}, {"candidates": [9], "score": 0.9}]
+        wide = [{"candidates": [1], "score": 0.9}, {"candidates": [4, 5, 6], "score": 0.96}, {"candidates": [9], "score": 0.9}]
+        sc._publish(narrow)
+        first = sc.offer
+        for _ in range(3):
+            sc._publish(wide)
+            self.assertIs(sc.offer, first)                     # vẫn là cùng 1 lượt chọn, không bị thay
+            self.assertEqual(sc.offer["slots"][1]["candidates"], [5])
+        sc._publish([{"candidates": [1], "score": 0.9}, {"candidates": [6], "score": 0.9},
+                     {"candidates": [9], "score": 0.9}])                     # đổi lõi thật ở thẻ 2
+        self.assertEqual(sc.offer["slots"][1]["candidates"], [6])
+
     def test_no_click_no_pick(self):
         import scanner
         sc = scanner.Scanner()

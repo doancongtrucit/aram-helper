@@ -193,8 +193,7 @@ def main_window_shots(root):
 
     pts = [(1, *below(app.chip)), (2, *inside_right(app.search_box)), (3, *below(settings_btn)),
            (4, *after(app.scan_lbl)), (5, *after(app.head.winfo_children()[1])), (6, *before(app.tabs)),
-           (7, *after(app.owned_bar)), (8, *before(more_btn)), (9, *rel(first_card, img)[:2]),
-           (10, *after(items_head))]
+           (7, *before(more_btn)), (8, *rel(first_card, img)[:2]), (9, *after(items_head))]
     save(annotate(img, pts, 1.1), "main-window.png")
 
     # 2) Tab Combo lõi

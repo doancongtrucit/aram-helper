@@ -145,6 +145,12 @@ class Scanner:
         with self.lock:
             if not (self.offer and self.offer.get("visible")):
                 self._session_at = time.time()
+            elif len(self.offer["slots"]) == len(slots):
+                # Giữ kết quả đã thu hẹp (đọc được tên bằng OCR): lần quét sau OCR trượt chỉ còn "1 trong N lõi"
+                # thì không lùi lại – tránh gợi ý trên overlay nhảy qua lại mỗi giây.
+                for new, old in zip(slots, self.offer["slots"]):
+                    if len(old["candidates"]) < len(new["candidates"]) and set(old["candidates"]) <= set(new["candidates"]):
+                        new["candidates"] = old["candidates"]
             same = self.offer and [s["candidates"] for s in self.offer["slots"]] == [s["candidates"] for s in slots]
             if same:
                 if not self.offer.get("done"):     # đã bấm chọn lõi thì không hiện lại offer cũ

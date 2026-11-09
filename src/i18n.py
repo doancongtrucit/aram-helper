@@ -34,14 +34,12 @@ EN = {
     # Lõi
     "Lõi Kim Cương": "Prismatic", "Lõi Vàng": "Gold", "Lõi Bạc": "Silver",
     "Xem thêm ({n})": "More ({n})", "Thu gọn": "Less",
-    "Lõi đã chọn:": "Taken:", "Xoá hết": "Clear",
-    "hợp combo {t}": "combo {t} fit", "combo {t}": "combo {t}",
+    "combo {t}": "combo {t}",
     "Không có dữ liệu": "No data",
     "Đọc từ màn hình · ": "From screen · ",
     "Nên chọn:": "Pick:",
     "Ẩn": "Hide",
-    "Một trong (icon giống nhau) – bấm lõi bạn đã chọn:": "One of (same icon) – click the one you took:",
-    "Đã chọn": "Taken",
+    "Một trong (icon giống nhau):": "One of (same icon):",
     "Thắng {wr}{extra}": "Win {wr}{extra}",
     "chưa có số liệu": "no data",
     " (chung, mọi tướng)": " (all champions)",
@@ -57,9 +55,8 @@ EN = {
     "Đồ nên lên theo đội hình + trang bị của đội địch": "Items against the enemy team and their items",
     # Combo
     "Chưa có lối chơi / combo cho tướng này.": "No playstyles / combos for this champion yet.",
-    "Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng. Bấm vào lõi để đánh dấu đã chọn; combo chứa lõi đã chọn được tô xanh.":
-        "Combo tiers are editor ratings, not win rates (descriptions are in Vietnamese). Click an augment to mark it taken; combos with taken augments turn green.",
-    "đã có {n}/{m}": "have {n}/{m}",
+    "Hạng combo là đánh giá của biên tập viên, không phải tỉ lệ thắng.":
+        "Combo tiers are editor ratings, not win rates (descriptions are in Vietnamese).",
     "Đồ khuyên dùng:": "Recommended items:",
     # Overlay
     "GỢI Ý – bấm để đánh dấu đã chọn": "PICK – click to mark as taken",

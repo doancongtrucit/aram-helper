@@ -13,7 +13,7 @@ import paths
 BG, PANEL, PANEL2, CARD, LINE = "#0b0d14", "#141826", "#1a2031", "#111524", "#262d40"
 TEXT, MUTED, DIMTEXT = "#e6e8ef", "#8a91a8", "#4a5066"
 GOOD, OKC, BAD, ACCENT = "#3ddc97", "#f5a53a", "#ef6b6b", "#6aa8ff"
-HIT_BG, OWNED_BG = "#12291f", "#14223a"
+HIT_BG = "#12291f"
 RARITY = [("prismatic", "Lõi Kim Cương", "#c58cff"), ("gold", "Lõi Vàng", "#f0c35a"), ("silver", "Lõi Bạc", "#b9c3d6")]
 RARITY_COLOR = {k: c for k, _, c in RARITY}
 TIER_COLOR = {"S+": "#ff8a5c", "S": "#ff8a5c", "A": "#f5c451", "B": "#6aa8ff", "C": MUTED, "D": MUTED}
