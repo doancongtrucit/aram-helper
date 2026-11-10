@@ -48,6 +48,10 @@ class SettingsTest(unittest.TestCase):
         settings._reset_for_tests(self.path)
         self.assertEqual(settings.get("top_n"), 6)
         self.assertEqual(settings.get("ov_opacity"), 0.5)
+        # độ đậm khung còn đúng mặc định cũ 74% → về mặc định mới; giá trị tự chọn thì giữ nguyên
+        self.path.write_text(json.dumps({"_v": 2, "ov_opacity": 0.74}), encoding="utf-8")
+        settings._reset_for_tests(self.path)
+        self.assertEqual(settings.get("ov_opacity"), 0.7)
 
     def test_translate(self):
         self.assertEqual(i18n.T("Thắng {wr}%", wr=55), "Thắng 55%")

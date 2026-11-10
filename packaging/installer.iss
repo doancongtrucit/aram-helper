@@ -68,7 +68,8 @@ Name: "{userstartup}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"; Tasks: sta
 
 [Run]
 Filename: "{app}\ARAM Helper.exe"; Description: "{cm:LaunchNow}"; Flags: nowait postinstall skipifsilent
-; Tự cập nhật trong app: cài im lặng với /RELAUNCH=1 → mở lại app sau khi cài xong
+; Tự cập nhật trong app: cài im lặng với /RELAUNCH=1 → mở lại app sau khi cài xong.
+; GIỮ NGUYÊN tham số /RELAUNCH=1, tên ARAM-Helper-Setup.exe và SHA256SUMS.txt: mọi bản >= 1.7.0 đang cài dựa vào chúng.
 Filename: "{app}\ARAM Helper.exe"; Flags: nowait; Check: RelaunchRequested
 
 [Code]

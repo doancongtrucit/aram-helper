@@ -316,7 +316,8 @@ class Overlay:
         if not (game.get("in_game") or os.environ.get("ARAM_FAKE_SCREEN")):
             return None
         return {"champ": champ, "scan": scan, "advice": st.get("advice"), "owned": st.get("owned", []),
-                "calib": scan.get("calibration"), "counter": st.get("counter") or []}
+                "calib": scan.get("calibration"), "counter": st.get("counter") or [],
+                "my_items": {int(i) for i in game.get("my_items") or ()}}       # đồ đang có (Live Client API)
 
     def _tick(self):
         try:
@@ -350,7 +351,7 @@ class Overlay:
         adv = [(a["slot"], a["rank"], [c["id"] for c in a["candidates"]]) for a in (d["advice"] or [])]
         sc = d["scan"]
         return (champ.get("slug"), champ.get("fetched_at"), sc.get("status"), sc.get("error"), sc.get("calibrated"),
-                adv, tuple(d["owned"]), repr(d["calib"]), repr(d.get("counter")))
+                adv, tuple(d["owned"]), repr(d["calib"]), repr(d.get("counter")), tuple(sorted(d.get("my_items") or ())))
 
     def _draw(self, d):
         for _, cv in self.layers:
@@ -394,12 +395,10 @@ class Overlay:
         cv.create_oval(x, hh / 2 - S(4), x + S(8), hh / 2 + S(4), fill=dot_col, outline="", tags=("head",))
         name = champ.get("name") or "ARAM Helper"
         tier = champ.get("tier", "")
-        t = self._text(cv, x + S(16), hh / 2, self._fit(name, W - x - S(132), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
+        t = self._text(cv, x + S(16), hh / 2, self._fit(name, W - x - S(90), 11, True), 11, TEXT, True, anchor="w", tags=("head",))
         tx = cv.bbox(t)[2] + S(6)
         if tier:
             self._text(cv, tx, hh / 2, tier, 10, TIER_COLOR.get(tier, OK), True, anchor="w", tags=("head",))
-        if champ.get("winrate"):
-            self._text(cv, right - S(46), hh / 2, f"{champ['winrate']:.1f}%", 9, MUTED, anchor="e", tags=("head",))
         for tag in ("head",):
             cv.tag_bind(tag, "<ButtonPress-1>", self._drag_start)
             cv.tag_bind(tag, "<B1-Motion>", self._drag_move)
@@ -440,7 +439,7 @@ class Overlay:
                 y = cv.bbox(t)[3] + S(6)
 
             if d["owned"] and show("owned"):
-                y = self._section(cv, y, T("ĐÃ CHỌN"))
+                y += S(10)                                  # không tiêu đề: chỉ icon + tên lõi đã chọn
                 ix = x
                 for i in d["owned"][:max(1, (W - 2 * pad) // S(26))]:
                     self._image(cv, ix, y, i, 22)
@@ -451,9 +450,9 @@ class Overlay:
 
             builds = (champ.get("builds") or [])[:int(settings.get("ov_builds") or 3)] if show("build") else []
             if builds:
-                y = self._section(cv, y, T("LỐI LÊN ĐỒ – viền xanh: món cốt lõi"))
+                y = self._section(cv, y, T("LỐI LÊN ĐỒ"))
                 for b in builds:
-                    y = self._build_row(cv, y, W, b)
+                    y = self._build_row(cv, y, W, b, d.get("my_items") or set())
 
             # 2 dòng cuối: đồ nên lên theo đội hình + trang bị của đội địch
             if d.get("counter") and show("counter"):
@@ -497,8 +496,8 @@ class Overlay:
         self._text(cv, x + S(20), y + S(25), self._fit(names, W - S(40), 8), 8, MUTED)
         return y + S(42)
 
-    def _build_row(self, cv, y, W, b):
-        """1 lối lên đồ: tên ngắn, rồi icon 5–6 món + giày (món cốt lõi viền xanh)."""
+    def _build_row(self, cv, y, W, b, have=frozenset()):
+        """1 lối lên đồ: tên ngắn, rồi icon 5–6 món + giày (món cốt lõi viền xanh, món đã có dấu ✓)."""
         S = self.S
         x = S(10)
         self._text(cv, x, y, self._fit(b.get("name", ""), W - S(20), 8, True), 8, TEXT, True)
@@ -508,9 +507,41 @@ class Overlay:
             size = 24 if it.get("core") else 22
             if it.get("core"):
                 cv.create_rectangle(ix - S(1), y - S(1), ix + S(size) + S(1), y + S(size) + S(1), outline=GOOD, width=S(2))
-            self._image(cv, ix, y + (0 if it.get("core") else S(1)), it.get("icon"), size)
+            iy = y + (0 if it.get("core") else S(1))
+            owned = it.get("id") in have
+            dim = self.img.dimmed(it.get("icon"), size) if owned else None
+            if dim is not None:                    # món đã có: icon mờ + ✓ – mắt dồn vào các món còn thiếu
+                cv.create_image(ix, iy, image=dim, anchor="nw")
+            else:
+                self._image(cv, ix, iy, it.get("icon"), size)
+            if owned:
+                self._check_mark(cv, ix, iy, S(size))
             ix += S(size) + S(5)
         return y + S(30)
+
+    def _check_mark(self, cv, x, y, p):
+        """Món đã lên: huy hiệu ✓ xanh nhỏ ở góc dưới phải icon – icon vẫn nhìn rõ, không che."""
+        d = max(10, int(p * 0.5))
+        img = self._check_img(d)
+        cv.create_image(x + p - d * 0.65, y + p - d * 0.65, image=img, anchor="nw", tags=("have",))
+
+    def _check_img(self, d: int):
+        """Huy hiệu tròn xanh + ✓ trắng, viền tối để nổi trên mọi icon (vẽ to 4 lần rồi thu nhỏ cho mịn)."""
+        cache = self.__dict__.setdefault("_check_imgs", {})
+        if d not in cache:
+            from PIL import Image, ImageDraw, ImageTk
+            k = 4
+            D = d * k
+            im = Image.new("RGBA", (D, D), (0, 0, 0, 0))
+            dr = ImageDraw.Draw(im)
+            dr.ellipse((0, 0, D - 1, D - 1), fill=BG)
+            ring = max(k, int(D * 0.1))
+            dr.ellipse((ring, ring, D - 1 - ring, D - 1 - ring), fill=GOOD)
+            c, r = D / 2, D * 0.22
+            dr.line((c - r, c + r * 0.05, c - r * 0.25, c + r * 0.75, c + r, c - r * 0.6),
+                    fill="#ffffff", width=max(2, int(D * 0.13)), joint="curve")
+            cache[d] = ImageTk.PhotoImage(im.resize((d, d), Image.LANCZOS), master=self.root)
+        return cache[d]
 
     def _counter_row(self, cv, y, W, line):
         """1 dòng: icon món + tên món (đậm) + lý do ngắn; dòng tóm tắt đội địch thì chỉ có chữ."""

@@ -314,6 +314,54 @@ class DesktopUI(unittest.TestCase):
             quit_.assert_called_once()
         dlg.close()
 
+    def test_update_guards_and_failure(self):
+        import time
+        import updater
+        from tkinter import messagebox
+        info = {"version": "v99.0.0", "url": "https://example.invalid/r"}
+        self.app._show_update(info)
+        self.root.update()
+        start_text = self.app._update_btn.cget("text")
+        with mock.patch.object(updater, "can_self_update", return_value=True), \
+                mock.patch.object(updater, "prepare") as prep, \
+                mock.patch.object(updater, "launch_installer") as launch, \
+                mock.patch.object(self.root, "destroy") as quit_:
+            # đang cập nhật: bấm lần 2 (vd. từ Cài đặt) không mở hộp xác nhận thứ hai
+            self.app._updating = True
+            with mock.patch.object(messagebox, "askyesno") as ask:
+                self.app.start_update(info)
+                ask.assert_not_called()
+            self.app._updating = False
+            # trận bắt đầu trong lúc hộp xác nhận đang mở → không tải
+            self.app._st = {"game": {"in_game": False}}
+
+            def game_starts(*a, **k):
+                self.app._st = {"game": {"in_game": True}}
+                return True
+            with mock.patch.object(messagebox, "askyesno", side_effect=game_starts):
+                self.app.start_update(info)
+            prep.assert_not_called()
+            self.assertFalse(self.app.updating)
+            # tải lỗi → nút về như cũ, bấm lại được
+            self.app._st = {"game": {"in_game": False}}
+            prep.side_effect = updater.UpdateError("download", "offline")
+            with mock.patch.object(messagebox, "askyesno", return_value=True):
+                self.app.start_update(info)
+                end = time.time() + 5
+                while self.app.updating and time.time() < end:
+                    self.root.update()
+                    time.sleep(0.05)
+            self.assertFalse(self.app.updating)
+            self.assertEqual(self.app._update_btn.cget("text"), start_text)
+            # tải xong khi đang trong trận → chờ, hết trận mới cài
+            setup = Path(self.tmp.name) / "s.exe"
+            self.app._st = {"game": {"in_game": True}}
+            self.app._update_install(setup)
+            launch.assert_not_called()
+            self.app._st = {"game": {"in_game": False}}
+            self.app._update_install(setup)
+            launch.assert_called_once_with(setup)
+
     def test_settings_dialog_pages(self):
         self.app.open_settings()
         dlg = self.app._settings_dlg

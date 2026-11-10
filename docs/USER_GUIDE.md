@@ -224,7 +224,7 @@ Các phần bên dưới gợi ý (bật/tắt từng phần trong **Cài đặt
 
 - **COMBO** (khi đang chọn lõi): tối đa 3 combo chứa lõi đang được đưa ra, ưu tiên combo hoàn thành được với lõi
   đã có. Viền **xanh lá** = lõi đang được đưa ra, viền **xanh lam** = lõi đã có.
-- **ĐÃ CHỌN**: các lõi bạn đã lấy trong trận.
+- Các lõi bạn đã lấy trong trận (icon + tên, sau phần gợi ý / combo).
 - **LỐI LÊN ĐỒ**: tối đa 3 lối lên đồ; 2 món viền xanh là món cốt lõi.
 - **THEO ĐỘI ĐỊCH**: 2 món nên lên dựa trên 5 tướng địch và trang bị họ đang có, kèm lý do ngắn
   (ví dụ "Lời Nhắc Tử Vong – 3/5 địch hồi máu"). App xét tướng hồi máu, tướng đỡ đòn / giáp / kháng phép,

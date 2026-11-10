@@ -646,11 +646,13 @@ class SettingsDialog:
         self._section(T("Cập nhật & dữ liệu"))
         from version import __version__
         ctl = self._row(T("Phiên bản {v}", v=__version__), T("Bấm để kiểm tra bản mới trên GitHub."))
-        self._upd_desc = ctl.master.grid_slaves(row=0, column=0)[0].winfo_children()[-1]
-        self._upd_ctl = ctl
-        self._btn(ctl, T("Kiểm tra cập nhật"), self._check_update).pack()
-        if getattr(a, "_update_info", None):
-            self._show_new(a._update_info)
+        self._upd_desc, self._upd_ctl = ctl.master.desc, ctl
+        if getattr(a, "updating", False):          # đang tải / cài: chỉ hiện tiến độ, không cho bấm thêm
+            self.update_note(T("Đang cập nhật…"))
+        else:
+            self._btn(ctl, T("Kiểm tra cập nhật"), self._check_update).pack()
+            if getattr(a, "_update_info", None):
+                self._show_new(a._update_info)
         self._check("check_updates", T("Báo khi có bản mới"), T("Tự kiểm tra bản phát hành trên GitHub."))
         ctl = self._row(T("Thư mục dữ liệu"), a._fit(str(paths.DATA), self.body_w - a.S(260), 9))
         self._btn(ctl, T("Mở"), paths.open_data_folder).pack()
@@ -665,6 +667,8 @@ class SettingsDialog:
     def _check_update(self):
         import threading
         import updater
+        if getattr(self.app, "updating", False):
+            return
         self.update_note(T("Đang kiểm tra…"))
 
         box = {}
@@ -695,7 +699,7 @@ class SettingsDialog:
     def _show_new(self, info):
         import updater
         ctl = getattr(self, "_upd_ctl", None)
-        if ctl is None or not ctl.winfo_exists():
+        if ctl is None or not ctl.winfo_exists() or getattr(self.app, "updating", False):
             return
         auto = updater.can_self_update()
         self.update_note(T("Có bản mới {v}.", v=info["version"]) + ("" if auto else " " + T(
@@ -755,7 +759,7 @@ class SettingsDialog:
             b.pack()
             b.bind("<Button-1>", lambda e, n=name: self._start_capture(n))
             self._hover(b, BTN, BTN_HOVER)
-            note = ctl.master.grid_slaves(row=0, column=0)[0].winfo_children()[-1]
+            note = ctl.master.desc
             note.configure(fg=d.OKC)
             self._hk_buttons[name] = (b, note)
         self._hk_refresh()

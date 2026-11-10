@@ -3,6 +3,25 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.8.0] – 2026-11-10
+
+### Thêm
+- Overlay: món trong **Lối lên đồ** mà bạn đã có trong trận được làm mờ và có huy hiệu **✓ xanh** nhỏ ở góc icon (đọc từ Live Client API của Riot,
+  tự cập nhật khi mua / bán đồ).
+
+### Đã đổi
+- Overlay gọn hơn: bỏ tỉ lệ thắng của tướng trên thanh tiêu đề, bỏ tiêu đề "ĐÃ CHỌN" (vẫn hiện icon + tên lõi đã
+  chọn) và chú thích "viền xanh: món cốt lõi" ở mục Lối lên đồ.
+- Độ đậm khung overlay mặc định 70% (trước 74%); máy đang để đúng mặc định cũ tự chuyển sang 70%.
+
+### Đã sửa
+- Cập nhật một chạm: kiểm tra lại "đang trong trận" sau hộp xác nhận và trước khi cài (tải xong mà trận đã bắt đầu
+  thì chờ hết trận mới cài); chặn bấm cập nhật lần 2 từ Cài đặt khi hộp xác nhận đang mở; Cài đặt chỉ hiện tiến độ
+  khi đang tải.
+- Kiểm tra cập nhật lỗi mạng không còn xoá thông tin "có bản mới" đã biết (thử lại sau ~10 phút).
+- Tải bộ cài: chỉ chấp nhận HTTPS, xoá file tải dở và bộ cài của các bản cũ trong thư mục tạm, kiểm tra số phiên
+  bản; thông báo lỗi ngắn gọn, có bản tiếng Anh.
+
 ## [1.7.0] – 2026-11-10
 
 ### Thêm
@@ -133,6 +152,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.8.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.5.0...v1.6.0
 [1.5.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.4.3...v1.5.0

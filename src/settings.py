@@ -21,7 +21,7 @@ DEFAULTS = {
     "focus_guard": True,          # app vô tình lấy focus khi đang chơi → tự trả focus về game            # tự ghi nhận lõi đã chọn theo cú bấm chuột lên thẻ khi bảng chọn đóng
     # Overlay
     "overlay": True,
-    "ov_opacity": 0.74,
+    "ov_opacity": 0.7,
     "ov_badge_opacity": 0.84,
     "ov_scale": 1.0,              # 0.7 – 1.6
     "ov_width": 272,              # px ở tỉ lệ 100%
@@ -46,7 +46,7 @@ DEFAULTS = {
     "check_updates": True,
 }
 
-VERSION = 2                       # tăng khi đổi giá trị mặc định cần áp lại cho file cũ
+VERSION = 3                       # tăng khi đổi giá trị mặc định cần áp lại cho file cũ
 _lock = threading.Lock()
 _values: dict | None = None
 _listeners: list = []
@@ -60,6 +60,8 @@ def _load() -> dict:
             saved = json.loads(PATH.read_text(encoding="utf-8"))
             if saved.get("_v", 1) < 2:
                 saved.pop("top_n", None)          # bản cũ lưu cả giá trị mặc định cũ (tự vừa cửa sổ)
+            if saved.get("_v", 1) < 3 and saved.get("ov_opacity") == 0.74:
+                saved.pop("ov_opacity", None)     # mặc định cũ 74% → mặc định mới 70%
             _values.update({k: v for k, v in saved.items() if k in DEFAULTS})
         except Exception:
             pass

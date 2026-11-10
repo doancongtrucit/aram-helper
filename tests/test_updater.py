@@ -101,6 +101,55 @@ class UpdaterTest(unittest.TestCase):
                 self.assertRaises(updater.UpdateError):
             updater.prepare("v9.9.9")
 
+    def test_failed_check_keeps_cached_release(self):
+        with self.fake("v99.0.0"):
+            updater.check(force=True)
+        with mock.patch("urllib.request.urlopen", side_effect=OSError("offline")):
+            self.assertEqual(updater.status(force=True)[0], "new")     # vẫn nhớ bản mới đã thấy
+        st = json.loads(updater.STATE.read_text(encoding="utf-8"))
+        self.assertLess(st["checked"], __import__("time").time() - updater.EVERY + 700)   # thử lại sau ~10 phút
+
+    class Resp(io.BytesIO):
+        def __init__(self, body, url="https://objects.example.invalid/x", length=True):
+            super().__init__(body)
+            self.headers = {"Content-Length": str(len(body))} if length else {}
+            self._url = url
+
+        def geturl(self):
+            return self._url
+
+    def test_download_progress_and_part_file(self):
+        dest = Path(self.tmp.name) / "setup.exe"
+        seen = []
+        with mock.patch("urllib.request.urlopen", return_value=self.Resp(b"x" * 200_000)):
+            updater._download("https://example.invalid/s", dest, lambda d, t: seen.append((d, t)))
+        self.assertEqual(dest.stat().st_size, 200_000)
+        self.assertEqual(seen[-1], (200_000, 200_000))
+        self.assertFalse(dest.with_suffix(".exe.part").exists())
+
+    def test_download_rejects_http_and_cleans_up(self):
+        dest = Path(self.tmp.name) / "setup.exe"
+        with mock.patch("urllib.request.urlopen", return_value=self.Resp(b"abc", url="http://evil.invalid/x")), \
+                self.assertRaises(updater.UpdateError) as cm:
+            updater._download("https://example.invalid/s", dest)
+        self.assertEqual(cm.exception.kind, "insecure")
+        self.assertFalse(dest.exists() or dest.with_suffix(".exe.part").exists())
+
+    def test_bad_version_and_messages(self):
+        for bad in ("", "latest", "v1.0/../../x", "v1.2.3-rc"):
+            with self.assertRaises(updater.UpdateError):
+                updater.prepare(bad)
+        self.assertEqual(updater.describe(updater.UpdateError("mismatch")), "mã băm bộ cài không khớp – đã huỷ")
+        self.assertEqual(updater.describe(ValueError("x")), "x")
+
+    def test_prepare_removes_old_installers(self):
+        old = Path(self.tmp.name) / "upd"
+        old.mkdir()
+        (old / "ARAM-Helper-1.0.0-Setup.exe").write_bytes(b"old")
+        (old / "ARAM-Helper-9.9.9-Setup.exe.part").write_bytes(b"half")
+        path, _ = self._prepare(b"installer", b"installer")
+        self.assertEqual(sorted(p.name for p in old.iterdir()), [path.name])
+
     def test_data_dir(self):
         self.assertTrue(str(paths.DATA))
         with mock.patch.dict("os.environ", {"ARAM_HELPER_DATA": self.tmp.name}):

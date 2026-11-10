@@ -35,7 +35,30 @@ UA = {"User-Agent": f"ARAM-Helper/{__version__}"}
 
 
 class UpdateError(Exception):
-    pass
+    """Lỗi cập nhật có mã loại (kind) để hiện thông báo đã dịch; chi tiết kỹ thuật chỉ ghi log."""
+
+    def __init__(self, kind: str, detail: str = ""):
+        super().__init__(f"{kind}: {detail}" if detail else kind)
+        self.kind = kind
+
+
+# Thông báo cho người dùng theo loại lỗi (khoá tiếng Việt → i18n)
+MESSAGES = {
+    "sums": "không tải được file mã băm của bản phát hành – thử lại sau ít phút",
+    "no_entry": "bản phát hành không có mã băm của bộ cài",
+    "download": "tải bộ cài lỗi – kiểm tra mạng rồi thử lại",
+    "mismatch": "mã băm bộ cài không khớp – đã huỷ",
+    "version": "số phiên bản không hợp lệ",
+    "insecure": "đường tải không dùng HTTPS – đã huỷ",
+}
+
+
+def describe(e: Exception) -> str:
+    """Thông báo ngắn, đã dịch, cho người dùng."""
+    from i18n import T
+    if isinstance(e, UpdateError) and e.kind in MESSAGES:
+        return T(MESSAGES[e.kind])
+    return str(e)
 
 
 def parse(v: str) -> tuple[int, ...]:
@@ -68,12 +91,13 @@ def status(force: bool = False) -> tuple[str, dict | None]:
         latest, ok = st.get("latest"), True
     else:
         try:
-            latest, ok = _fetch_latest(), True
+            latest, ok, checked = _fetch_latest(), True, time.time()
         except Exception:
-            latest, ok = None, False
+            # lỗi mạng: giữ kết quả cũ (không xoá nút "có bản mới"), thử lại sau ~10 phút
+            latest, ok, checked = st.get("latest"), False, time.time() - EVERY + 600
         try:
             STATE.parent.mkdir(parents=True, exist_ok=True)
-            STATE.write_text(json.dumps({"checked": time.time(), "latest": latest}), encoding="utf-8")
+            STATE.write_text(json.dumps({"checked": checked, "latest": latest}), encoding="utf-8")
         except OSError:
             pass
     if latest and newer(latest.get("version", "")):
@@ -123,25 +147,37 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def _https_only(r):
+    """GitHub chuyển hướng sang máy chủ tải; không chấp nhận bị chuyển về http."""
+    if not str(r.geturl()).startswith("https://"):
+        raise UpdateError("insecure", r.geturl())
+
+
 def _download(url: str, dest: Path, progress=None, timeout=30):
     req = urllib.request.Request(url, headers=UA)
     part = dest.with_suffix(dest.suffix + ".part")
-    with urllib.request.urlopen(req, timeout=timeout) as r, open(part, "wb") as f:
-        total = int(r.headers.get("Content-Length") or 0)
-        done = 0
-        while True:
-            chunk = r.read(1 << 16)
-            if not chunk:
-                break
-            f.write(chunk)
-            done += len(chunk)
-            if progress:
-                progress(done, total)
-    part.replace(dest)
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r, open(part, "wb") as f:
+            _https_only(r)
+            total = int(r.headers.get("Content-Length") or 0)
+            done = 0
+            while True:
+                chunk = r.read(1 << 16)
+                if not chunk:
+                    break
+                f.write(chunk)
+                done += len(chunk)
+                if progress:
+                    progress(done, total)
+        part.replace(dest)
+    except BaseException:
+        part.unlink(missing_ok=True)          # không để lại file tải dở
+        raise
 
 
 def _read_url(url: str, timeout=15) -> str:
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
+        _https_only(r)
         return r.read(1 << 20).decode("utf-8", "replace")
 
 
@@ -151,26 +187,38 @@ def update_dir() -> Path:
 
 def prepare(version: str, progress=None) -> Path:
     """Tải bộ cài của bản `version` (vd. 'v1.7.0') và kiểm tra mã băm; trả đường dẫn file đã kiểm tra."""
+    if not re.fullmatch(r"v?\d+(\.\d+){0,3}", version or ""):
+        raise UpdateError("version", repr(version))
     base = f"{DOWNLOAD}/{version}"
     try:
         sums = parse_sums(_read_url(f"{base}/{SUMS}"))
+    except UpdateError:
+        raise
     except Exception as e:
-        raise UpdateError(f"không tải được {SUMS}: {e}") from e
+        raise UpdateError("sums", str(e)) from e
     want = sums.get(SETUP)
     if not want:
-        raise UpdateError(f"{SUMS} không có {SETUP}")
+        raise UpdateError("no_entry", f"{SUMS} không có {SETUP}")
     folder = update_dir()
     folder.mkdir(parents=True, exist_ok=True)
     dest = folder / f"ARAM-Helper-{version.lstrip('v')}-Setup.exe"
+    for old in folder.iterdir():                             # bộ cài của các bản cũ / file tải dở
+        if old != dest:
+            try:
+                old.unlink()
+            except OSError:
+                pass
     if not (dest.exists() and sha256(dest) == want):        # đã tải đủ lần trước thì dùng lại
         try:
             _download(f"{base}/{SETUP}", dest, progress)
+        except UpdateError:
+            raise
         except Exception as e:
-            raise UpdateError(f"tải bộ cài lỗi: {e}") from e
+            raise UpdateError("download", str(e)) from e
         got = sha256(dest)
         if got != want:
             dest.unlink(missing_ok=True)
-            raise UpdateError("mã băm bộ cài không khớp – đã huỷ")
+            raise UpdateError("mismatch", f"{got} != {want}")
     return dest
 
 

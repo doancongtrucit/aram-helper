@@ -81,6 +81,7 @@ jobs:
         with:
           path: out
           merge-multiple: true
+      # GIỮ NGUYÊN tên SHA256SUMS.txt và ARAM-Helper-Setup.exe: app >= 1.7.0 dùng chúng để tự cập nhật
       - name: Mã băm SHA-256 (app kiểm tra bộ cài tải về trước khi tự cập nhật)
         run: cd out && sha256sum -- * > SHA256SUMS.txt && cat SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2

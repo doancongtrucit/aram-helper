@@ -19,6 +19,7 @@ CALIB = {"width": 1920, "height": 1080, "size": 128, "centers": [[660, 432], [96
 
 class Hub(FakeHub):
     offer = True
+    my_items = ()           # đồ đang có trong trận (giả lập)
     reroll = None           # thẻ được gợi ý đổi lõi (giả lập)
 
     def slug(self):
@@ -30,6 +31,7 @@ class Hub(FakeHub):
         for r in s["advice"] or []:
             r["reroll"] = r["slot"] == self.reroll
         s["scan"] = {"status": "ok", "calibrated": True, "calibration": CALIB}
+        s["game"] = {**s["game"], "my_items": list(self.my_items)}
         return s
 
 
@@ -99,6 +101,19 @@ class OverlayUI(unittest.TestCase):
         self.tick()
         self.assertIn(3048, self.hub.owned)
         self.assertFalse(self.ov.is_shown(self.ov.bwin))
+
+    def test_check_mark_on_owned_items(self):
+        builds = CHAMP["builds"]
+        first = [it["id"] for it in builds[0]["items"] if it.get("id")][:2]
+        self.assertEqual(len(first), 2)                 # dữ liệu mẫu có mã trang bị
+        self.assertEqual(len(self.ov.pcv.find_withtag("have")), 0)
+        self.hub.my_items = (*first, 999999)            # 2 món của lối 1 + 1 món ngoài lối
+        self.tick()
+        shown = sum(it.get("id") in first for b in builds[:3] for it in b["items"][:6] + b.get("boots", [])[:1])
+        self.assertEqual(len(self.ov.pcv.find_withtag("have")), shown)
+        self.hub.my_items = ()                           # bán đồ → bỏ dấu
+        self.tick()
+        self.assertEqual(len(self.ov.pcv.find_withtag("have")), 0)
 
     def test_collapse_shrinks_panel(self):
         full = self.ov.panel.winfo_height()

@@ -24,6 +24,7 @@ class Images:
     def __init__(self, root: tk.Tk, scale: float):
         self.root, self.scale = root, scale
         self.mem: dict = {}
+        self.pil: dict = {}                # ảnh gốc (PIL) để tạo bản mờ
         self.waiting: dict = {}
         self.blank: dict = {}
         self.jobs: queue.Queue = queue.Queue()
@@ -60,6 +61,19 @@ class Images:
             self.waiting[k] = []
             self.jobs.put(k)
         return None
+
+    def dimmed(self, src, size: int):
+        """Bản mờ + nhạt màu của ảnh (vd. trang bị đã có trên overlay); None nếu ảnh gốc chưa tải xong."""
+        if self.photo(src, size) is None:
+            return None
+        k = (src, self.px(size), "dim")
+        if k not in self.mem:
+            from PIL import ImageEnhance, ImageTk
+            base = self.pil[k[:2]]
+            im = ImageEnhance.Color(base).enhance(0.25)
+            im = ImageEnhance.Brightness(im).enhance(0.45)
+            self.mem[k] = ImageTk.PhotoImage(im, master=self.root)
+        return self.mem[k]
 
     def _blank(self, px):
         if px not in self.blank:
@@ -100,6 +114,7 @@ class Images:
                     continue
                 photo = ImageTk.PhotoImage(img)
                 self.mem[k] = photo
+                self.pil[k] = img
                 got = True
                 for w in widgets:
                     try:

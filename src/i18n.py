@@ -61,8 +61,7 @@ EN = {
     # Overlay
     "GỢI Ý – bấm để đánh dấu đã chọn": "PICK – click to mark as taken",
     "COMBO – viền xanh: đang được đưa ra · viền lam: đã có": "COMBO – green: offered · blue: taken",
-    "ĐÃ CHỌN": "TAKEN",
-    "LỐI LÊN ĐỒ – viền xanh: món cốt lõi": "BUILDS – green: core items",
+    "LỐI LÊN ĐỒ": "BUILDS",
     "THEO ĐỘI ĐỊCH": "VS ENEMY TEAM",
     "có {n}/{m}": "have {n}/{m}",
     "1 trong {n}": "1 of {n}",
@@ -113,8 +112,17 @@ EN = {
     "Giới thiệu": "About", "Email": "Email",
     "Cập nhật lên {v}": "Update to {v}", "Cập nhật ARAM Helper": "Update ARAM Helper",
     "Đang trong trận – cập nhật sau khi hết trận nhé.": "In a game – update after the game ends.",
-    "Cập nhật lên {v}?\n\nApp tải bộ cài (khoảng 45 MB), đóng lại, cài bản mới rồi tự mở lại. Cài đặt và dữ liệu được giữ nguyên.":
-        "Update to {v}?\n\nThe app downloads the installer (about 45 MB), closes, installs the new version and reopens. Your settings and data are kept.",
+    "Cập nhật lên {v}?\n\nApp tải bộ cài, đóng lại, cài bản mới rồi tự mở lại. Cài đặt và dữ liệu được giữ nguyên.":
+        "Update to {v}?\n\nThe app downloads the installer, closes, installs the new version and reopens. Your settings and data are kept.",
+    "Đang cập nhật – chờ một chút nhé.": "Updating – one moment.", "Đang cập nhật…": "Updating…",
+    "Đã tải xong – sẽ cài khi hết trận": "Downloaded – will install after the game",
+    "không tải được file mã băm của bản phát hành – thử lại sau ít phút":
+        "couldn't download the release checksum file – try again in a few minutes",
+    "bản phát hành không có mã băm của bộ cài": "the release has no checksum for the installer",
+    "tải bộ cài lỗi – kiểm tra mạng rồi thử lại": "installer download failed – check your connection and retry",
+    "mã băm bộ cài không khớp – đã huỷ": "installer checksum mismatch – cancelled",
+    "số phiên bản không hợp lệ": "invalid version number",
+    "đường tải không dùng HTTPS – đã huỷ": "download was not over HTTPS – cancelled",
     "Đang tải bản cập nhật…": "Downloading the update…", "Đang tải… {p}%": "Downloading… {p}%",
     "Cập nhật lỗi: {e}": "Update failed: {e}", "Đang cài – app sẽ tự mở lại…": "Installing – the app will reopen…",
     "Bấm để kiểm tra bản mới trên GitHub.": "Click to check GitHub for a new version.",

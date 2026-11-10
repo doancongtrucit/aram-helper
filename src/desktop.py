@@ -107,18 +107,23 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         if not updater.can_self_update():
             webbrowser.open(info["url"])
             return
-        if getattr(self, "_updating", False):
+        if self.updating:
+            self.toast(T("Đang cập nhật – chờ một chút nhé."))
             return
-        if (self._st.get("game") or {}).get("in_game"):
+        if self._in_game():
             self.toast(T("Đang trong trận – cập nhật sau khi hết trận nhé."))
             return
         from tkinter import messagebox
-        if not messagebox.askyesno(
-                T("Cập nhật ARAM Helper"),
-                T("Cập nhật lên {v}?\n\nApp tải bộ cài (khoảng 45 MB), đóng lại, cài bản mới rồi tự mở lại. "
-                  "Cài đặt và dữ liệu được giữ nguyên.", v=info["version"]), parent=self.root):
+        self._updating = True                      # đặt trước hộp xác nhận: chặn bấm lần 2 (vd. từ Cài đặt)
+        ok = messagebox.askyesno(
+            T("Cập nhật ARAM Helper"),
+            T("Cập nhật lên {v}?\n\nApp tải bộ cài, đóng lại, cài bản mới rồi tự mở lại. "
+              "Cài đặt và dữ liệu được giữ nguyên.", v=info["version"]), parent=self.root)
+        if not ok or self._in_game():              # hộp xác nhận có thể mở lâu – trận có thể đã bắt đầu
+            self._updating = False
+            if ok:
+                self.toast(T("Đang trong trận – cập nhật sau khi hết trận nhé."))
             return
-        self._updating = True
         self._update_note(T("Đang tải bản cập nhật…"))
         job = {"pct": None, "done": None}          # luồng tải ghi vào, luồng giao diện đọc (không gọi Tk từ luồng phụ)
 
@@ -158,16 +163,28 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         b = getattr(self, "_update_btn", None)
         if b is not None and b.winfo_exists():
             b.configure(text=getattr(self, "_update_text", ""))
-        self._update_note_reset(T("Cập nhật lỗi: {e}", e=e))
-        self.toast(T("Cập nhật lỗi: {e}", e=e))
+        msg = T("Cập nhật lỗi: {e}", e=updater.describe(e))
+        self._update_note_reset(msg)
+        self.toast(msg)
 
     def _update_note_reset(self, text):
         dlg = self._settings_dlg
         if dlg is not None and dlg.win.winfo_exists():
             dlg.update_note(text)
 
+    @property
+    def updating(self) -> bool:
+        return bool(getattr(self, "_updating", False))
+
+    def _in_game(self) -> bool:
+        return bool((self._st.get("game") or {}).get("in_game"))
+
     def _update_install(self, path):
         import diag
+        if self._in_game():                        # tải xong khi trận đã bắt đầu: chờ hết trận mới cài
+            self._update_note(T("Đã tải xong – sẽ cài khi hết trận"))
+            self.root.after(5000, self._update_install, path)
+            return
         self._update_note(T("Đang cài – app sẽ tự mở lại…"))
         try:
             updater.launch_installer(path)
