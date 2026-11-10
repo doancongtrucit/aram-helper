@@ -19,6 +19,11 @@ class Decide(unittest.TestCase):
         self.assertIsNone(fg.decide(True, False, 2000))                      # game → app khác (Discord…)
         self.assertIsNone(fg.decide(False, True, 2000))                      # app → app (không phải từ game)
 
+    def test_overlay_always_returned(self):
+        # bấm lên overlay (chọn lõi, kéo khung) mà overlay lấy focus → vẫn trả về game dù vừa có cú bấm
+        self.assertEqual(fg.decide(True, True, idle_ms=30, now_is_overlay=True), "return")
+        self.assertIsNone(fg.decide(False, True, 30, now_is_overlay=True))
+
 
 if __name__ == "__main__":
     unittest.main()

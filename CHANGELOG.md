@@ -3,6 +3,14 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.8.1] – 2026-11-10
+
+### Đã sửa
+- **Bị đẩy ra khỏi game khi bấm vào overlay** (thấy trong log máy laptop: "người chơi tự chuyển sang 'ARAM Helper
+  overlay'"): tkinter tự kích hoạt cửa sổ khi bấm, bỏ qua cờ không-kích-hoạt; khi overlay ẩn đi focus rơi sang cửa sổ
+  chính. Overlay giờ luôn trả lời "không kích hoạt" cho cú bấm – bấm vẫn chọn lõi / kéo khung như thường.
+- Giữ focus cho game: overlay lấy focus thì luôn trả về game, kể cả ngay sau cú bấm.
+
 ## [1.8.0] – 2026-11-10
 
 ### Thêm
@@ -152,6 +160,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.8.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.5.0...v1.6.0

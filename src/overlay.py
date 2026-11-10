@@ -79,6 +79,35 @@ def _keep_on_top(win):
                                       SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_NOOWNERZORDER)
 
 
+# Tk tự trả lời WM_MOUSEACTIVATE bằng "kích hoạt", bỏ qua WS_EX_NOACTIVATE → mỗi lần bấm vào overlay game mất focus,
+# và khi overlay ẩn đi focus rơi sang cửa sổ chính ("bị tab ra"). Thay thủ tục cửa sổ để luôn trả MA_NOACTIVATE:
+# cú bấm vẫn tới tkinter như thường, chỉ không kích hoạt cửa sổ.
+WM_MOUSEACTIVATE, MA_NOACTIVATE, GWLP_WNDPROC = 0x0021, 3, -4
+_subclassed: dict = {}         # hwnd → (thủ tục mới, thủ tục cũ) – giữ tham chiếu để không bị dọn rác
+
+
+def _no_mouse_activate(hwnd: int):
+    if not hwnd or hwnd in _subclassed:
+        return
+    from ctypes import wintypes as wt
+    u = ctypes.windll.user32
+    lresult = ctypes.c_ssize_t
+    proc_t = ctypes.WINFUNCTYPE(lresult, wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM)
+    u.CallWindowProcW.restype = lresult
+    u.CallWindowProcW.argtypes = [ctypes.c_void_p, wt.HWND, wt.UINT, wt.WPARAM, wt.LPARAM]
+    u.SetWindowLongPtrW.restype = ctypes.c_void_p
+    u.SetWindowLongPtrW.argtypes = [wt.HWND, ctypes.c_int, ctypes.c_void_p]
+    box = {}
+
+    def proc(h, msg, wp, lp):
+        if msg == WM_MOUSEACTIVATE:
+            return MA_NOACTIVATE
+        return u.CallWindowProcW(box["old"], h, msg, wp, lp)
+    cb = proc_t(proc)
+    box["old"] = u.SetWindowLongPtrW(hwnd, GWLP_WNDPROC, ctypes.cast(cb, ctypes.c_void_p))
+    _subclassed[hwnd] = (cb, box["old"])
+
+
 def _dpi_aware():
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -121,6 +150,8 @@ class Overlay:
             win.geometry("1x1+0+0")
             win.update_idletasks()
             self._style_window(win, alpha)
+            for h in {_hwnd(win), win.winfo_id(), cv.winfo_id()}:    # khung ngoài, cửa sổ Tk, canvas
+                _no_mouse_activate(h)
             self._shown[win] = True
             self._set_shown(win, False)        # ẩn bằng Win32; tkinter vẫn coi là đang hiện (không bao giờ deiconify)
             self.layers.append((win, cv))

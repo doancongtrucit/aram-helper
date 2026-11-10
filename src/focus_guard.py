@@ -18,10 +18,18 @@ USER_INPUT_MS = 400          # có phím / chuột trong khoảng này trước 
 GAME_CLASS = "RiotWindowClass"
 
 
-def decide(prev_is_game: bool, now_is_ours: bool, idle_ms: int) -> str | None:
-    """'return' = trả focus về game; 'user' = người chơi tự chuyển sang app; None = không liên quan."""
+OVERLAY_TITLE = "ARAM Helper overlay"
+
+
+def decide(prev_is_game: bool, now_is_ours: bool, idle_ms: int, now_is_overlay: bool = False) -> str | None:
+    """'return' = trả focus về game; 'user' = người chơi tự chuyển sang app; None = không liên quan.
+
+    Overlay lấy focus thì luôn trả về game, kể cả ngay sau cú bấm: bấm lên overlay (chọn lõi, kéo khung) không bao giờ
+    là ý muốn rời game."""
     if not (prev_is_game and now_is_ours):
         return None
+    if now_is_overlay:
+        return "return"
     return "user" if idle_ms < USER_INPUT_MS else "return"
 
 
@@ -77,11 +85,14 @@ class FocusGuard:
                     game_hwnd = fg
                 if fg != prev:
                     is_ours = bool(fg) and ours(fg)
-                    what = decide(prev is not None and prev == game_hwnd, is_ours, idle_ms())
-                    if what:
+                    name = ""
+                    if is_ours:
                         t = ctypes.create_unicode_buffer(128)
                         u.GetWindowTextW(fg, t, 128)
                         name = t.value or cls(fg)
+                    what = decide(prev is not None and prev == game_hwnd, is_ours, idle_ms(),
+                                  now_is_overlay=name == OVERLAY_TITLE)
+                    if what:
                         if what == "return" and self.enabled_fn() and game_hwnd:
                             u.SetForegroundWindow(game_hwnd)
                             self.returned += 1
