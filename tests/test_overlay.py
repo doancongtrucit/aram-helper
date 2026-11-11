@@ -87,6 +87,19 @@ class OverlayUI(unittest.TestCase):
             self.ov._hide()
         self.assertFalse(dei.called or lift.called or wd.called)
 
+    def test_no_activate_style_survives_tk_alpha(self):
+        """Tk ghi đè extended style khi đổi -alpha; cờ WS_EX_NOACTIVATE phải còn sau khi tạo và sau khi đổi độ đậm,
+        nếu không bấm vào overlay sẽ làm game mất focus."""
+        import ctypes
+        import overlay
+
+        def ok(win):
+            st = ctypes.windll.user32.GetWindowLongW(overlay._hwnd(win), overlay.GWL_EXSTYLE)
+            return st & overlay.NO_ACTIVATE_EX == overlay.NO_ACTIVATE_EX
+        self.assertTrue(ok(self.ov.panel) and ok(self.ov.bwin))
+        self.ov._on_settings({"ov_opacity": 0.5, "ov_badge_opacity": 0.9})
+        self.assertTrue(ok(self.ov.panel) and ok(self.ov.bwin))
+
     def test_reroll_hint_drawn_on_row_and_badge(self):
         import i18n
         self.hub.reroll = 0

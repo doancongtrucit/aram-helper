@@ -3,6 +3,13 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.8.2] – 2026-11-11
+
+### Đã sửa
+- **Vẫn bị đẩy ra khỏi game khi bấm vào overlay** (1.8.1): lệnh đổi độ đậm của tkinter ghi đè kiểu cửa sổ, xoá mất cờ
+  không-kích-hoạt mà overlay vừa đặt → cú bấm làm game mất focus mà không cửa sổ nào nhận (nên log không ghi gì).
+  Overlay giờ đặt lại cờ sau mọi lần đổi độ đậm; đã thử bằng cú bấm chuột thật: game giữ nguyên focus.
+
 ## [1.8.1] – 2026-11-10
 
 ### Đã sửa
@@ -160,6 +167,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.8.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.6.0...v1.7.0

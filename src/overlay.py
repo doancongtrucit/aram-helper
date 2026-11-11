@@ -108,6 +108,20 @@ def _no_mouse_activate(hwnd: int):
     _subclassed[hwnd] = (cb, box["old"])
 
 
+GWL_EXSTYLE = -20
+WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_NOACTIVATE, WS_EX_TOPMOST = 0x80000, 0x80, 0x08000000, 0x8
+NO_ACTIVATE_EX = WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST
+
+
+def _no_activate_style(win):
+    """Không kích hoạt khi bấm, không hiện trên taskbar, luôn nằm trên. Gọi lại sau mọi lệnh `attributes` của Tk."""
+    u = ctypes.windll.user32
+    hwnd = _hwnd(win)
+    style = u.GetWindowLongW(hwnd, GWL_EXSTYLE)
+    if style & NO_ACTIVATE_EX != NO_ACTIVATE_EX:
+        u.SetWindowLongW(hwnd, GWL_EXSTYLE, style | NO_ACTIVATE_EX)
+
+
 def _dpi_aware():
     try:
         ctypes.windll.shcore.SetProcessDpiAwareness(2)
@@ -170,9 +184,9 @@ class Overlay:
 
     def _on_settings(self, ch: dict):
         if "ov_opacity" in ch:
-            self.panel.attributes("-alpha", max(0.2, min(1.0, float(ch["ov_opacity"]))))
+            self._set_alpha(self.panel, max(0.2, min(1.0, float(ch["ov_opacity"]))))
         if "ov_badge_opacity" in ch:
-            self.bwin.attributes("-alpha", max(0.2, min(1.0, float(ch["ov_badge_opacity"]))))
+            self._set_alpha(self.bwin, max(0.2, min(1.0, float(ch["ov_badge_opacity"]))))
         if "ov_scale" in ch:
             self._apply_scale()
         if "overlay" in ch:
@@ -224,16 +238,19 @@ class Overlay:
             pass
 
     @staticmethod
+    def _set_alpha(win, alpha):
+        """Đổi độ đậm. Tk ghi đè cả extended style của cửa sổ khi đổi -alpha / -transparentcolor (chỉ còn
+        WS_EX_LAYERED) → mất WS_EX_NOACTIVATE, bấm vào overlay làm game mất focus. Luôn đặt lại sau lệnh của Tk."""
+        win.attributes("-alpha", alpha)
+        _no_activate_style(win)
+
+    @staticmethod
     def _style_window(win, alpha):
         """Luôn nằm trên, không hiện trên taskbar, bấm vào không cướp focus của game, không lọt vào ảnh chụp."""
         user32 = ctypes.windll.user32
         hwnd = _hwnd(win)
-        GWL_EXSTYLE = -20
-        WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_NOACTIVATE, WS_EX_TOPMOST = 0x80000, 0x80, 0x08000000, 0x8
-        style = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-        user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST)
         win.attributes("-transparentcolor", KEY)
-        win.attributes("-alpha", alpha)
+        Overlay._set_alpha(win, alpha)            # sau các lệnh Tk – xem _set_alpha
         _keep_on_top(win)
         if not SHOW_IN_CAPTURE:
             try:
