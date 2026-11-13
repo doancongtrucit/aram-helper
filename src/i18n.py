@@ -31,6 +31,11 @@ EN = {
     "Đang tải dữ liệu {name}…": "Loading {name}…",
     "Vào một trận ARAM Hỗn Loạn để app tự nhận tướng, hoặc tìm tướng ở ô tìm kiếm phía trên.":
         "Start an ARAM Mayhem game and the app picks up your champion, or search a champion above.",
+    "Lưu ý: Cấu hình trò chơi ở chế độ cửa sổ Không viền": "Note: set the game to Borderless window mode",
+    "Overlay chỉ hiện trong trận khi chế độ cửa sổ là Không viền (Borderless).":
+        "The overlay only shows in game when the window mode is Borderless.",
+    "Cách đổi: trong trận bấm Esc → Hình ảnh → Chế độ cửa sổ → Không viền.":
+        "How: in game press Esc → Video → Window Mode → Borderless.",
     # Lõi
     "Lõi Kim Cương": "Prismatic", "Lõi Vàng": "Gold", "Lõi Bạc": "Silver",
     "Xem thêm ({n})": "More ({n})", "Thu gọn": "Less",

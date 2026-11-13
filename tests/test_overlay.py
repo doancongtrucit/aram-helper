@@ -50,6 +50,10 @@ class OverlayUI(unittest.TestCase):
         import overlay
         self.tmp = tempfile.TemporaryDirectory()
         overlay.PREFS = os.path.join(self.tmp.name, "overlay.json")
+        from unittest import mock
+        fs = mock.patch.object(overlay.game_window, "exclusive_fullscreen", return_value=False)  # không phụ thuộc máy
+        fs.start()
+        self.addCleanup(fs.stop)
         self.root = tk.Tk()
         self.root.withdraw()
         self.hub = Hub()
@@ -86,6 +90,17 @@ class OverlayUI(unittest.TestCase):
             self.tick()
             self.ov._hide()
         self.assertFalse(dei.called or lift.called or wd.called)
+
+    def test_hidden_while_league_is_exclusive_fullscreen(self):
+        """League Toàn màn hình: overlay vô hình nhưng hứng cú bấm → phải ẩn hẳn; đổi sang Không viền thì hiện lại."""
+        from unittest import mock
+        import game_window
+        with mock.patch.object(game_window, "exclusive_fullscreen", return_value=True):
+            self.tick()
+            self.assertFalse(self.ov.is_shown(self.ov.panel) or self.ov.is_shown(self.ov.bwin))
+        with mock.patch.object(game_window, "exclusive_fullscreen", return_value=False):
+            self.tick()
+            self.assertTrue(self.ov.is_shown(self.ov.panel) and self.ov.is_shown(self.ov.bwin))
 
     def test_no_activate_style_survives_tk_alpha(self):
         """Tk ghi đè extended style khi đổi -alpha; cờ WS_EX_NOACTIVATE phải còn sau khi tạo và sau khi đổi độ đậm,

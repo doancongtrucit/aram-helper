@@ -586,9 +586,25 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.label(box, T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn") + f"  ·  v{__version__}", 10, MUTED).pack()
         self.label(box, msg, 11, OKC if self._st.get("error") else TEXT, wraplength=self.S(620),
                    justify="center").pack(pady=(self.S(18), 0))
-        foot = self.label(self.body, about.COPYRIGHT + "  ·  " + T("Giới thiệu"), 8, DIMTEXT, cursor="hand2")
+        self._borderless_note(box)
+        foot =self.label(self.body, about.COPYRIGHT + "  ·  " + T("Giới thiệu"), 8, DIMTEXT, cursor="hand2")
         foot.place(relx=0.5, rely=1.0, y=-self.S(10), anchor="s")
         foot.bind("<Button-1>", lambda e: self.open_settings("about"))
+
+    def _borderless_note(self, parent):
+        """Ô lưu ý nổi bật: overlay chỉ hiện khi League để chế độ cửa sổ Không viền."""
+        card = tk.Frame(parent, bg=PANEL, highlightthickness=1, highlightbackground=OKC)
+        card.pack(pady=(self.S(22), 0), fill="x")
+        tk.Frame(card, bg=OKC, width=self.S(4)).pack(side="left", fill="y")
+        inner = tk.Frame(card, bg=PANEL)
+        inner.pack(side="left", fill="both", expand=True, padx=self.S(14), pady=self.S(10))
+        wrap = self.S(560)
+        self.label(inner, "⚠  " + T("Lưu ý: Cấu hình trò chơi ở chế độ cửa sổ Không viền"), 11, OKC, True, bg=PANEL,
+                   anchor="w", justify="left", wraplength=wrap).pack(anchor="w")
+        self.label(inner, T("Overlay chỉ hiện trong trận khi chế độ cửa sổ là Không viền (Borderless)."),
+                   10, TEXT, bg=PANEL, anchor="w", justify="left", wraplength=wrap).pack(anchor="w", pady=(self.S(4), 0))
+        self.label(inner, T("Cách đổi: trong trận bấm Esc → Hình ảnh → Chế độ cửa sổ → Không viền."),
+                   10, MUTED, bg=PANEL, anchor="w", justify="left", wraplength=wrap).pack(anchor="w", pady=(self.S(4), 0))
 
     def _render_head(self, c):
         self.icon(self.head, c.get("icon"), 40).pack(side="left", padx=(0, self.S(10)))

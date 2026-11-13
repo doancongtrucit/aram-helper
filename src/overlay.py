@@ -150,6 +150,7 @@ class Overlay:
         self._sig = None
         self._last_top = 0.0
         self._drag = None
+        self._fs_noted = False          # đã ghi log "League Toàn màn hình → ẩn overlay" trong trận này
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
         self._shown: dict = {}
@@ -362,7 +363,21 @@ class Overlay:
         st = self.hub.state()
         game, champ, scan = st["game"], st["champion"], st.get("scan") or {}
         if not (game.get("in_game") or os.environ.get("ARAM_FAKE_SCREEN")):
+            self._fs_noted = False
             return None
+        # League Toàn màn hình: overlay bị game che nhưng vẫn hứng cú bấm (bấm chọn lõi → văng ra desktop).
+        # Chỉ hiện overlay khi Không viền; đổi chế độ trong trận thì overlay tự hiện lại sau vài giây.
+        if game_window.exclusive_fullscreen():
+            if not self._fs_noted:
+                self._fs_noted = True
+                import diag
+                diag.log("overlay: League đang ở chế độ Toàn màn hình → tạm ẩn overlay "
+                         "(đổi sang Không viền: Esc → Hình ảnh → Chế độ cửa sổ)")
+            return None
+        if self._fs_noted:
+            self._fs_noted = False
+            import diag
+            diag.log("overlay: League đã chuyển sang chế độ Không viền / Cửa sổ → hiện lại overlay")
         return {"champ": champ, "scan": scan, "advice": st.get("advice"), "owned": st.get("owned", []),
                 "calib": scan.get("calibration"), "counter": st.get("counter") or [],
                 "my_items": {int(i) for i in game.get("my_items") or ()}}       # đồ đang có (Live Client API)

@@ -3,6 +3,15 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.8.3] – 2026-11-13
+
+### Thêm
+- Màn hình chào có ô lưu ý nổi bật: cấu hình trò chơi ở chế độ cửa sổ **Không viền** – overlay chỉ hiện trong trận ở
+  chế độ này; kèm cách đổi (Esc → Hình ảnh → Chế độ cửa sổ → Không viền).
+- Overlay chỉ hiện khi League ở chế độ **Không viền / Cửa sổ**. Ở chế độ Toàn màn hình (đọc `game.cfg` của game đang
+  chạy, hoặc Windows báo game D3D chiếm toàn màn hình) app tự ẩn overlay – overlay vô hình vẫn hứng cú bấm làm
+  văng khỏi game. Đổi chế độ trong trận thì overlay tự hiện lại sau vài giây; app.log ghi lại lúc ẩn / hiện.
+
 ## [1.8.2] – 2026-11-11
 
 ### Đã sửa
@@ -167,6 +176,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.8.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.0...v1.8.1
 [1.8.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.7.0...v1.8.0
