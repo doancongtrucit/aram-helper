@@ -3,7 +3,24 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [1.9.0] – 2026-11-18
+
+### Thêm
+- **Khay hệ thống** (Windows): bấm X hoặc thu nhỏ → cửa sổ chính ẩn xuống khay, overlay và quét lõi vẫn chạy. Bấm
+  biểu tượng để mở lại; chuột phải → Mở / Cài đặt / Thoát. Tắt được ở Cài đặt → Chung → "Ẩn xuống khay hệ thống".
+- **Khởi động cùng Windows** ngay trong Cài đặt → Chung; mở cùng Windows thì nằm sẵn dưới khay. Dùng khoá Run của
+  Windows; lối tắt Startup do bộ cài cũ tạo được tự chuyển sang, gỡ cài đặt thì xoá luôn.
+
+### Cải thiện
+- Cửa sổ chính không vẽ lại khi đang ẩn ở khay / thu nhỏ (giảm CPU khi chơi).
+- Chỉ giữ dữ liệu 12 tướng xem gần nhất trong RAM – xem lướt nhiều tướng không làm app phình bộ nhớ.
+
+### Đã sửa
+- Lỗi hiếm khi gõ tìm kiếm đúng lúc danh sách lõi đang vẽ lại (`invalid command name …` trong app.log).
+
 ## [1.8.3] – 2026-11-13
+
+Không phát hành riêng (bản build bị lỗi vì máy chủ icon CommunityDragon sập) – có trong 1.9.0.
 
 ### Thêm
 - Màn hình chào có ô lưu ý nổi bật: cấu hình trò chơi ở chế độ cửa sổ **Không viền** – overlay chỉ hiện trong trận ở
@@ -176,6 +193,7 @@
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[1.9.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.3...v1.9.0
 [1.8.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.1...v1.8.2
 [1.8.1]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.0...v1.8.1
