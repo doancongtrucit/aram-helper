@@ -18,7 +18,10 @@ DEFAULTS = {
     "app_follow_offer": False,    # cửa sổ chính phản ứng khi bảng chọn lõi hiện ra (tô sáng + ô Nên chọn)
     "always_on_top": False,
     "auto_pick": True,
-    "focus_guard": True,          # app vô tình lấy focus khi đang chơi → tự trả focus về game            # tự ghi nhận lõi đã chọn theo cú bấm chuột lên thẻ khi bảng chọn đóng
+    "focus_guard": True,          # app vô tình lấy focus khi đang chơi → tự trả focus về game
+    "tray": True,                 # Windows: nút X / thu nhỏ → ẩn xuống khay hệ thống (app vẫn chạy)
+    "tray_hinted": False,         # đã báo "app vẫn chạy dưới khay" một lần
+    "start_with_windows": False,  # Windows: thật ra lưu ở registry (autostart.py); giá trị này chỉ phản chiếu
     # Overlay
     "overlay": True,
     "ov_opacity": 0.7,

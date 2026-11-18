@@ -303,10 +303,30 @@ def main():
         focus_guard.FocusGuard(lambda: HUB.game.get("in_game", False), log=diag.log,
                                enabled_fn=lambda: settings.get("focus_guard")).start()
 
-    desktop.App(root, HUB, SCANNER, overlay)
+    tray = None
+    if IS_WINDOWS:
+        import autostart
+        try:
+            autostart.migrate()                # lối tắt Startup của bộ cài cũ → khoá Run
+            settings.set_many({"start_with_windows": autostart.is_enabled()}, save=False)   # registry là gốc
+        except Exception as e:
+            print("autostart:", repr(e))
+        import paths
+        import tray as tray_mod
+        tray = tray_mod.Tray("ARAM Helper", str(paths.RES / "assets" / "icon.ico"))
+        if not tray.start():
+            tray = None
+    app = desktop.App(root, HUB, SCANNER, overlay, tray=tray)
+    if tray:
+        tray.set_labels(app._tray_labels())
+    if "--minimized" in sys.argv:              # mở cùng Windows: nằm sẵn dưới khay (tắt khay: thu nhỏ xuống thanh tác vụ)
+        if tray and settings.get("tray"):
+            app.hide_to_tray(hint=False)
+        else:
+            root.iconify()
     if overlay:
         overlay.start()
-    root.mainloop()                     # đóng cửa sổ chính = thoát app (overlay, quét màn hình dừng theo)
+    root.mainloop()          # Thoát (khay / nút X khi tắt "ẩn xuống khay") = tắt app, overlay + quét màn hình dừng theo
 
 
 if __name__ == "__main__":

@@ -444,7 +444,8 @@ class SettingsDialog:
 
     # ----- mặc định / đồng bộ -----
     def _defaults(self):
-        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "check_updates", "auto_pick", "focus_guard"],
+        keys = {"general": ["lang", "ui_zoom", "top_n", "app_follow_offer", "always_on_top", "tray", "check_updates",
+                            "auto_pick", "focus_guard"],
                 "overlay": [k for k in settings.DEFAULTS if k.startswith("ov_") or k in ("overlay", "reroll_hint")],
                 "hotkeys": ["hk_" + k for k, _ in HOTKEYS]}[self.page]
         settings.reset(keys)
@@ -636,6 +637,12 @@ class SettingsDialog:
                     T("Tô sáng lõi và hiện ô Nên chọn. Tắt: cửa sổ chính giữ nguyên để xem tổng quát, "
                       "gợi ý chọn lõi chỉ hiện trên overlay."))
         self._check("always_on_top", T("Cửa sổ chính luôn nằm trên"))
+        if sys.platform == "win32":
+            self._check("tray", T("Ẩn xuống khay hệ thống"),
+                        T("Bấm X hoặc thu nhỏ: cửa sổ ẩn xuống khay, overlay và quét lõi vẫn chạy. "
+                          "Chuột phải biểu tượng ở khay → Thoát để tắt hẳn."))
+            self._check("start_with_windows", T("Khởi động cùng Windows"),
+                        T("Tự mở khi đăng nhập Windows và nằm sẵn dưới khay hệ thống."))
 
         if sys.platform == "win32":
             self._section(T("Trong trận"))

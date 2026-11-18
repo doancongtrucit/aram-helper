@@ -9,6 +9,7 @@ Mặc định cửa sổ chính KHÔNG đổi khi bảng chọn lõi hiện ra (
 """
 from __future__ import annotations
 
+import queue
 import sys
 import threading
 import time
@@ -34,7 +35,7 @@ from views.search import SearchMixin
 
 # ---------- cửa sổ chính ----------
 class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
-    def __init__(self, root: tk.Tk, hub, scanner=None, overlay=None):
+    def __init__(self, root: tk.Tk, hub, scanner=None, overlay=None, tray=None):
         self.root, self.hub, self.scanner, self.overlay = root, hub, scanner, overlay
         theme.load_fonts(root)                  # Inter đi kèm app (font hệ thống nếu nạp lỗi)
         # Windows: 96 dpi = 100%; macOS Tk báo 72 dpi nhưng màn Retina đã tự nhân → giữ tỉ lệ 1
@@ -77,6 +78,74 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         threading.Thread(target=self._load_champion_list, daemon=True).start()
         updater.check_async(lambda info: root.after(0, self._show_update, info))
         root.after(200, self._poll)
+        self.tray = tray
+        self.in_tray = False
+        root.protocol("WM_DELETE_WINDOW", self._on_close)
+        if tray:
+            root.bind("<Unmap>", self._on_unmap, add="+")
+            root.after(200, self._pump_tray)
+
+    # ----- khay hệ thống -----
+    def _to_tray(self) -> bool:
+        return bool(self.tray and self.tray.hwnd and settings.get("tray"))
+
+    def _on_close(self):
+        """Nút X: ẩn xuống khay (app vẫn chạy cho overlay + quét lõi) nếu bật, không thì thoát."""
+        if self._to_tray():
+            self.hide_to_tray()
+        else:
+            self.quit()
+
+    def _on_unmap(self, e):
+        if e.widget is self.root and self._to_tray():
+            self.root.after(0, self._iconic_to_tray)
+
+    def _iconic_to_tray(self):
+        if self.root.state() == "iconic":          # bấm thu nhỏ → ẩn khỏi thanh tác vụ, chỉ còn ở khay
+            self.hide_to_tray()
+
+    def hide_to_tray(self, hint: bool = True):
+        self._hide_popup()
+        self.tooltip.hide()
+        self.root.withdraw()
+        self.in_tray = True
+        if hint and not settings.get("tray_hinted"):
+            settings.set("tray_hinted", True)
+            self.tray.notify("ARAM Helper", T("App vẫn chạy dưới khay hệ thống. Bấm vào biểu tượng để mở lại, "
+                                              "chuột phải → Thoát để tắt hẳn."))
+
+    def show_window(self):
+        self.in_tray = False
+        self.root.deiconify()
+        self.root.state("normal")
+        self.root.lift()
+        self.root.focus_force()
+        self._full_sig = None                      # lúc ẩn không vẽ lại → vẽ lại ngay
+
+    def quit(self):
+        if self.tray:
+            self.tray.stop()
+        self.root.destroy()
+
+    def _tray_labels(self) -> dict:
+        return {"open": T("Mở ARAM Helper"), "settings": T("Cài đặt"), "quit": T("Thoát")}
+
+    def _pump_tray(self):
+        try:
+            while True:
+                ev = self.tray.events.get_nowait()
+                if ev == "open":
+                    self.show_window()
+                elif ev == "settings":
+                    self.show_window()
+                    self.open_settings()
+                elif ev == "quit":
+                    return self.quit()
+        except queue.Empty:
+            pass
+        except Exception:
+            self._on_ui_error(*sys.exc_info())
+        self.root.after(200, self._pump_tray)
 
     def _set_icon(self):
         try:
@@ -219,6 +288,13 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self._full_sig = None
         if "always_on_top" in changed:
             self.root.attributes("-topmost", bool(changed["always_on_top"]))
+        if "lang" in changed and self.tray:
+            self.tray.set_labels(self._tray_labels())
+        if "start_with_windows" in changed:
+            import autostart
+            on = autostart.set_enabled(bool(changed["start_with_windows"]))
+            if on != bool(changed["start_with_windows"]):
+                settings.set_many({"start_with_windows": on}, save=False)
 
     def _rebuild(self):
         """Đổi ngôn ngữ / cỡ chữ: dựng lại toàn bộ cửa sổ (giữ các cửa sổ con như overlay, Cài đặt)."""
@@ -457,6 +533,13 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self._full_sig = None
 
     def _poll(self):
+        if self.in_tray or self.root.state() == "iconic":   # đang ở khay / thu nhỏ: không vẽ gì, thưa nhịp hơn
+            try:
+                self.hub.state()                   # vẫn ghi nhận lõi đã chọn khi overlay tắt
+            except Exception:
+                pass
+            self.root.after(1500, self._poll)
+            return
         try:
             st = self.hub.state()
             self._st = st

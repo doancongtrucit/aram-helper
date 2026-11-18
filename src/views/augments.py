@@ -148,6 +148,9 @@ class AugmentsMixin:
         hits = [i for i, c in self.cards.items() if any(t in c["fold"] for t in terms)] if terms else []
         active = bool(terms or offer_ids)
         for i, c in self.cards.items():
+            if not c["w"].winfo_exists():   # tìm kiếm hẹn giờ chạy đúng lúc thẻ đang được vẽ lại → bỏ qua lượt này
+                self._light_sig = None
+                return
             hit = i in offer_ids or i in hits
             self._style_card(c, "hit" if hit else "dim" if active else "normal")
             if c["extra"]:   # lõi ngoài top N đang được tìm / đọc ra thì vẫn hiện

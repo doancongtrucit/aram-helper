@@ -257,6 +257,20 @@ def _cache_path(name: str) -> Path:
 
 
 _mem: dict[str, dict] = {}     # bản trong RAM: khỏi đọc + parse file JSON mỗi lần hỏi
+MEM_CHAMPS = 12                # giữ tối đa chừng này tướng trong RAM (xem lướt nhiều tướng không phình bộ nhớ)
+
+
+_mem_lock = threading.Lock()   # luồng nền + luồng giao diện cùng đọc / ghi
+
+
+def _remember(name: str, obj: dict) -> None:
+    with _mem_lock:
+        _mem.pop(name, None)
+        _mem[name] = obj                           # mới dùng → cuối dict
+        if name.startswith("champ_"):
+            champs = [k for k in _mem if k.startswith("champ_")]
+            for old in champs[:-MEM_CHAMPS]:
+                del _mem[old]
 
 
 def _read_cache(name: str, ttl: float) -> dict | None:
@@ -266,7 +280,9 @@ def _read_cache(name: str, ttl: float) -> dict | None:
         if not p.exists():
             return None
         obj = json.loads(p.read_text(encoding="utf-8"))
-        _mem[name] = obj
+        _remember(name, obj)
+    elif name.startswith("champ_"):
+        _remember(name, obj)
     if time.time() - obj.get("fetched_at", 0) > ttl:
         return None
     return obj
@@ -276,7 +292,7 @@ def _write_cache(name: str, obj: dict) -> None:
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
     obj["fetched_at"] = time.time()
     _cache_path(name).write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
-    _mem[name] = obj
+    _remember(name, obj)
 
 
 def _stale_cache(name: str) -> dict | None:

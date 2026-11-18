@@ -151,6 +151,20 @@ EN = {
     "Giữ focus cho game": "Keep focus on the game",
     "App vô tình lấy focus khi đang chơi thì trả lại game ngay và ghi vào log.":
         "If the app accidentally takes focus while playing, give it back to the game and log it.",
+    "Ẩn xuống khay hệ thống": "Hide to the system tray",
+    "Bấm X hoặc thu nhỏ: cửa sổ ẩn xuống khay, overlay và quét lõi vẫn chạy. "
+    "Chuột phải biểu tượng ở khay → Thoát để tắt hẳn.":
+        "Close (X) or minimize hides the window to the tray; the overlay and augment scan keep running. "
+        "Right-click the tray icon → Quit to exit.",
+    "Khởi động cùng Windows": "Start with Windows",
+    "Tự mở khi đăng nhập Windows và nằm sẵn dưới khay hệ thống.":
+        "Opens when you sign in to Windows and waits in the system tray.",
+    "Mở ARAM Helper": "Open ARAM Helper",
+    "Thoát": "Quit",
+    "App vẫn chạy dưới khay hệ thống. Bấm vào biểu tượng để mở lại, "
+    "chuột phải → Thoát để tắt hẳn.":
+        "ARAM Helper is still running in the system tray. Click the icon to open it, "
+        "right-click → Quit to exit.",
     "Báo khi có bản mới": "Notify about new versions",
     "Tự kiểm tra bản phát hành trên GitHub.": "Checks releases on GitHub.",
     "Khung gợi ý và nhãn trên thẻ lõi nằm trên game.": "Suggestion panel and card labels drawn over the game.",

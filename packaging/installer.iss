@@ -64,7 +64,13 @@ Type: filesandordirs; Name: "{app}\_internal"
 [Icons]
 Name: "{autoprograms}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"
 Name: "{autodesktop}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"; Tasks: desktopicon
-Name: "{userstartup}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"; Tasks: startup
+
+[Registry]
+; Mở cùng Windows: khoá Run (app đọc / đổi cùng khoá này trong Cài đặt → Chung). --minimized: nằm sẵn dưới khay.
+; Cài im lặng (tự cập nhật) không đụng tới để giữ lựa chọn người dùng đã đổi trong app.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ARAM Helper"; ValueData: """{app}\ARAM Helper.exe"" --minimized"; Tasks: startup; Check: not WizardSilent
+; Gỡ cài đặt: xoá cả khoá do app tự tạo (ValueType none = không ghi gì lúc cài)
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "ARAM Helper"; Flags: uninsdeletevalue
 
 [Run]
 Filename: "{app}\ARAM Helper.exe"; Description: "{cm:LaunchNow}"; Flags: nowait postinstall skipifsilent
