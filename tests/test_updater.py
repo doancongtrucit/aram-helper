@@ -30,14 +30,22 @@ class UpdaterTest(unittest.TestCase):
         self.assertFalse(updater.newer("", "1.0"))
 
     def fake(self, tag):
+        """Giả GitHub API. Mỗi lần gọi một phản hồi mới: luồng nền của test khác (vd. tải icon) có thể cũng gọi
+        urlopen trong lúc patch – không được đọc mất phản hồi của updater."""
         body = json.dumps({"tag_name": tag, "html_url": "https://example.invalid/r"}).encode()
-        return mock.patch("urllib.request.urlopen", return_value=io.BytesIO(body))
+        return mock.patch("urllib.request.urlopen", side_effect=lambda *a, **k: io.BytesIO(body))
+
+    @staticmethod
+    def _api_calls(op) -> int:
+        """Chỉ đếm lần hỏi GitHub API (bỏ qua request của luồng nền khác)."""
+        return sum(1 for c in op.call_args_list
+                   if getattr(c.args[0], "full_url", c.args[0] if c.args else "") == updater.API)
 
     def test_check_and_cache(self):
         with self.fake("v99.0.0") as op:
             self.assertEqual(updater.check()["version"], "v99.0.0")
             self.assertEqual(updater.check()["version"], "v99.0.0")   # lần 2 dùng kết quả đã nhớ
-            self.assertEqual(op.call_count, 1)
+            self.assertEqual(self._api_calls(op), 1)
         with self.fake("v0.0.1"):
             self.assertIsNone(updater.check(force=True))
 
@@ -162,7 +170,7 @@ class UpdaterTest(unittest.TestCase):
     def test_download_progress_and_part_file(self):
         dest = Path(self.tmp.name) / "setup.exe"
         seen = []
-        with mock.patch("urllib.request.urlopen", return_value=self.Resp(b"x" * 200_000)):
+        with mock.patch("urllib.request.urlopen", side_effect=lambda *a, **k: self.Resp(b"x" * 200_000)):
             updater._download("https://example.invalid/s", dest, lambda d, t: seen.append((d, t)))
         self.assertEqual(dest.stat().st_size, 200_000)
         self.assertEqual(seen[-1], (200_000, 200_000))
@@ -170,7 +178,7 @@ class UpdaterTest(unittest.TestCase):
 
     def test_download_rejects_http_and_cleans_up(self):
         dest = Path(self.tmp.name) / "setup.exe"
-        with mock.patch("urllib.request.urlopen", return_value=self.Resp(b"abc", url="http://evil.invalid/x")), \
+        with mock.patch("urllib.request.urlopen", side_effect=lambda *a, **k: self.Resp(b"abc", url="http://evil.invalid/x")), \
                 self.assertRaises(updater.UpdateError) as cm:
             updater._download("https://example.invalid/s", dest)
         self.assertEqual(cm.exception.kind, "insecure")
