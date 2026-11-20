@@ -1,7 +1,8 @@
 # Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Mở app cùng Windows: giá trị "ARAM Helper" trong HKCU\\...\\Run (chạy kèm --minimized → nằm sẵn dưới khay).
 
-Bộ cài cũ (≤ 1.8.3) tạo lối tắt trong thư mục Startup; migrate() đổi lối tắt đó sang khoá Run để chỉ còn một chỗ.
+Mặc định TẮT. Bộ cài cũ (≤ 1.8.3) tạo lối tắt trong thư mục Startup; migrate() chỉ xoá lối tắt đó (không bật khoá
+Run) – người dùng muốn thì tự bật lại ở Cài đặt → Chung.
 Chỉ Windows; nơi khác mọi hàm đều trả False / không làm gì.
 """
 from __future__ import annotations
@@ -50,8 +51,7 @@ def _read() -> str | None:
 def is_enabled() -> bool:
     if not IS_WINDOWS:
         return False
-    lnk = _legacy_shortcut()
-    return bool(_read()) or bool(lnk and lnk.exists())
+    return bool(_read())
 
 
 def set_enabled(on: bool) -> bool:
@@ -78,13 +78,13 @@ def set_enabled(on: bool) -> bool:
 
 
 def migrate():
-    """Lối tắt Startup của bộ cài cũ → khoá Run (có --minimized); khoá Run trỏ sai chỗ (đã chuyển thư mục) → sửa lại."""
+    """Xoá lối tắt Startup của bộ cài cũ (mặc định không mở cùng Windows); khoá Run trỏ sai chỗ (đã chuyển thư mục)
+    → sửa lại."""
     if not IS_WINDOWS:
         return
     lnk = _legacy_shortcut()
     cur = _read()
     if lnk and lnk.exists():
-        set_enabled(True)
         lnk.unlink(missing_ok=True)
     elif cur and paths.FROZEN and cur != command() and not _target_exists(cur):
         set_enabled(True)

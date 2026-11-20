@@ -73,6 +73,26 @@ def rect(force: bool = False) -> tuple[int, int, int, int]:
     return r
 
 
+def dpi_scale(x: int, y: int) -> float:
+    """Tỉ lệ DPI của màn hình chứa điểm (x, y): 1.0 = 100 %, 1.5 = 150 %… (overlay vẽ cỡ chữ theo màn hình game)."""
+    if sys.platform != "win32":
+        return 1.0
+    try:
+        import ctypes
+        from ctypes import wintypes
+        _dpi_aware()
+        u = ctypes.windll.user32
+        u.MonitorFromPoint.restype = wintypes.HMONITOR
+        u.MonitorFromPoint.argtypes = [wintypes.POINT, wintypes.DWORD]
+        mon = u.MonitorFromPoint(wintypes.POINT(int(x), int(y)), 2)      # MONITOR_DEFAULTTONEAREST
+        dx, dy = ctypes.c_uint(), ctypes.c_uint()
+        if ctypes.windll.shcore.GetDpiForMonitor(mon, 0, ctypes.byref(dx), ctypes.byref(dy)) != 0:
+            return 1.0
+        return dx.value / 96.0
+    except Exception:
+        return 1.0
+
+
 # ---------- chế độ Toàn màn hình ----------
 # League ở chế độ Toàn màn hình (exclusive) chiếm riêng màn hình: overlay bị game che nhưng VẪN nhận cú bấm, nên
 # bấm chọn lõi trúng overlay vô hình → game thu nhỏ, người chơi văng ra desktop. Overlay chỉ hiện khi Không viền.

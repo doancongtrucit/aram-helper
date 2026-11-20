@@ -37,16 +37,18 @@ def _draw_names(img: np.ndarray, items) -> np.ndarray:
 
 def make_screen(icons: dict[int, np.ndarray], offer: list[int], rarity: str = "gold",
                 width=1920, height=1080, icon_frac=128 / 1920, seed=0,
-                names: dict[int, str] | None = None) -> np.ndarray:
+                names: dict[int, str] | None = None, gap_k: float = 1.0) -> np.ndarray:
+    """Bảng chọn len(offer) thẻ (3, hoặc 4 ở lượt chọn 4 lõi) cân giữa màn hình; gap_k: khoảng cách thẻ × gap_k."""
     rng = random.Random(seed)
     nprng = np.random.default_rng(seed)
     img = np.zeros((height, width, 3), np.uint8)
     grad = np.linspace(20, 45, height, dtype=np.float32)[:, None, None]
     img[:] = np.clip(grad + nprng.normal(0, 6, (height, width, 3)), 0, 255).astype(np.uint8)
     size = int(round(width * icon_frac))
-    gap = int(width * 300 / 1920)
+    gap = int(width * 300 / 1920 * gap_k)
     cy = int(height * 0.40)
-    centers = [(width // 2 - gap, cy), (width // 2, cy), (width // 2 + gap, cy)]
+    n = len(offer)
+    centers = [(width // 2 + int(round((i - (n - 1) / 2) * gap)), cy) for i in range(n)]
     for (cx, cy_), aug_id in zip(centers, offer):
         cw, ch = int(size * 2.0), int(size * 3.4)
         x0, y0 = cx - cw // 2, cy_ - int(size * 0.9)

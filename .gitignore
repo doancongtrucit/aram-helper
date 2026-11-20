@@ -21,5 +21,8 @@ Thumbs.db
 build/
 dist/
 
+# Thử nghiệm bản Tauri (Rust) – chưa đưa vào repo
+tauri/
+
 # Dữ liệu tạm của GitHub Actions (icon cho test)
 .ci-data/

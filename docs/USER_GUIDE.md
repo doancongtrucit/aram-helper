@@ -63,7 +63,7 @@ Trang Releases cũng có các file kèm số phiên bản (vd. `ARAM-Helper-1.4.
 
 1. Bấm đúp `ARAM-Helper-Setup.exe` vừa tải.
 2. Nếu Windows hiện **"Windows protected your PC"** (app chưa có chữ ký số): bấm **More info → Run anyway**.
-3. Chọn có tạo biểu tượng Desktop / mở cùng Windows hay không → **Install**.
+3. Chọn có tạo biểu tượng Desktop hay không → **Install**. App không tự mở cùng Windows; muốn thì bật ở **Cài đặt → Chung → Khởi động cùng Windows**.
 4. Mở **ARAM Helper** từ Start Menu hoặc Desktop.
 
 ### 2.3. Cài trên macOS

@@ -49,3 +49,33 @@ def open_data_folder():
 
 # File đi kèm app (icon...): bản exe nằm trong thư mục giải nén của PyInstaller, bản mã nguồn nằm cạnh code
 RES = Path(getattr(sys, "_MEIPASS", APP_DIR))
+
+
+def write_atomic(path, data: str | bytes) -> None:
+    """Ghi file kiểu "tất cả hoặc không": ghi ra file tạm cạnh đó rồi thay thế một lần.
+
+    Tắt máy / app bị đóng giữa chừng thì file cũ vẫn nguyên, không bao giờ còn nửa file JSON hỏng.
+    """
+    import threading
+    import time
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(f"{path.name}.{os.getpid()}-{threading.get_ident()}.tmp")
+    try:
+        with open(tmp, "wb") as f:
+            f.write(data.encode("utf-8") if isinstance(data, str) else data)
+            f.flush()
+            os.fsync(f.fileno())
+        for attempt in range(5):              # Windows: file đích đang bị luồng khác / phần mềm diệt virus mở
+            try:
+                os.replace(tmp, path)
+                return
+            except PermissionError:
+                if attempt == 4:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+    finally:
+        try:
+            tmp.unlink()
+        except OSError:
+            pass

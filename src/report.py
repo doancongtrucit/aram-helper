@@ -3,8 +3,9 @@
 để người dùng đính kèm khi báo lỗi trên GitHub.
 
 Bảo vệ thông tin cá nhân: che đường dẫn thư mục người dùng, tên đăng nhập Windows và địa chỉ IP trong log;
-KHÔNG đưa cấu hình khác hay dữ liệu tải về (cache, icon) vào gói. Ảnh chẩn đoán là ảnh màn hình game
-lúc chọn lõi – người dùng được báo trước khi tạo gói.
+KHÔNG đưa cấu hình khác hay dữ liệu tải về (cache, icon) vào gói. Ảnh chẩn đoán chỉ giữ vùng quanh 3 thẻ lõi:
+ảnh chụp cả màn hình (định vị thất bại, phím chẩn đoán) được cắt trước khi cho vào gói – không lộ khung chat,
+tên người chơi hay bảng điểm. Người dùng được báo trước khi tạo gói.
 """
 from __future__ import annotations
 
@@ -72,6 +73,39 @@ def system_info(extra: dict | None = None) -> dict:
     return info
 
 
+def crop_box(w: int, h: int, info: dict) -> tuple[int, int, int, int]:
+    """Vùng giữ lại của ảnh chẩn đoán (x0, y0, x1, y1).
+
+    Ảnh đã là vùng quét (có "origin") → giữ nguyên. Ảnh cả màn hình → vùng quanh 3 thẻ lõi theo vị trí bảng lõi
+    trong file .json, không có thì dải giữa màn hình nơi bảng chọn lõi hiện (bỏ chat, bảng điểm, tên người chơi)."""
+    if "origin" in info:
+        return 0, 0, w, h
+    c = info.get("calibration") or {}
+    try:
+        sx, sy = w / c["width"], h / c["height"]
+        s = c["size"] * sx
+        xs = [p[0] * sx for p in c["centers"]]
+        ys = [p[1] * sy for p in c["centers"]]
+        box = (int(min(xs) - 1.5 * s), int(min(ys) - 1.4 * s), int(max(xs) + 1.5 * s), int(max(ys) + 3.1 * s))
+    except (KeyError, TypeError, ValueError, ZeroDivisionError):
+        box = (int(w * 0.2), int(h * 0.1), int(w * 0.8), int(h * 0.62))
+    x0, y0, x1, y1 = max(0, box[0]), max(0, box[1]), min(w, box[2]), min(h, box[3])
+    if x1 - x0 < 16 or y1 - y0 < 16:
+        return int(w * 0.2), int(h * 0.1), int(w * 0.8), int(h * 0.62)
+    return x0, y0, x1, y1
+
+
+def card_area_png(path: Path, info: dict) -> bytes:
+    """PNG đã cắt chỉ còn vùng thẻ lõi (xem crop_box)."""
+    import io
+    from PIL import Image
+    with Image.open(path) as im:
+        box = crop_box(im.width, im.height, info)
+        out = io.BytesIO()
+        im.crop(box).save(out, "PNG")
+        return out.getvalue()
+
+
 def default_dir() -> Path:
     """Desktop nếu có (dễ tìm để đính kèm), không thì thư mục dữ liệu."""
     for d in (Path(os.environ.get("USERPROFILE", Path.home())) / "Desktop", Path.home() / "Desktop"):
@@ -96,13 +130,23 @@ def make_bundle(dest_dir: Path | None = None, extra: dict | None = None) -> Path
         if debug.is_dir():
             pngs = sorted(debug.glob("*.png"), key=lambda p: p.stat().st_mtime)[-MAX_DEBUG:]
             for png in pngs:
-                z.write(png, f"debug/{png.name}")
                 meta = png.with_suffix(".json")
+                info = {}
                 if meta.is_file():
-                    z.writestr(f"debug/{meta.name}", sanitize(meta.read_text(encoding="utf-8", errors="replace")))
+                    text = meta.read_text(encoding="utf-8", errors="replace")
+                    z.writestr(f"debug/{meta.name}", sanitize(text))
+                    try:
+                        info = json.loads(text)
+                    except ValueError:
+                        pass
+                try:
+                    z.writestr(f"debug/{png.name}", card_area_png(png, info))
+                except Exception as e:                  # ảnh hỏng: bỏ qua, không đưa ảnh gốc vào gói
+                    z.writestr(f"debug/{png.name}.skipped.txt", f"không đọc được ảnh: {e!r}")
         z.writestr("README.txt", "ARAM Helper – gói báo lỗi.\n"
                                  "Đính kèm file zip này khi mở issue: https://github.com/doancongtrucit/aram-helper/issues\n"
-                                 "Đã che đường dẫn thư mục người dùng và địa chỉ IP; không gồm dữ liệu tải về.\n")
+                                 "Đã che đường dẫn thư mục người dùng và địa chỉ IP; ảnh chỉ giữ vùng thẻ lõi; "
+                                 "không gồm dữ liệu tải về.\n")
     return out
 
 

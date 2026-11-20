@@ -5,7 +5,7 @@
   tướng, 3 lõi đang được đưa ra (xếp hạng, có icon), lõi đã chọn, build đồ chính.
   Nút ▾/▸ thu gọn còn 1 dòng, nút ✕ ẩn (phím tắt hoặc ô "Overlay" trong cửa sổ chính để hiện lại).
 - Khi bảng chọn lõi hiện ra: nhãn nhỏ ngay trên từng thẻ lõi (★ = nên chọn).
-- Bấm vào dòng gợi ý / nhãn trên thẻ = đánh dấu đã chọn lõi đó (giống phím Ctrl+Alt+1/2/3).
+- Bấm vào dòng gợi ý / nhãn trên thẻ = đánh dấu đã chọn lõi đó (giống phím Ctrl+Alt+1/2/3/4).
 - Overlay bị loại khỏi ảnh chụp màn hình (SetWindowDisplayAffinity) để không làm nhiễu bộ quét lõi.
 
 Chỉ vẽ lên màn hình, không đọc/ghi bộ nhớ game, không gửi phím/chuột vào game.
@@ -22,6 +22,7 @@ from tkinter import font as tkfont
 
 import advice
 import game_window
+import i18n
 import paths
 import settings
 import theme
@@ -150,6 +151,7 @@ class Overlay:
         self._sig = None
         self._last_top = 0.0
         self._drag = None
+        self._choose = None             # thẻ đang mở danh sách "đúng lõi nào?" (chuột phải trên nhãn)
         self._fs_noted = False          # đã ghi log "League Toàn màn hình → ẩn overlay" trong trận này
         # 2 cửa sổ nhỏ vừa khít nội dung: khung (panel) + dải nhãn trên thẻ lõi (badges)
         self.layers = []
@@ -232,9 +234,7 @@ class Overlay:
 
     def _save_prefs(self):
         try:
-            os.makedirs(os.path.dirname(PREFS), exist_ok=True)
-            with open(PREFS, "w", encoding="utf-8") as f:
-                json.dump(self.prefs, f)
+            paths.write_atomic(PREFS, json.dumps(self.prefs))
         except Exception:
             pass
 
@@ -279,12 +279,8 @@ class Overlay:
         return self._fonts[key]
 
     def _fit(self, text, width, size, bold=False):
-        f = self._font(size, bold)
-        if f.measure(text) <= width:
-            return text
-        while text and f.measure(text + "…") > width:
-            text = text[:-1]
-        return text.rstrip() + "…"
+        from widgets import ellipsize
+        return ellipsize(self._font(size, bold), text, width)
 
     def _round_rect(self, cv, x0, y0, x1, y1, r, **kw):
         pts = [x0 + r, y0, x1 - r, y0, x1, y0, x1, y0 + r, x1, y1 - r, x1, y1, x1 - r, y1,
@@ -379,7 +375,8 @@ class Overlay:
             import diag
             diag.log("overlay: League đã chuyển sang chế độ Không viền / Cửa sổ → hiện lại overlay")
         return {"champ": champ, "scan": scan, "advice": st.get("advice"), "owned": st.get("owned", []),
-                "calib": scan.get("calibration"), "counter": st.get("counter") or [],
+                "calib": (scan.get("offer") or {}).get("calib") or scan.get("calibration"),
+                "counter": st.get("counter") or [],
                 "my_items": {int(i) for i in game.get("my_items") or ()}}       # đồ đang có (Live Client API)
 
     def _tick(self):
@@ -393,7 +390,11 @@ class Overlay:
                     self._sig = None
             if self.visible and not self._drag:
                 d = self._gather()
-                sig = repr(self._signature(d)) + repr(self.collapsed) + repr(settings.all_values())
+                geo = self._follow_game() if d else None
+                if not (d and d.get("advice")):
+                    self._choose = None
+                sig = (repr(self._signature(d)) + repr(self.collapsed) + repr(settings.all_values()) + repr(geo)
+                       + repr(self._choose))
                 if sig != self._sig:
                     self._sig = sig
                     self._draw(d)
@@ -405,6 +406,16 @@ class Overlay:
         except Exception as e:  # không để overlay chết vì một lỗi vẽ
             print("overlay:", repr(e))
         self.root.after(400, self._tick)
+
+    def _follow_game(self):
+        """Vị trí + DPI màn hình của cửa sổ game: kéo game sang chỗ khác / sang màn hình có tỉ lệ khác thì
+        overlay vẽ lại đúng chỗ, đúng cỡ (trước đây chỉ tính 1 lần lúc mở app)."""
+        gx, gy, gw, gh = game_window.rect()
+        dpi = game_window.dpi_scale(gx + gw // 2, gy + gh // 2)
+        if abs(dpi - self.dpi) > 0.01:
+            self.dpi = dpi
+            self._apply_scale()
+        return gx, gy, gw, gh, round(dpi, 2)
 
     @staticmethod
     def _signature(d):
@@ -497,7 +508,7 @@ class Overlay:
                     for cb in combos:
                         y = self._combo_row(cv, y, W, cb)
             elif not adv and scan.get("error"):
-                msg = scan.get("error")
+                msg = i18n.status(scan.get("error"))
                 t = self._text(cv, x, y + S(6), msg, 8, OK, width=W - 2 * pad)
                 y = cv.bbox(t)[3] + S(6)
 
@@ -670,7 +681,7 @@ class Overlay:
             txt = f"★ {wr}" if top else f"#{a['rank']}  {wr}"
             sub = f"+{TIER_BONUS[b['fit']]} combo {b['fit']}" if b.get("fit") else ""
             if len(a["candidates"]) > 1:
-                sub = (sub + " · " if sub else "") + T("1 trong {n}", n=len(a["candidates"]))
+                sub = (sub + " · " if sub else "") + T("1 trong {n} · chuột phải để chọn", n=len(a["candidates"]))
             if a.get("reroll"):
                 sub = T("↻ nên đổi thẻ này") + (" · " + sub if sub else "")
             w = max(S(96), self._font(11, True).measure(txt) + S(24), self._font(8).measure(sub) + S(20))
@@ -689,6 +700,46 @@ class Overlay:
                 self._text(cv, cx, y0 + S(22), sub, 8, "#0b3d28" if top else MUTED, anchor="n", tags=(tag,))
             self._hover(cv, tag, rect, fill, "#5cf0b0" if top else BG_HOVER)
             cv.tag_bind(tag, "<Button-1>", lambda e, i=b["id"]: self._pick(i))
+            cv.tag_bind(tag, "<Button-3>", lambda e, i=i: self._toggle_choose(i))
+            if self._choose == i:
+                slots = ((d["scan"].get("offer") or {}).get("slots") or [])
+                ids = (slots[i].get("manual") if i < len(slots) else None) or [c["id"] for c in a["candidates"]]
+                self._draw_chooser(cv, cx, bottom + S(4), i, ids, d["champ"] or {})
+
+    def _toggle_choose(self, slot):
+        """Chuột phải trên nhãn: mở / đóng danh sách chọn đúng lõi cho thẻ đó."""
+        self._choose = None if self._choose == slot else slot
+        self._sig = None
+
+    def _choose_aug(self, slot, aug_id):
+        self._choose = None
+        if self.scanner and aug_id is not None:
+            self.scanner.choose(slot, aug_id)
+        elif self.scanner:
+            self.scanner.request_calibration(0)
+        self._sig = None
+
+    def _draw_chooser(self, cv, cx, y, slot, ids, champ):
+        """Danh sách lõi có thể ở thẻ này (cùng icon) + "Định vị lại lõi" – bấm để sửa khi app đọc nhầm."""
+        S = self.S
+        rows = [(i, self._aug_name(i, champ)) for i in ids] + [(None, "⌖ " + T("Định vị lại lõi"))]
+        title = T("Đúng lõi nào?")
+        w = max([self._font(9).measure(n) for _, n in rows] + [self._font(8, True).measure(title)]) + S(40)
+        rh = S(24)
+        x0 = cx - w / 2
+        self._round_rect(cv, x0, y, x0 + w, y + S(22) + rh * len(rows) + S(6), S(8), fill=BG, outline=LINE, width=1)
+        self._text(cv, x0 + S(10), y + S(5), title, 8, MUTED, True)
+        ry = y + S(22)
+        for aug_id, name in rows:
+            tag = f"choose{slot}_{aug_id}"
+            r = cv.create_rectangle(x0 + S(4), ry, x0 + w - S(4), ry + rh, fill=BG, outline="", tags=(tag,))
+            if aug_id is not None:
+                self._image(cv, x0 + S(10), ry + S(3), aug_id, 18, tags=(tag,))
+            self._text(cv, x0 + S(34), ry + rh / 2, name, 9, TEXT if aug_id is not None else ACCENT,
+                       anchor="w", tags=(tag,))
+            self._hover(cv, tag, r, BG, BG_HOVER)
+            cv.tag_bind(tag, "<Button-1>", lambda e, a=aug_id: self._choose_aug(slot, a))
+            ry += rh
 
     def _shrink_wrap(self, win, cv):
         """Nội dung vẽ theo toạ độ màn hình; thu cửa sổ lại vừa khít nội dung rồi đặt đúng chỗ."""

@@ -4,6 +4,8 @@
 - Kiểm tra bản mới (tối đa 4 lần / ngày, hoặc khi bấm Kiểm tra cập nhật trong Cài đặt).
 - Bản cài bằng Setup.exe (Windows): cập nhật một chạm – tải bộ cài, so mã băm SHA-256 với SHA256SUMS.txt của
   bản phát hành, chạy bộ cài im lặng (/RELAUNCH=1 → mở lại app sau khi cài). Không khớp mã băm thì không cài.
+- Từ 2.0: SHA256SUMS.txt phải có chữ ký Ed25519 (SHA256SUMS.txt.sig) của khoá riêng nhà phát triển (không nằm trên
+  GitHub Releases). Mã băm đi cùng chỗ với bộ cài chỉ chống tải hỏng; chữ ký chống cả bộ cài bị thay bằng bản giả.
 - Bản portable / macOS / chạy từ mã nguồn: chỉ báo + mở trang tải.
 """
 from __future__ import annotations
@@ -29,6 +31,9 @@ RELEASES = f"https://github.com/{REPO}/releases/latest"
 DOWNLOAD = f"https://github.com/{REPO}/releases/download"
 SETUP = "ARAM-Helper-Setup.exe"
 SUMS = "SHA256SUMS.txt"
+SIG = SUMS + ".sig"
+# Khoá công khai Ed25519 kiểm tra chữ ký SHA256SUMS.txt (khoá riêng: GitHub secret RELEASE_SIGNING_KEY)
+SIGNING_KEY = "b7fd3e4aa90742bc1f5104fb9bbd02fb6bd1041dd4ab5c258369887170018611"
 STATE = paths.DATA / "update.json"
 EVERY = 6 * 3600          # hỏi GitHub tối đa 4 lần / ngày
 UA = {"User-Agent": f"ARAM-Helper/{__version__}"}
@@ -50,6 +55,7 @@ MESSAGES = {
     "mismatch": "mã băm bộ cài không khớp – đã huỷ",
     "version": "số phiên bản không hợp lệ",
     "insecure": "đường tải không dùng HTTPS – đã huỷ",
+    "signature": "chữ ký bản phát hành không hợp lệ – đã huỷ",
 }
 
 
@@ -96,8 +102,7 @@ def status(force: bool = False) -> tuple[str, dict | None]:
             # lỗi mạng: giữ kết quả cũ (không xoá nút "có bản mới"), thử lại sau ~10 phút
             latest, ok, checked = st.get("latest"), False, time.time() - EVERY + 600
         try:
-            STATE.parent.mkdir(parents=True, exist_ok=True)
-            STATE.write_text(json.dumps({"checked": checked, "latest": latest}), encoding="utf-8")
+            paths.write_atomic(STATE, json.dumps({"checked": checked, "latest": latest}))
         except OSError:
             pass
     if latest and newer(latest.get("version", "")):
@@ -139,6 +144,15 @@ def parse_sums(text: str) -> dict[str, str]:
     return out
 
 
+def signature_ok(sums: bytes, sig_hex: str, key_hex: str | None = None) -> bool:
+    """Chữ ký Ed25519 (hex) của nội dung SHA256SUMS.txt có khớp khoá công khai của app không."""
+    import ed25519
+    try:
+        return ed25519.verify(bytes.fromhex(key_hex or SIGNING_KEY), sums, bytes.fromhex(sig_hex.strip()))
+    except ValueError:
+        return False
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as f:
@@ -175,10 +189,14 @@ def _download(url: str, dest: Path, progress=None, timeout=30):
         raise
 
 
-def _read_url(url: str, timeout=15) -> str:
+def _read_bytes(url: str, timeout=15) -> bytes:
     with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=timeout) as r:
         _https_only(r)
-        return r.read(1 << 20).decode("utf-8", "replace")
+        return r.read(1 << 20)
+
+
+def _read_url(url: str, timeout=15) -> str:
+    return _read_bytes(url, timeout).decode("utf-8", "replace")
 
 
 def update_dir() -> Path:
@@ -191,11 +209,20 @@ def prepare(version: str, progress=None) -> Path:
         raise UpdateError("version", repr(version))
     base = f"{DOWNLOAD}/{version}"
     try:
-        sums = parse_sums(_read_url(f"{base}/{SUMS}"))
+        raw = _read_bytes(f"{base}/{SUMS}")
     except UpdateError:
         raise
     except Exception as e:
         raise UpdateError("sums", str(e)) from e
+    try:
+        sig = _read_url(f"{base}/{SIG}")
+    except UpdateError:
+        raise
+    except Exception as e:                                     # bản phát hành không có chữ ký → không cài
+        raise UpdateError("signature", f"không tải được {SIG}: {e}") from e
+    if not signature_ok(raw, sig):
+        raise UpdateError("signature", f"{SIG} không khớp khoá công khai")
+    sums = parse_sums(raw.decode("utf-8", "replace"))
     want = sums.get(SETUP)
     if not want:
         raise UpdateError("no_entry", f"{SUMS} không có {SETUP}")

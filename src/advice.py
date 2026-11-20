@@ -1,13 +1,33 @@
 # Copyright (c) 2026 doancongtrucit. All rights reserved. See LICENSE.
 """Chấm điểm lõi và xếp hạng gợi ý (dùng chung cho cửa sổ chính và overlay).
 
-Điểm = tỉ lệ thắng của lõi với tướng này
+Điểm = tỉ lệ thắng của lõi với tướng này, kéo về mức kỳ vọng khi lõi có ít trận
        (thiếu thì: tỉ lệ thắng chung tướng + (tỉ lệ thắng chung của lõi - 50))
        + thưởng nếu hợp combo với lõi đã chọn: S +4, A +3, B +2, C +1.
+
+Kéo về mức kỳ vọng (trung bình có trọng số kiểu Bayes): lõi hiếm, vài chục trận thắng 70 % chưa chắc tốt hơn lõi
+phổ biến hàng nghìn trận thắng 56 %. Số trận ước tính = tỉ lệ chọn × số trận của tướng; PRIOR_GAMES trận "ảo"
+mang tỉ lệ thắng kỳ vọng (tỉ lệ chung của lõi quy về tướng này). Lõi nhiều trận gần như không đổi.
 """
 from __future__ import annotations
 
 TIER_BONUS = {"S": 4, "A": 3, "B": 2, "C": 1}
+PRIOR_GAMES = 150
+
+
+def est_games(aug: dict, champion: dict) -> float | None:
+    """Số trận ước tính của lõi với tướng: tỉ lệ chọn (%) × số trận của tướng. Thiếu số liệu → None."""
+    pr, games = aug.get("pickrate"), champion.get("games")
+    if pr is None or not games:
+        return None
+    return max(0.0, pr) / 100.0 * games
+
+
+def shrink(wr: float, games: float | None, prior: float, k: float = PRIOR_GAMES) -> float:
+    """Tỉ lệ thắng sau khi kéo về prior theo số trận (games=None: giữ nguyên)."""
+    if games is None:
+        return wr
+    return (games * wr + k * prior) / (games + k)
 
 
 def _rank(t):
@@ -44,7 +64,8 @@ def score(aug_id: int, champion: dict, catalog: dict[int, dict], owned: set[int]
     g = catalog.get(aug_id, {})
     name = (a or g).get("name", f"#{aug_id}")
     if a and a.get("winrate") is not None:
-        wr, src, shown = a["winrate"], "tướng", a["winrate"]
+        prior = base + (g["winrate"] - 50) if g.get("winrate") is not None else base
+        wr, src, shown = shrink(a["winrate"], est_games(a, champion), prior), "tướng", a["winrate"]
     elif g.get("winrate") is not None:
         wr, src, shown = base + (g["winrate"] - 50), "chung", g["winrate"]
     else:

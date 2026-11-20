@@ -6,7 +6,7 @@ Chạy từ mã nguồn: python app.py   (người dùng cài bản exe / .app t
 
 Phím tắt (cả khi đang trong game; nếu bị app khác chiếm thì tự dùng phím dự phòng, hiện trong app):
   Ctrl+Alt+A      định vị lõi: tìm lại vị trí 3 thẻ lõi (dự phòng: Ctrl+Alt+K, Ctrl+Alt+Shift+A)
-  Ctrl+Alt+1/2/3  đánh dấu đã chọn lõi ở ô 1/2/3 (dự phòng: Ctrl+Alt+Shift+1/2/3)
+  Ctrl+Alt+1..4   đánh dấu đã chọn lõi ở ô 1..4 (lượt chọn 4 lõi) (dự phòng: Ctrl+Alt+Shift+1..4)
   Ctrl+Alt+O      ẩn / hiện overlay (dự phòng: Ctrl+Alt+Shift+O)
 """
 from __future__ import annotations
@@ -33,6 +33,7 @@ import live_client  # noqa: E402
 import playaram  # noqa: E402
 
 IS_WINDOWS = sys.platform == "win32"
+CATALOG_EVERY = 3600.0      # giây giữa 2 lần xem lại danh mục lõi (tải mạng thật chỉ khi cache quá hạn)
 if IS_WINDOWS:
     try:  # quét màn hình – cần opencv; thiếu thì app vẫn chạy (chỉ không tự đọc lõi)
         from scanner import Scanner
@@ -66,17 +67,36 @@ class Hub:
         self._loc_key = None
         self._loc_champ = None
         self._pick_seen = None
+        self._catalog_at = 0.0
+        self._force = False             # bấm "Tải lại": lần refresh tới bỏ cache, tải mới
+        self._last_err = None
         settings.on_change(lambda ch: self._wake.set() if "lang" in ch else None)   # đổi ngôn ngữ: tải ngay
 
     # ----- dữ liệu -----
     def catalog(self) -> dict[int, dict]:
-        """Danh mục lõi theo ngôn ngữ đang chọn (id → lõi)."""
+        """Danh mục lõi theo ngôn ngữ đang chọn (id → lõi). Không bao giờ tải mạng ở đây (gọi từ luồng giao
+        diện): luồng nền nạp trong refresh(); chưa có thì trả {} – gợi ý dùng số liệu theo tướng."""
         if self._catalog is None:
-            try:
-                self._catalog = {a["id"]: a for a in playaram.get_augment_catalog()}
-            except Exception:
-                return {}
+            return {}
         return localize.catalog(self._catalog, i18n.lang(), self._aug_names.get(i18n.lang(), {}))
+
+    def _refresh_catalog(self):
+        """Ở luồng nền: nạp danh mục lõi lần đầu, sau đó mỗi giờ hỏi lại (playaram.py chỉ tải mạng khi cache
+        quá 24 giờ) → để app chạy dưới khay nhiều ngày vẫn có lõi của bản game mới."""
+        if self._catalog is not None and time.time() - self._catalog_at < CATALOG_EVERY:
+            return
+        self._catalog_at = time.time()
+        try:
+            self._catalog = {a["id"]: a for a in playaram.get_augment_catalog()}
+        except Exception as e:
+            if self._catalog is None:
+                self._catalog_at = time.time() - CATALOG_EVERY + 60      # chưa có gì: thử lại sau 1 phút
+            print("danh mục lõi:", repr(e), flush=True)
+        for lang in list(self._aug_names):
+            try:
+                self._aug_names[lang] = {a["id"]: a["name"] for a in playaram.get_augment_catalog(lang=lang)}
+            except Exception:
+                pass
 
     def dd(self) -> dict | None:
         return self._dds.get(i18n.ddragon_locale())
@@ -105,15 +125,25 @@ class Hub:
 
     def refresh(self):
         game = live_client.current_game()
-        game_slug = playaram.slugify(game["champion_raw"]) if game.get("champion_raw") else None
+        game_slug = playaram.game_slug(game["champion_raw"]) if game.get("champion_raw") else None
+        if game.get("in_game") and not self.game.get("in_game") and self.focus_slug:
+            # Vào trận mới: bỏ tướng đang xem tay (vd. hôm qua xem Yasuo rồi ẩn app xuống khay, hôm nay chơi Lux)
+            print(f"vào trận mới → bỏ tướng đang xem tay ({self.focus_slug})", flush=True)
+            self.focus_slug = None
         slug = self.focus_slug or game_slug
         champ, err = None, None
+        force, self._force = self._force, False
         if slug:
             try:
-                champ = playaram.get_champion(slug)
+                champ = playaram.get_champion(slug, force=force)
             except Exception as e:
-                err = f"Không lấy được dữ liệu cho {slug}: {e}"
+                if repr(e).split(":")[0] != self._last_err:      # không ghi lại cùng 1 lỗi mỗi 1,5 giây
+                    self._last_err = repr(e).split(":")[0]
+                    print(f"tải {slug}: {e!r}", flush=True)
+                err = i18n.T("Không lấy được dữ liệu cho {slug}: {e}", slug=slug,
+                             e=i18n.T(playaram.describe_error(e)))
         self._load_lang_data(bool(game.get("in_game")))
+        self._refresh_catalog()
         if game.get("in_game") and not self.game.get("in_game"):
             enemies = game.get("enemies") or []
             print(f"[{time.strftime('%H:%M:%S')}] vào trận: {game.get('champion_name')} · đội địch: "
@@ -146,6 +176,13 @@ class Hub:
             self._wake.wait(1.5)
             self._wake.clear()
 
+    def reload(self):
+        """Nút "Tải lại" (dữ liệu cũ / mạng lỗi): thử ngay, không chờ hết thời gian chờ sau lỗi."""
+        playaram.reset_backoff()
+        self._force = True
+        self._catalog_at = 0.0
+        self._wake.set()
+
     def set_focus(self, slug: str | None):
         self.focus_slug = playaram.slugify(slug) if slug else None
         with self.lock:
@@ -174,7 +211,7 @@ class Hub:
             return list(cur)
 
     def pick_slot(self, i: int):
-        """Phím Ctrl+Alt+1/2/3: đánh dấu lõi ở ô i của bảng chọn đang hiện là đã chọn."""
+        """Phím Ctrl+Alt+1/2/3/4: đánh dấu lõi ở ô i của bảng chọn đang hiện là đã chọn."""
         if not self.scanner:
             return
         offer = self.scanner.snapshot()["offer"] or {}
@@ -228,18 +265,62 @@ class Hub:
 HUB = Hub(SCANNER)
 
 
+class RotatingLog:
+    """app.log tự xoay vòng cả khi app chạy liên tục nhiều ngày dưới khay (quá LIMIT thì đổi thành app.log.1,
+    giữ 1 bản cũ). Trước đây chỉ xoay lúc mở app nên file cứ lớn dần."""
+
+    LIMIT = 1_000_000
+    CHECK_EVERY = 50          # số lần ghi giữa 2 lần xem kích thước
+
+    def __init__(self, path, limit: int | None = None):
+        self.path = path
+        self.limit = limit or self.LIMIT
+        self.encoding = "utf-8"
+        self._lock = threading.RLock()
+        self._writes = 0
+        self._rotate_if_big()
+        self._f = open(path, "a", encoding="utf-8", buffering=1)
+
+    def _rotate_if_big(self):
+        try:
+            if self.path.stat().st_size > self.limit:
+                self.path.replace(self.path.with_suffix(".log.1"))
+        except OSError:
+            pass
+
+    def write(self, text: str) -> int:
+        with self._lock:
+            n = self._f.write(text)
+            self._writes += 1
+            if self._writes >= self.CHECK_EVERY:
+                self._writes = 0
+                try:
+                    big = self._f.tell() > self.limit
+                except OSError:
+                    big = False
+                if big:
+                    self._f.close()
+                    self._rotate_if_big()
+                    self._f = open(self.path, "a", encoding="utf-8", buffering=1)
+            return n
+
+    def flush(self):
+        with self._lock:
+            self._f.flush()
+
+    def isatty(self) -> bool:
+        return False
+
+    def fileno(self) -> int:
+        return self._f.fileno()
+
+
 def _setup_output():
     """Chạy bằng pythonw hoặc bản exe (không có cửa sổ dòng lệnh) thì ghi log ra app.log trong thư mục dữ liệu."""
     import paths
     if sys.stdout is None or sys.stderr is None or paths.FROZEN:
         playaram.CACHE_DIR.mkdir(parents=True, exist_ok=True)
-        path = playaram.CACHE_DIR / "app.log"
-        try:                                   # dùng lâu dài: log quá 1 MB thì xoay vòng (giữ 1 bản cũ)
-            if path.stat().st_size > 1_000_000:
-                path.replace(path.with_suffix(".log.1"))
-        except OSError:
-            pass
-        log = open(path, "a", encoding="utf-8", buffering=1)
+        log = RotatingLog(playaram.CACHE_DIR / "app.log")
         sys.stdout = log if paths.FROZEN else (sys.stdout or log)
         sys.stderr = log if paths.FROZEN else (sys.stderr or log)
     else:
@@ -248,8 +329,28 @@ def _setup_output():
     print(f"--- ARAM Helper {__version__} khởi động {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
+def _single_instance() -> bool:
+    """True: đây là bản duy nhất, chạy tiếp. False: đã có bản khác (đã gọi bản đó hiện cửa sổ) → thoát."""
+    import single_instance
+    end = time.time() + 5                     # bản cũ có thể đang thoát (vd. vừa bấm Thoát rồi mở lại ngay)
+    while not single_instance.acquire():
+        if "--minimized" in sys.argv:          # mở cùng Windows mà app đã chạy sẵn: không làm gì
+            print("ARAM Helper đã chạy – bỏ qua lần mở cùng Windows")
+            return False
+        if single_instance.wake_existing(timeout=0):
+            print("ARAM Helper đã chạy – đưa cửa sổ đang chạy lên, thoát bản mới")
+            return False
+        if time.time() > end:
+            print("ARAM Helper đã chạy nhưng không tìm thấy cửa sổ – thoát bản mới")
+            return False
+        time.sleep(0.25)
+    return True
+
+
 def main():
     _setup_output()
+    if IS_WINDOWS and not _single_instance():
+        return
     import tkinter as tk
     if IS_WINDOWS:
         import ctypes
@@ -276,7 +377,7 @@ def main():
     def combos(name):
         return hotkeys.combos_for(name, settings.get("hk_" + name))
 
-    keys = {f"pick{i + 1}": (combos(f"pick{i + 1}"), (lambda i=i: HUB.pick_slot(i))) for i in range(3)}
+    keys = {f"pick{i + 1}": (combos(f"pick{i + 1}"), (lambda i=i: HUB.pick_slot(i))) for i in range(4)}
     if SCANNER:
         SCANNER.in_game_fn = lambda: HUB.game.get("in_game", False)   # dùng chung, không gọi Live API 2 lần
         SCANNER.start()
@@ -295,7 +396,7 @@ def main():
                     name = k[3:]
                     threading.Thread(target=hotkeys.update, args=(name, combos(name)), daemon=True).start()
         settings.on_change(on_hotkey_change)
-        print(f"Phím tắt: {hotkeys.label('calibrate')} định vị lõi · {hotkeys.label('pick1')}/2/3 đánh dấu lõi đã chọn · "
+        print(f"Phím tắt: {hotkeys.label('calibrate')} định vị lõi · {hotkeys.label('pick1')}/2/3/4 đánh dấu lõi đã chọn · "
               f"{hotkeys.label('overlay')} ẩn/hiện overlay")
 
     if IS_WINDOWS:                              # app vô tình lấy focus của game → trả lại + ghi log

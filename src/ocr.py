@@ -61,7 +61,7 @@ def read_lines(bgr: np.ndarray) -> list[str]:
     """Các dòng chữ trong ảnh (BGR uint8). Trả [] nếu OCR không có."""
     if bgr is None or bgr.size == 0 or not _init():
         return []
-    import cv2
+    import cvlite as cv2
     h = bgr.shape[0]
     if h < 120:                         # chữ nhỏ: phóng to giúp OCR đọc tốt hơn
         k = 120 / h

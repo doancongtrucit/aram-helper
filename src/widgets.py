@@ -9,12 +9,28 @@ import tkinter as tk
 import urllib.request
 from tkinter import ttk
 
+import paths
 import playaram
 from theme import BG, PANEL2, LINE, TEXT
 
 
 IMG_DIR = playaram.CACHE_DIR / "img"
 ICON_DIR = playaram.CACHE_DIR / "icons"
+
+
+def ellipsize(font, text: str, width: int) -> str:
+    """Cắt chữ cho vừa bề rộng (px) và thêm '…' – Label / Canvas của tkinter tự cắt cụt không có dấu.
+    Dùng chung cho cửa sổ chính và overlay; tìm nhị phân nên chuỗi dài cũng chỉ đo ~log2(n) lần."""
+    if font.measure(text) <= width:
+        return text
+    lo, hi = 0, len(text)
+    while lo < hi:                            # số ký tự dài nhất còn vừa kèm "…"
+        mid = (lo + hi + 1) // 2
+        if font.measure(text[:mid] + "…") <= width:
+            lo = mid
+        else:
+            hi = mid - 1
+    return text[:lo].rstrip() + "…"
 
 
 # ---------- ảnh (tải nền, cache đĩa + RAM) ----------
@@ -96,7 +112,7 @@ class Images:
                         req = urllib.request.Request(src, headers={"User-Agent": playaram.USER_AGENT,
                                                                    "Accept": "image/png,image/*"})
                         with urllib.request.urlopen(req, timeout=15) as r:
-                            path.write_bytes(r.read())
+                            paths.write_atomic(path, r.read())
                 with Image.open(path) as im:
                     img = im.convert("RGBA").resize((px, px), Image.LANCZOS)
             except Exception:
@@ -104,15 +120,24 @@ class Images:
             self.done.put((k, img))
 
     def _pump(self):
+        """Đưa ảnh đã tải lên giao diện. Luôn hẹn lần sau (kể cả khi lỗi) – trước đây một lỗi ở đây làm app
+        ngừng hiện icon mới tới hết phiên."""
         got = False
         try:
             from PIL import ImageTk
             while True:
-                k, img = self.done.get_nowait()
+                try:
+                    k, img = self.done.get_nowait()
+                except queue.Empty:
+                    break
                 widgets = self.waiting.pop(k, [])
                 if img is None:
                     continue
-                photo = ImageTk.PhotoImage(img)
+                try:
+                    photo = ImageTk.PhotoImage(img, master=self.root)
+                except Exception as e:           # 1 ảnh lỗi không chặn các ảnh khác
+                    print("ảnh:", repr(e), flush=True)
+                    continue
                 self.mem[k] = photo
                 self.pil[k] = img
                 got = True
@@ -121,12 +146,19 @@ class Images:
                         w.configure(image=photo)
                     except tk.TclError:      # widget đã bị vẽ lại
                         pass
-        except queue.Empty:
-            pass
-        if got:
-            for fn in self.listeners:
-                fn()
-        self.root.after(80, self._pump)
+            if got:
+                for fn in self.listeners:
+                    try:
+                        fn()
+                    except Exception as e:
+                        print("ảnh (listener):", repr(e), flush=True)
+        except Exception as e:
+            print("ảnh:", repr(e), flush=True)
+        finally:
+            try:
+                self.root.after(80, self._pump)
+            except tk.TclError:                  # cửa sổ đã đóng
+                pass
 
 
 

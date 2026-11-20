@@ -24,7 +24,7 @@ def log(msg: str):
 
 
 def save(img_bgr, info: dict, tag: str) -> Path:
-    import cv2
+    import cvlite as cv2
     DEBUG_DIR.mkdir(parents=True, exist_ok=True)
     stem = f"{time.strftime('%Y%m%d-%H%M%S')}-{tag}"
     path = DEBUG_DIR / f"{stem}.png"

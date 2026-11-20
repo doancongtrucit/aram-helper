@@ -24,6 +24,8 @@ SCAN_IDLE = 1.5          # lâu không thấy bảng chọn lõi (giữa các l�
 IDLE_AFTER = 120.0
 MISS_TO_HIDE = 2          # số lần quét liên tiếp không thấy bảng lõi thì coi như bảng đã đóng
 WIDE_EVERY = 3.0          # chưa thấy bảng lõi: cứ ~3 giây dò thô vùng rộng một lần (~70 ms) phòng thẻ xê dịch
+RETRY_MIN, RETRY_MAX = 30.0, 600.0   # khởi động lỗi (vd. mất mạng lần đầu): thử lại sau 30 s, 60 s… tối đa 10 phút
+RELOAD_EVERY = 6 * 3600.0  # ngoài trận: xem lại danh mục lõi (bản game mới có lõi mới → tải icon, dựng lại mẫu)
 
 
 class Scanner:
@@ -55,6 +57,13 @@ class Scanner:
         self._session_at = 0.0       # lúc bảng chọn lõi hiện ra (đổi lõi trong cùng lượt vẫn giữ)
         self.picked = None           # {"id", "slot", "slots"} – lõi tự ghi nhận theo cú bấm chuột
         self._pick_id = 0
+        self._catalog_ids: list[int] = []
+        self._four_k = None           # khoảng cách thẻ đã xác nhận ở lượt chọn 4 lõi (ss.FOUR_GAPS)
+        self._four_try = 0            # lượt thử bố cục 4 thẻ kế tiếp (luân phiên các khoảng cách)
+        self._four_saved = False      # đã lưu ảnh chẩn đoán lượt 4 lõi đầu tiên
+        self._layout_n = 3            # số thẻ của lượt chọn vừa đọc được
+        self._loaded_at = 0.0
+        self._retry_at = None
 
     # ---------- public ----------
     def snapshot(self) -> dict:
@@ -69,6 +78,7 @@ class Scanner:
                 "ocr": _ocr_available(),
                 "calibrating_in": max(0, round(self.calibrating_at - time.time(), 1)) if self.calibrating_at else None,
                 "offer": self.offer,
+                "cards": (self.offer or {}).get("n", 3),
                 "picked": self.picked,
             }
 
@@ -80,6 +90,20 @@ class Scanner:
 
     def start(self):
         threading.Thread(target=self._run, daemon=True, name="scanner").start()
+
+    def choose(self, slot: int, aug_id: int) -> bool:
+        """Sửa lõi ở thẻ `slot` khi app đọc nhầm (nhiều lõi chung icon): người chơi chọn đúng lõi trên overlay."""
+        with self.lock:
+            offer = self.offer
+            if not offer or slot >= len(offer["slots"]):
+                return False
+            s = offer["slots"][slot]
+            if aug_id not in s["candidates"] and aug_id not in (s.get("manual") or []):
+                return False
+            s["manual"] = list(s.get("manual") or s["candidates"])
+            s["candidates"] = [aug_id]
+        diag.log(f"người chơi sửa lõi ở thẻ {slot + 1}: {aug_id}")
+        return True
 
     def mark_hidden(self):
         """Người dùng đã chọn lõi: ẩn offer hiện tại cho tới khi bảng chọn mới xuất hiện."""
@@ -95,18 +119,63 @@ class Scanner:
             for k, v in kw.items():
                 setattr(self, k, v)
 
-    def _load(self):
-        self._set(status="Đang tải danh sách lõi và icon (lần đầu mất khoảng 1 phút)…")
-        self.catalog = playaram.get_augment_catalog()
+    def _load(self, quiet: bool = False):
+        """Danh mục lõi + icon + mẫu nhận diện. quiet=True: nạp lại ngầm (đang chạy bình thường, không đổi trạng thái)."""
+        if not quiet:
+            self._set(status="Đang tải danh sách lõi…")
+        catalog = playaram.get_augment_catalog()
         try:   # tên tiếng Anh: OCR nhận được cả khi game để tiếng Anh
-            self.alt_names = {a["id"]: [a["name"]] for a in playaram.get_augment_catalog(lang="en")}
+            alt = {a["id"]: [a["name"]] for a in playaram.get_augment_catalog(lang="en")}
         except Exception:
-            self.alt_names = {}
-        ss.ensure_icons(self.catalog, log=lambda *_: None)
-        self.icons = ss.load_icons(self.catalog)
-        self.bank = ss.bank_for(self.icons)
-        self._set(ready=True, status="Sẵn sàng." if self.calib else
-                  "Sẵn sàng – vị trí bảng lõi sẽ tự xác định ở lượt chọn lõi đầu tiên.")
+            alt = self.alt_names or {}
+
+        def progress(done, total):
+            if not quiet:
+                self._set(status=f"Đang tải icon lõi {done}/{total}…")
+        ss.ensure_icons(catalog, log=lambda *_: None, progress=progress)
+        ids = sorted(a["id"] for a in catalog)
+        if quiet and self.bank is not None and ids == self._catalog_ids:
+            self.catalog, self.alt_names = catalog, alt        # chỉ đổi số liệu / tên, mẫu icon giữ nguyên
+            return
+        icons = ss.load_icons(catalog)
+        bank = ss.bank_for(icons)
+        with self.lock:                                       # đổi cả bộ cùng lúc: luồng quét không thấy nửa cũ nửa mới
+            self.catalog, self.alt_names, self.icons, self.bank = catalog, alt, icons, bank
+        if quiet:
+            diag.log(f"bộ quét: danh mục lõi đổi ({len(self._catalog_ids)} → {len(ids)} lõi) – đã nạp lại icon")
+        self._catalog_ids = ids
+        if not quiet:
+            self._set(ready=True, status="Sẵn sàng." if self.calib else
+                      "Sẵn sàng – vị trí bảng lõi sẽ tự xác định ở lượt chọn lõi đầu tiên.")
+
+    def _start_up(self):
+        """Nạp dữ liệu; lỗi (vd. mất mạng ở lần chạy đầu) thì thử lại thưa dần thay vì chết hẳn tới khi mở lại app."""
+        delay = RETRY_MIN
+        while True:
+            try:
+                self._load()
+                self._set(error=None)
+                self._loaded_at = time.time()
+                return
+            except Exception as e:
+                traceback.print_exc()
+                self._set(error=f"Không khởi động được bộ quét: {playaram.describe_error(e)} – tự thử lại sau {delay:.0f} giây",
+                          status="Lỗi")
+                self._retry_at = time.time() + delay
+                time.sleep(delay)
+                delay = min(RETRY_MAX, delay * 2)
+                playaram.reset_backoff()
+
+    def _end_game(self):
+        """Hết trận (kể cả khi bảng chọn lõi còn đang mở): bỏ gợi ý cũ, ngừng theo dõi cú bấm chuột.
+        Không thì ngoài sảnh vẫn ghi nhận cú bấm, sang trận sau có thể tự đánh dấu một lõi không hề chọn."""
+        self.clicks.stop()
+        self.clicks.take(float("inf"))         # bỏ cú bấm còn treo
+        self._ocr_cache.clear()
+        self._misses = 0
+        with self.lock:
+            self.offer = None
+            self.picked = None
 
     def _check_game(self):
         if ss.FAKE_SCREEN:
@@ -140,7 +209,7 @@ class Scanner:
         self._publish(res)
         del img
 
-    def _publish(self, res, rerolls=None):
+    def _publish(self, res, rerolls=None, calib=None):
         slots = [{"candidates": r["candidates"], "score": round(r["score"], 3)} for r in res]
         with self.lock:
             if not (self.offer and self.offer.get("visible")):
@@ -149,9 +218,15 @@ class Scanner:
                 # Giữ kết quả đã thu hẹp (đọc được tên bằng OCR): lần quét sau OCR trượt chỉ còn "1 trong N lõi"
                 # thì không lùi lại – tránh gợi ý trên overlay nhảy qua lại mỗi giây.
                 for new, old in zip(slots, self.offer["slots"]):
-                    if len(old["candidates"]) < len(new["candidates"]) and set(old["candidates"]) <= set(new["candidates"]):
+                    if old.get("manual") and set(old["manual"]) & set(new["candidates"]):
+                        # người chơi đã chọn tay đúng lõi (chuột phải trên overlay): giữ tới khi thẻ đổi hẳn
+                        new["candidates"], new["manual"] = old["candidates"], old["manual"]
+                    elif len(old["candidates"]) < len(new["candidates"]) and set(old["candidates"]) <= set(new["candidates"]):
                         new["candidates"] = old["candidates"]
             same = self.offer and [s["candidates"] for s in self.offer["slots"]] == [s["candidates"] for s in slots]
+            if same:
+                for new, old in zip(slots, self.offer["slots"]):
+                    old.update({k: v for k, v in new.items() if k == "score"})
             if same:
                 if not self.offer.get("done"):     # đã bấm chọn lõi thì không hiện lại offer cũ
                     self.offer["visible"] = True
@@ -159,6 +234,9 @@ class Scanner:
                 self.offer = {"slots": slots, "at": time.time(), "visible": True}
             if rerolls is not None:
                 self.offer["rerolls"] = rerolls
+            self.offer["n"] = len(slots)
+            if calib is not None:                 # vị trí thẻ của lượt này (3 hoặc 4 thẻ) – overlay đặt nhãn theo
+                self.offer["calib"] = {k: v for k, v in calib.__dict__.items()}
 
     def _offer_closed(self):
         """Bảng chọn vừa đóng: nếu người chơi đã bấm vào 1 thẻ (và chưa tự đánh dấu) → ghi nhận lõi ở thẻ đó."""
@@ -181,14 +259,40 @@ class Scanner:
             self._est = ss.Calibration.estimate(*full)
         return self._est
 
+    def _four_layouts(self, calib) -> list:
+        """Bố cục 4 thẻ cần thử ở lần quét này: khoảng cách đã xác nhận, không thì luân phiên mỗi lần 1 kiểu
+        (đỡ tốn CPU lúc không có bảng chọn – mỗi lần đọc thêm ~30 ms)."""
+        if self._four_k is not None:
+            return [ss.layout(calib, 4, self._four_k)]
+        k = ss.FOUR_GAPS[self._four_try % len(ss.FOUR_GAPS)]
+        self._four_try += 1
+        return [ss.layout(calib, 4, k)]
+
+    def _read_any(self, img, calib, four, kw):
+        """Đọc bảng chọn theo bố cục 3 thẻ, không chắc thì thử bố cục 4 thẻ (lượt chọn 4 lõi).
+        Trả (kết quả, bố cục dùng). Lượt trước là 4 thẻ thì thử 4 thẻ trước."""
+        order = [calib] + four if self._layout_n == 3 else four + [calib]
+        first = None
+        for lay in order:
+            res = ss.read_offer(img, lay, self.bank, self.catalog, **kw)
+            if ss.confident(res):
+                return res, lay
+            if lay is calib:
+                first = (res, lay)
+        return first if first else (res, lay)
+
     def _scan_once(self):
-        # Chỉ chụp vùng quanh 3 thẻ lõi (~1/5 vùng game) thay vì cả màn hình
+        # Chỉ chụp vùng quanh các thẻ lõi (~1/5 vùng game) thay vì cả màn hình – gồm cả chỗ của bảng 4 thẻ
         full = ss.screen_size()
         calib = self._active_calib(full)
-        x0, y0, x1, y1 = ss.scan_region(calib, full)
+        four = self._four_layouts(calib)
+        x0, y0, x1, y1 = ss.union_region(ss.scan_region(c, full) for c in [calib] + four)
         img = ss.grab_screen((x0, y0, x1, y1))
         kw = dict(origin=(x0, y0), full=full, ocr_cache=self._ocr_cache, alt_names=self.alt_names)
-        res = ss.read_offer(img, calib, self.bank, self.catalog, **kw)
+        res, lay = self._read_any(img, calib, four, kw)
+        if lay is not calib:                      # chỉ khác bảng 3 thẻ khi đã đọc chắc lượt chọn 4 lõi
+            self._seen_four(res, img, (x0, y0), lay, calib, full)
+            return
         near = max(r["score"] for r in res) >= ss.NEAR_MIN
         since = time.time() - self._last_wide
         if not ss.confident(res) and ((near and since > 2) or since > WIDE_EVERY):
@@ -215,7 +319,8 @@ class Scanner:
             self._last_seen = time.time()
         if ss.confident(res):
             self._misses = 0
-            self._publish(res, rerolls)
+            self._layout_n = 3
+            self._publish(res, rerolls, calib)
             gx, gy = game_window.rect()[:2] if not ss.FAKE_SCREEN else (0, 0)
             self.clicks.watch(ss.card_rects(calib, full, (gx, gy)))
             self._set(status="Đã thấy bảng chọn lõi.")
@@ -229,8 +334,29 @@ class Scanner:
                         self.offer["visible"] = False
                 if was_visible:
                     self._offer_closed()
-                best = max(r["score"] for r in res)
-                self._set(status=f"Đang quét… (chưa thấy bảng chọn lõi · khớp tốt nhất {best:.2f})")
+                self._set(status="Đang quét… (chưa thấy bảng chọn lõi)")   # điểm khớp chỉ ghi vào log chẩn đoán
+
+    def _seen_four(self, res, img, origin, lay, calib, full):
+        """Đọc chắc được lượt chọn 4 lõi: công bố như lượt 3 lõi, nhớ khoảng cách thẻ. Không lưu làm vị trí chuẩn
+        (calibration.json luôn là bảng 3 thẻ)."""
+        xs = [c[0] for c in lay.centers]
+        k = round((xs[-1] - xs[0]) / 3 / ((max(c[0] for c in calib.centers) - min(c[0] for c in calib.centers)) / 2), 2)
+        if self._four_k is None:
+            diag.log(f"lượt chọn 4 lõi: khoảng cách thẻ ×{k} so với bảng 3 thẻ · tâm {lay.centers}")
+        self._four_k = k
+        self._layout_n = 4
+        self._misses = 0
+        self._last_seen = time.time()
+        if not self._four_saved:
+            self._four_saved = True
+            names = {a["id"]: a["name"] for a in self.catalog}
+            diag.save(img, {"origin": origin, "calibration": lay.__dict__, "four_gap": k,
+                            "best": [[names.get(c, c) for c in r["candidates"]] for r in res]}, "four-cards")
+        rerolls = ss.rerolls_left(img, res, origin)
+        self._publish(res, rerolls, lay)
+        gx, gy = game_window.rect()[:2] if not ss.FAKE_SCREEN else (0, 0)
+        self.clicks.watch(ss.card_rects(lay, full, (gx, gy)))
+        self._set(status="Đã thấy bảng chọn 4 lõi.")
 
     # ---------- chẩn đoán ----------
     def _diagnose(self, res, img, origin, calib):
@@ -275,11 +401,7 @@ class Scanner:
         self._set(status=f"Đã lưu ảnh chẩn đoán: {path.name}")
 
     def _run(self):
-        try:
-            self._load()
-        except Exception as e:
-            self._set(error=f"Không khởi động được bộ quét: {e}", status="Lỗi")
-            return
+        self._start_up()
         while True:
             try:
                 in_game = self._check_game()
@@ -288,6 +410,14 @@ class Scanner:
                     diag.log(("vào trận – vùng game " + str(ss.screen_size()) + ", " +
                               (f"vị trí bảng lõi {self.calib.__dict__}" if self.calib else "dùng vị trí ước tính"))
                              if in_game else "ra khỏi trận")
+                    if not in_game:
+                        self._end_game()
+                if not in_game and time.time() - self._loaded_at > RELOAD_EVERY:
+                    self._loaded_at = time.time()
+                    try:
+                        self._load(quiet=True)
+                    except Exception as e:
+                        print("bộ quét: nạp lại danh mục lỗi –", repr(e), flush=True)
                 if self._diag_req:
                     self._diag_req = False
                     self.save_diagnostic()

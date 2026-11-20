@@ -26,11 +26,25 @@ from i18n import T
 from theme import (
     BG, PANEL, PANEL2, LINE, TEXT, MUTED, DIMTEXT, GOOD, OKC, BAD, ACCENT, TIER_COLOR, IS_MAC,
     WIDE_MIN, app_logo)
-from widgets import Images, Scroll, Tooltip
+from widgets import Images, Scroll, Tooltip, ellipsize
 from views.augments import AugmentsMixin
 from views.combos import CombosMixin
 from views.items import ItemsMixin
 from views.search import SearchMixin
+
+
+def patch_lag(data_patch: str | None, dd_version: str | None) -> tuple[str, str] | None:
+    """(bản dữ liệu, bản game) khi dữ liệu playaram cũ hơn bản game hiện tại, không thì None.
+
+    playaram ghi bản theo năm ("26.22"); Data Dragon đánh số cũ ("16.22.1") – lệch nhau đúng 10 ở số đầu."""
+    import re
+    p = re.findall(r"\d+", data_patch or "")
+    g = re.findall(r"\d+", dd_version or "")
+    if len(p) < 2 or len(g) < 2:
+        return None
+    game = (int(g[0]) + 10, int(g[1]))
+    data = (int(p[0]), int(p[1]))
+    return (f"{data[0]}.{data[1]}", f"{game[0]}.{game[1]}") if game > data else None
 
 
 # ---------- cửa sổ chính ----------
@@ -76,7 +90,11 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self._style()
         self._build()
         threading.Thread(target=self._load_champion_list, daemon=True).start()
-        updater.check_async(lambda info: root.after(0, self._show_update, info))
+        # Luồng kiểm tra cập nhật chỉ ghi kết quả; _poll (luồng giao diện) hiện nút. Gọi root.after từ luồng phụ
+        # trước khi mainloop chạy có thể lỗi → mất nút "Cập nhật" ở lần mở app đó.
+        self._update_found = None
+        self._update_checked = time.time()
+        updater.check_async(self._on_update_found)
         root.after(200, self._poll)
         self.tray = tray
         self.in_tray = False
@@ -155,6 +173,17 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self.root.iconphoto(True, self._icon_img)
         except (tk.TclError, OSError):
             pass
+
+    def _on_update_found(self, info):          # luồng nền
+        self._update_found = info
+
+    def _check_update_due(self):
+        """App để dưới khay nhiều ngày: hỏi lại GitHub theo chu kỳ của updater (tối đa 4 lần / ngày)."""
+        if self._update_found and self._update_found != self._update_info:
+            self._show_update(self._update_found)
+        if time.time() - self._update_checked > updater.EVERY:
+            self._update_checked = time.time()
+            updater.check_async(self._on_update_found)
 
     def _show_update(self, info):
         """Có bản mới trên GitHub: nút ở thanh trên – bản cài: cập nhật một chạm; bản khác: mở trang tải."""
@@ -347,12 +376,7 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         if key not in self._fonts:
             fam, weight = theme.family(bold)
             self._fonts[key] = tkfont.Font(family=fam, size=max(6, int(round(size * self.zoom))), weight=weight)
-        f = self._fonts[key]
-        if f.measure(text) <= width_px:
-            return text
-        while text and f.measure(text + "…") > width_px:
-            text = text[:-1]
-        return text.rstrip() + "…"
+        return ellipsize(self._fonts[key], text, width_px)
 
     def _wheel(self, e):
         """Cuộn vùng nằm dưới con trỏ (có 2 vùng cuộn song song khi cửa sổ rộng)."""
@@ -445,7 +469,14 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             loc.bind("<Button-1>", lambda e: self.scanner.request_calibration(5))
             loc.bind("<Enter>", lambda e: loc.configure(fg=TEXT))
             loc.bind("<Leave>", lambda e: loc.configure(fg=ACCENT))
-            self.tooltip.bind(loc, T("Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai."))
+            tip = T("Tìm vị trí 3 thẻ lõi trên màn hình. Thường app tự làm ở lượt chọn đầu tiên – chỉ cần bấm khi app đọc sai.")
+            try:
+                import hotkeys
+                if hotkeys.ACTIVE.get("calibrate"):
+                    tip += "\n" + T("Phím tắt: {k}", k=hotkeys.label("calibrate"))
+            except Exception:
+                pass
+            self.tooltip.bind(loc, tip)
 
         headrow = tk.Frame(self.root, bg=BG, padx=self.S(12), pady=self.S(4))
         headrow.pack(fill="x")
@@ -533,6 +564,10 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
             self._full_sig = None
 
     def _poll(self):
+        try:
+            self._check_update_due()
+        except Exception:
+            self._on_ui_error(*sys.exc_info())
         if self.in_tray or self.root.state() == "iconic":   # đang ở khay / thu nhỏ: không vẽ gì, thưa nhịp hơn
             try:
                 self.hub.state()                   # vẫn ghi nhận lõi đã chọn khi overlay tắt
@@ -669,10 +704,27 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         self.label(box, T("Gợi ý lõi và trang bị cho ARAM Hỗn Loạn") + f"  ·  v{__version__}", 10, MUTED).pack()
         self.label(box, msg, 11, OKC if self._st.get("error") else TEXT, wraplength=self.S(620),
                    justify="center").pack(pady=(self.S(18), 0))
+        hk = self._hotkey_hint()
+        if hk:
+            self.label(box, hk, 9, MUTED, wraplength=self.S(620), justify="center").pack(pady=(self.S(10), 0))
         self._borderless_note(box)
         foot =self.label(self.body, about.COPYRIGHT + "  ·  " + T("Giới thiệu"), 8, DIMTEXT, cursor="hand2")
         foot.place(relx=0.5, rely=1.0, y=-self.S(10), anchor="s")
         foot.bind("<Button-1>", lambda e: self.open_settings("about"))
+
+    def _hotkey_hint(self) -> str:
+        """Dòng phím tắt đang dùng (phím thật, kể cả phím dự phòng) – trước đây chỉ thấy trong Cài đặt."""
+        if not self.scanner:
+            return ""
+        try:
+            import hotkeys
+            if not hotkeys.ACTIVE.get("calibrate"):
+                return ""
+            cal, pick, ov = (hotkeys.label(n) for n in ("calibrate", "pick1", "overlay"))
+        except Exception:
+            return ""
+        return T("Phím tắt trong game: {cal} định vị lõi · {pick}/2/3/4 đánh dấu lõi đã chọn · {ov} ẩn/hiện overlay",
+                 cal=cal, pick=pick, ov=ov)
 
     def _borderless_note(self, parent):
         """Ô lưu ý nổi bật: overlay chỉ hiện khi League để chế độ cửa sổ Không viền."""
@@ -697,13 +749,32 @@ class App(SearchMixin, AugmentsMixin, ItemsMixin, CombosMixin):
         row.pack(anchor="w")
         self.label(row, c.get("name", ""), 15, TEXT, True).pack(side="left")
         self.label(row, c.get("tier", ""), 15, TIER_COLOR.get(c.get("tier"), OKC), True).pack(side="left", padx=self.S(6))
-        meta = "   ·   ".join([T("Tỉ lệ thắng {wr}%", wr=c.get("winrate")),
+        meta = "   ·   ".join([T("Tỉ lệ thắng {wr}%", wr="?" if c.get("winrate") is None else c["winrate"]),
                                T("{n} trận", n=f"{c.get('games', 0):,}".replace(",", ".")),
                                T("Bản {v}", v=c.get("patch", "?"))])
         if c.get("fetched_at"):
             meta += "   ·   " + T("Dữ liệu {n} phút trước", n=int((time.time() - c["fetched_at"]) / 60))
             meta += T(" (cũ, mạng lỗi)") if c.get("stale") else ""
-        self.label(box, meta, 8, MUTED).pack(anchor="w")
+        line = tk.Frame(box, bg=BG)
+        line.pack(anchor="w")
+        self.label(line, meta, 8, OKC if c.get("stale") else MUTED).pack(side="left")
+        reload = self.label(line, "⟳ " + T("Tải lại"), 8, ACCENT, cursor="hand2")
+        reload.pack(side="left", padx=(self.S(10), 0))
+        reload.bind("<Button-1>", lambda e: self._reload_data())
+        reload.bind("<Enter>", lambda e: reload.configure(fg=TEXT))
+        reload.bind("<Leave>", lambda e: reload.configure(fg=ACCENT))
+        self.tooltip.bind(reload, T("Tải lại dữ liệu tướng này ngay"))
+        dd = self.hub.dd() if hasattr(self.hub, "dd") else None
+        lag = patch_lag(c.get("patch"), (dd or {}).get("version"))
+        if lag:
+            warn = self.label(box, T("⚠ Dữ liệu bản {p}, game đã lên bản {g}", p=lag[0], g=lag[1]), 8, OKC)
+            warn.pack(anchor="w")
+            self.tooltip.bind(warn, T("Nguồn dữ liệu chưa cập nhật bản mới – số liệu có thể lệch. Bấm Tải lại sau ít giờ."))
+
+    def _reload_data(self):
+        self.hub.reload()
+        self._full_sig = None
+        self.toast(T("Đang tải dữ liệu {name}…", name=(self._st.get("champion") or {}).get("name") or ""), ms=2500)
 
     def _render_tabs(self, c):
         n = sum(len(s.get("combos", [])) for s in c.get("playstyles", []))

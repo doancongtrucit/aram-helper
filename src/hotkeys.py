@@ -25,6 +25,7 @@ DEFAULTS = {
     "pick1": ["ctrl+alt+1", "ctrl+alt+shift+1"],
     "pick2": ["ctrl+alt+2", "ctrl+alt+shift+2"],
     "pick3": ["ctrl+alt+3", "ctrl+alt+shift+3"],
+    "pick4": ["ctrl+alt+4", "ctrl+alt+shift+4"],
     "overlay": ["ctrl+alt+o", "ctrl+alt+shift+o"],
     "diagnose": ["ctrl+alt+d", "ctrl+alt+shift+d"],
 }
@@ -73,7 +74,10 @@ def combos_for(name: str, custom: str | None) -> list[str]:
 
 
 def pretty(combo: str | None) -> str:
-    return "+".join(p.capitalize() if len(p) > 1 else p.upper() for p in combo.split("+")) if combo else "(không có)"
+    if not combo:
+        from i18n import T
+        return T("(không có)")
+    return "+".join(p.capitalize() if len(p) > 1 else p.upper() for p in combo.split("+"))
 
 
 def label(name: str) -> str:

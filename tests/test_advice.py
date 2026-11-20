@@ -15,6 +15,21 @@ CATALOG = {a["id"]: a for a in playaram.parse_augment_catalog(fixtures.load("aug
 CU_DAM, BAY_ONG, KHONG_NHAN, RUT_KIEM = 1058, 3048, 1018, 1134
 
 
+class Shrink(unittest.TestCase):
+    def test_rare_augment_is_pulled_towards_expected(self):
+        champ = {"winrate": 50.0, "games": 100_000, "augments": {"gold": [
+            {"id": 1, "name": "hiếm", "winrate": 70.0, "pickrate": 0.05},      # ~50 trận
+            {"id": 2, "name": "phổ biến", "winrate": 56.0, "pickrate": 8.0}]}}  # ~8000 trận
+        rare, common = (advice.score(i, champ, {}, set()) for i in (1, 2))
+        self.assertEqual(rare["winrate"], 70.0)                    # số hiện vẫn là số gốc
+        self.assertLess(rare["score"], common["score"])            # nhưng xếp sau lõi phổ biến
+        self.assertAlmostEqual(common["score"], 56.0, delta=0.15)
+
+    def test_no_pickrate_keeps_raw_winrate(self):
+        champ = {"winrate": 50.0, "games": 1000, "augments": {"gold": [{"id": 1, "name": "x", "winrate": 61.0}]}}
+        self.assertEqual(advice.score(1, champ, {}, set())["score"], 61.0)
+
+
 class Advice(unittest.TestCase):
     def test_combo_fit_with_owned(self):
         fit = advice.combo_fit(CHAMP, {CU_DAM})
@@ -26,7 +41,8 @@ class Advice(unittest.TestCase):
     def test_score_sources(self):
         s = advice.score(BAY_ONG, CHAMP, CATALOG, set())
         wr = CHAMP["augments"]["prismatic"][0]["winrate"]          # Bầy Ong đứng đầu bậc Kim Cương của tướng mẫu
-        self.assertEqual((s["source"], s["winrate"], s["score"]), ("tướng", wr, wr))
+        self.assertEqual((s["source"], s["winrate"]), ("tướng", wr))
+        self.assertAlmostEqual(s["score"], wr, delta=0.6)          # lõi nhiều trận: kéo về mức kỳ vọng rất ít
         g = advice.score(RUT_KIEM, CHAMP, CATALOG, set())      # không có trong top 16 của Yasuo
         self.assertEqual(g["source"], "chung")
         self.assertAlmostEqual(g["score"], CHAMP["winrate"] + CATALOG[RUT_KIEM]["winrate"] - 50, places=2)

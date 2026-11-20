@@ -13,7 +13,7 @@ Python 3.10+ (CI dùng 3.13), Windows để chạy đủ tính năng (macOS ch�
 ```
 python -m venv .venv
 .venv\Scripts\activate                      # macOS: source .venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt   # dev: PyInstaller, pyflakes, OpenCV (chỉ cho test)
 python tests/fetch_icons.py                 # tải icon lõi cho test nhận diện màn hình (1 lần)
 python tools/run_tests.py                   # chạy test; báo lỗi nếu quá 2 test bị bỏ qua
 python tests/fetch_fixtures.py              # (tuỳ chọn) tải trang thật để kiểm tra parser – không commit
@@ -41,15 +41,16 @@ aram-helper/
 | `app.py` | Điểm vào, `Hub` (trạng thái dùng chung: trận, tướng, lõi đã chọn), phím tắt |
 | `desktop.py` | Cửa sổ chính (tkinter): khung, vòng cập nhật, zoom, màn chào, bắt lỗi giao diện |
 | `views/` | Các phần của cửa sổ chính (mixin của `desktop.App`): `search.py` tìm tướng, `augments.py` bảng lõi + ô Nên chọn, `items.py` trang bị, `combos.py` tab Combo |
-| `theme.py`, `widgets.py` | Màu / font / hằng số bố cục / logo; tải ảnh nền, vùng cuộn, tooltip |
+| `theme.py`, `widgets.py` | Màu / font / hằng số bố cục / logo; tải ảnh nền, vùng cuộn, tooltip, cắt chữ `…` |
 | `overlay.py` | Overlay trên game (Windows) |
-| `settings.py`, `settings_ui.py` | Tuỳ chọn (`settings.json`, `on_change`) + hộp thoại Cài đặt |
+| `settings.py`, `settings_ui.py`, `controls.py` | Tuỳ chọn (`settings.json`, `on_change`) + hộp thoại Cài đặt + công tắc / thanh trượt vẽ tay |
 | `i18n.py`, `localize.py` | Chuỗi giao diện Anh / Việt (`T("chuỗi tiếng Việt")`), đổi tên lõi / đồ / tướng theo ngôn ngữ |
 | `advice.py` | Chấm điểm / xếp hạng lõi – nơi duy nhất chứa logic gợi ý lõi |
 | `counter_items.py` | Phân tích đội hình + trang bị địch → 2 dòng gợi ý đồ |
-| `screen_scan.py`, `scanner.py`, `ocr.py` | Chụp màn hình, nhận diện icon, OCR tên lõi, luồng quét nền (Windows) |
+| `screen_scan.py`, `scanner.py`, `ocr.py`, `cvlite.py` | Chụp màn hình, nhận diện icon, OCR tên lõi, luồng quét nền (Windows); `cvlite` thay OpenCV |
 | `playaram.py`, `ddragon.py`, `live_client.py` | Nguồn dữ liệu: playaram.gg, Riot Data Dragon, Live Client Data API |
-| `paths.py`, `version.py`, `updater.py` | Thư mục dữ liệu, số phiên bản, kiểm tra bản mới |
+| `paths.py`, `version.py`, `updater.py`, `ed25519.py` | Thư mục dữ liệu + ghi file an toàn (`write_atomic`), số phiên bản, cập nhật (kiểm tra chữ ký) |
+| `tray.py`, `autostart.py`, `single_instance.py` | Khay hệ thống, mở cùng Windows, chỉ 1 bản chạy (Windows) |
 | `hotkeys.py`, `diag.py` | Phím tắt toàn cục (Windows), log + ảnh chẩn đoán bộ quét |
 
 ## Quy ước
@@ -92,13 +93,28 @@ Build thử trên máy (Windows; có Inno Setup 6 thì tạo thêm `Setup.exe`):
 
 ```
 python -m venv build/venv
-build\venv\Scripts\python -m pip install -r requirements.txt pyinstaller
+build\venv\Scripts\python -m pip install -r requirements.txt -r requirements-dev.txt
 build\venv\Scripts\python tools/build.py            # → dist/
 ```
+
+Thư viện khoá đúng phiên bản (`requirements.txt` cho app, `requirements-dev.txt` cho build / test); GitHub Actions
+khoá theo mã commit. Nâng phiên bản: sửa số, chạy test, build thử rồi mới phát hành.
+Bản cài không có OpenCV: bộ quét dùng `src/cvlite.py` (numpy + Pillow); `tests/test_cvlite.py` so với OpenCV thật.
 
 Phát hành:
 
 1. Tăng `__version__` trong `src/version.py`, thêm mục mới vào `CHANGELOG.md`, commit.
 2. Tạo tag cùng số và push: `git tag -a v1.2.0 -m "ARAM Helper 1.2.0" && git push origin main v1.2.0`.
-3. GitHub Actions (`release.yml`) chạy test, build `Setup.exe` + bản portable (Windows) + `.app` (macOS) rồi tạo
-   Release. App của người dùng hiện nút **Có bản mới** trong vòng vài giờ.
+3. GitHub Actions (`release.yml`) chạy test, build `Setup.exe` + bản portable (Windows) + `.app` (macOS), ký
+   `SHA256SUMS.txt` rồi tạo Release. App của người dùng hiện nút **Có bản mới** trong vòng vài giờ.
+
+### Chữ ký bản phát hành (bắt buộc từ 2.0)
+
+App ≥ 2.0 chỉ tự cập nhật khi `SHA256SUMS.txt` của bản phát hành có chữ ký Ed25519 hợp lệ
+(`SHA256SUMS.txt.sig`). Khoá công khai nằm ở `SIGNING_KEY` trong `src/updater.py`; khoá riêng chỉ ở máy nhà phát
+triển và trong GitHub secret `RELEASE_SIGNING_KEY` – **không bao giờ commit**.
+
+- Tạo khoá (1 lần): `python tools/sign_release.py keygen <file ngoài repo>` → dán khoá công khai vào `updater.py`,
+  đưa nội dung file khoá riêng vào secret `RELEASE_SIGNING_KEY` (Settings → Secrets and variables → Actions).
+- Thiếu secret hoặc secret không khớp khoá công khai → bước ký trong `release.yml` dừng, không đăng bản chưa ký.
+- Mất khoá riêng: tạo khoá mới, đổi `SIGNING_KEY`, phát hành; bản cũ phải tải bản mới bằng tay một lần.

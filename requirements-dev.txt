@@ -1,0 +1,7 @@
+# Chỉ dùng khi phát triển / build / test – KHÔNG đóng gói vào app.
+#   python -m pip install -r requirements.txt -r requirements-dev.txt
+pyinstaller==6.22.3
+pyinstaller-hooks-contrib==2026.9
+pyflakes==4.1.0
+# Test: dựng ảnh giả lập bảng chọn lõi và so src/cvlite.py với OpenCV thật
+opencv-python-headless==5.0.0.93; sys_platform == "win32"

@@ -46,13 +46,11 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
 en.DesktopIcon=Tạo biểu tượng ngoài Desktop
-en.StartWithWindows=Mở ARAM Helper khi khởi động Windows
 en.LaunchNow=Mở ARAM Helper
 en.DeleteData=Xoá cả dữ liệu của ARAM Helper (cache, hiệu chỉnh, cài đặt)?%n%nChọn No nếu bạn sẽ cài lại.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:DesktopIcon}"
-Name: "startup"; Description: "{cm:StartWithWindows}"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -66,9 +64,9 @@ Name: "{autoprograms}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"
 Name: "{autodesktop}\ARAM Helper"; Filename: "{app}\ARAM Helper.exe"; Tasks: desktopicon
 
 [Registry]
-; Mở cùng Windows: khoá Run (app đọc / đổi cùng khoá này trong Cài đặt → Chung). --minimized: nằm sẵn dưới khay.
-; Cài im lặng (tự cập nhật) không đụng tới để giữ lựa chọn người dùng đã đổi trong app.
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "ARAM Helper"; ValueData: """{app}\ARAM Helper.exe"" --minimized"; Tasks: startup; Check: not WizardSilent
+; Mở cùng Windows chỉ khi người dùng tự bật trong app (Cài đặt → Chung; app ghi khoá Run, kèm --minimized).
+; Cài lần đầu / cài lại bằng tay: tắt (xoá khoá). Cài im lặng (tự cập nhật trong app): giữ nguyên lựa chọn đã bật.
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "ARAM Helper"; Flags: deletevalue; Check: not WizardSilent
 ; Gỡ cài đặt: xoá cả khoá do app tự tạo (ValueType none = không ghi gì lúc cài)
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "ARAM Helper"; Flags: uninsdeletevalue
 

@@ -59,12 +59,21 @@ def current_game() -> dict:
     }
 
 
+def _slug(raw: str) -> str:
+    """Slug tướng (dạng biến hình như Gnar Khổng Lồ về tướng gốc)."""
+    try:
+        import playaram
+        return playaram.game_slug(raw)
+    except Exception:
+        return "".join(ch for ch in raw.replace("game_character_displayname_", "").lower() if ch.isalnum())
+
+
 def _player_brief(p: dict) -> dict:
     raw = str(p.get("rawChampionName", ""))
     return {
         "champion_raw": raw,
         "champion_name": p.get("championName", ""),
-        "slug": "".join(ch for ch in raw.replace("game_character_displayname_", "").lower() if ch.isalnum()),
+        "slug": _slug(raw),
         "level": p.get("level"),
         "items": [int(it["itemID"]) for it in p.get("items") or [] if isinstance(it, dict) and it.get("itemID")],
     }

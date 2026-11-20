@@ -24,8 +24,9 @@ class BugReport(unittest.TestCase):
                                            encoding="utf-8")
         (self.data / "calibration.json").write_text('{"width": 2560}', encoding="utf-8")
         (self.data / "secret.json").write_text('{"token": "secret"}', encoding="utf-8")
+        from PIL import Image
         for i in range(15):
-            (self.data / "debug" / f"shot{i:02}.png").write_bytes(b"\x89PNG fake")
+            Image.new("RGB", (64, 48), (i, 0, 0)).save(self.data / "debug" / f"shot{i:02}.png")
             (self.data / "debug" / f"shot{i:02}.json").write_text('{"note": "x"}', encoding="utf-8")
         self.patch = mock.patch.object(paths, "DATA", self.data)
         self.patch.start()

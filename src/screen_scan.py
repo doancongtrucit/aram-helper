@@ -24,7 +24,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
+import cvlite as cv2  # thay OpenCV (~84 MB) – xem cvlite.py
 import numpy as np
 
 import game_window
@@ -47,25 +47,30 @@ NAME_MIN = 0.75       # độ giống tên (OCR) tối thiểu khi nhận lõi c
 REROLL_Y = 2.85              # tâm nút đổi lõi: dưới tâm icon 2,85 × cỡ icon (đo trên game thật)
 REROLL_SAT_MIN = 110         # độ bão hoà: nút còn lượt ~145, nút đã dùng (xám) ~75
 GAP_MIN, GAP_MAX = 1.8, 3.0   # khoảng cách tâm 2 thẻ lõi kề nhau / cỡ icon (trong game ~2.3)
+# Lượt chọn 4 lõi: 4 thẻ cùng cỡ, xếp cân giữa màn hình. Chưa đo trên game thật → thử vài khoảng cách thẻ
+# (so với bảng 3 thẻ); lần đầu bắt được, bộ quét lưu ảnh "four-cards" để đo lại.
+FOUR_GAPS = (1.0, 0.9, 0.8)
 CLOSE_DELTA = 0.045   # icon có điểm cách icon tốt nhất ≤ mức này được coi là dễ nhầm → ứng viên (OCR phân xử)
 CLOSE_MAX = 6
 
 
 # ---------------- icon ----------------
 
-def ensure_icons(catalog: list[dict], log=print) -> int:
-    """Tải icon gốc (256px, có alpha) của mọi lõi vào data/icons/<id>.png. Trả về số icon mới tải."""
+def ensure_icons(catalog: list[dict], log=print, progress=None) -> int:
+    """Tải icon gốc (256px, có alpha) của mọi lõi vào data/icons/<id>.png. Trả về số icon mới tải.
+    progress(đã xử lý, cần tải) – để hiện tiến độ lần chạy đầu."""
     ICON_DIR.mkdir(parents=True, exist_ok=True)
     n = 0
-    for a in catalog:
+    todo = [a for a in catalog if a.get("asset") and not (ICON_DIR / f"{a['id']}.png").exists()]
+    for k, a in enumerate(todo):
+        if progress:
+            progress(k, len(todo))
         dest = ICON_DIR / f"{a['id']}.png"
-        if dest.exists() or not a.get("asset"):
-            continue
         for url in (CDRAGON + a["asset"], playaram.BASE + "/media/game-asset/" + a["asset"]):
             try:
                 req = urllib.request.Request(url, headers={"User-Agent": playaram.USER_AGENT})
                 with urllib.request.urlopen(req, timeout=15) as r:
-                    dest.write_bytes(r.read())
+                    paths.write_atomic(dest, r.read())
                 n += 1
                 break
             except Exception:
@@ -183,9 +188,8 @@ class Calibration:
     estimated: bool = False         # vị trí ước tính theo độ phân giải, chưa xác nhận bằng bảng chọn thật
 
     def save(self):
-        DATA.mkdir(parents=True, exist_ok=True)
         d = {k: v for k, v in self.__dict__.items() if k != "estimated"}
-        CALIB_FILE.write_text(json.dumps(d), encoding="utf-8")
+        paths.write_atomic(CALIB_FILE, json.dumps(d))
 
     @staticmethod
     def estimate(width: int, height: int) -> "Calibration":
@@ -206,8 +210,13 @@ class Calibration:
     def load() -> "Calibration | None":
         if not CALIB_FILE.exists():
             return None
-        d = json.loads(CALIB_FILE.read_text(encoding="utf-8"))
-        return Calibration(d["width"], d["height"], d["size"], [tuple(c) for c in d["centers"]])
+        try:
+            d = json.loads(CALIB_FILE.read_text(encoding="utf-8"))
+            return Calibration(int(d["width"]), int(d["height"]), int(d["size"]),
+                               [tuple(int(v) for v in c) for c in d["centers"]])
+        except (OSError, ValueError, KeyError, TypeError) as e:   # file hỏng → coi như chưa định vị
+            print(f"calibration.json hỏng ({e!r}) – dùng vị trí ước tính", flush=True)
+            return None
 
 
 def _nms_peaks(score: np.ndarray, radius: int, k: int = 12, floor: float = 0.3):
@@ -518,8 +527,28 @@ def slot_ok(r: dict) -> bool:
 
 
 def confident(results: list[dict]) -> bool:
-    """Đủ 3 ô: mỗi ô khớp icon chắc chắn, hoặc nhận được bằng tên (lõi kỹ năng tướng)."""
-    return len(results) == 3 and all(slot_ok(r) or r.get("by_name") for r in results)
+    """Đủ ô (3, hoặc 4 ở lượt chọn 4 lõi): mỗi ô khớp icon chắc chắn, hoặc nhận được bằng tên (lõi kỹ năng tướng)."""
+    return len(results) >= 3 and all(slot_ok(r) or r.get("by_name") for r in results)
+
+
+def layout(calib: Calibration, n: int, gap_k: float = 1.0) -> Calibration:
+    """Vị trí n thẻ suy từ vị trí 3 thẻ đã biết: cùng cỡ icon, cùng hàng, cân giữa quanh thẻ giữa;
+    khoảng cách thẻ = khoảng cách ở bảng 3 thẻ × gap_k. n = 3 và gap_k = 1 → trả nguyên calib."""
+    if n == len(calib.centers) and gap_k == 1.0:
+        return calib
+    xs = [c[0] for c in calib.centers]
+    ys = sorted(c[1] for c in calib.centers)
+    gap = (max(xs) - min(xs)) / (len(xs) - 1) * gap_k
+    mid = sum(xs) / len(xs)
+    cy = ys[len(ys) // 2]
+    centers = [(int(round(mid + (i - (n - 1) / 2) * gap)), cy) for i in range(n)]
+    return Calibration(calib.width, calib.height, calib.size, centers, estimated=calib.estimated)
+
+
+def union_region(regions) -> tuple[int, int, int, int]:
+    regions = list(regions)
+    return (min(r[0] for r in regions), min(r[1] for r in regions),
+            max(r[2] for r in regions), max(r[3] for r in regions))
 
 
 def _fingerprint(crop: np.ndarray) -> bytes:

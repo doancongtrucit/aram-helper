@@ -51,13 +51,13 @@ class Autostart(unittest.TestCase):
         self.assertFalse(autostart.set_enabled(False))
         self.assertIsNone(autostart._read())
 
-    def test_legacy_shortcut_counts_and_is_migrated(self):
+    def test_legacy_shortcut_is_removed_and_stays_off(self):
         self.lnk.parent.mkdir(parents=True)
         self.lnk.write_bytes(b"x")
-        self.assertTrue(autostart.is_enabled())
         autostart.migrate()
         self.assertFalse(self.lnk.exists())
-        self.assertIn("--minimized", autostart._read())
+        self.assertIsNone(autostart._read())               # mặc định tắt: không tự bật khoá Run
+        self.assertFalse(autostart.is_enabled())
 
     def test_disable_removes_legacy_shortcut(self):
         self.lnk.parent.mkdir(parents=True)

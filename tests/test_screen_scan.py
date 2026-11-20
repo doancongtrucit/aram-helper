@@ -44,7 +44,7 @@ class OcrMatching(unittest.TestCase):
 
 
 try:
-    import cv2  # noqa: F401
+    import cv2  # noqa: F401 – chỉ để dựng ảnh giả lập (tests/synthetic.py); app dùng src/cvlite.py
     import screen_scan as ss
     HAS_SS = True
     HAS_CV = (ss.ICON_DIR / f"{CATALOG[0]['id']}.png").exists()
@@ -129,6 +129,48 @@ class DetectSynthetic(unittest.TestCase):
             self.assertLess(abs((x1 - x0) + shift), 8)
             self.assertLess(abs((y1 - y0) - shift), 8)
         self.assertTrue(ss.confident(ss.read_offer(moved, fixed, bank, CATALOG)))
+
+    def test_four_card_offer(self):
+        """Lượt chọn 4 lõi: bố cục 3 thẻ không đọc được, bố cục 4 thẻ suy từ vị trí 3 thẻ đọc đủ 4 lõi."""
+        bank = ss.bank_for(self.icons)
+        offer = [BY_NAME["Rút Kiếm Ra"], BY_NAME["Cú Đấm Thần Bí"], BY_NAME["Bầy Ong Nảy Bật"],
+                 BY_NAME["Hộp Pandora"]]
+        img = self.make(self.icons, offer, "prismatic", seed=11, names=self.names)
+        self.assertFalse(ss.confident(ss.read_offer(img, self.calib, bank, CATALOG)))
+        four = ss.layout(self.calib, 4)
+        self.assertEqual(len(four.centers), 4)
+        res = ss.read_offer(img, four, bank, CATALOG)
+        self.assertTrue(ss.confident(res))
+        for slot, want in zip(res, offer):
+            self.assertIn(want, slot["candidates"])
+        self.assertEqual(len(ss.card_rects(four, (1920, 1080))), 4)
+
+    def test_scanner_finds_four_cards_with_narrower_gap(self):
+        """Bộ quét tự thử các khoảng cách thẻ (FOUR_GAPS) – bảng 4 thẻ hẹp hơn vẫn đọc được, công bố 4 ô."""
+        from unittest import mock
+        import scanner
+        sc = scanner.Scanner()
+        sc.bank, sc.catalog = ss.bank_for(self.icons), CATALOG
+        offer = [BY_NAME["Rút Kiếm Ra"], BY_NAME["Cú Đấm Thần Bí"], BY_NAME["Bầy Ong Nảy Bật"],
+                 BY_NAME["Hộp Pandora"]]
+        img = self.make(self.icons, offer, "prismatic", seed=12, names=self.names, gap_k=0.9)
+        kw = dict(origin=(0, 0), full=(1920, 1080), ocr_cache={}, alt_names={})
+        found = None
+        for _ in range(len(ss.FOUR_GAPS)):                   # mỗi lần quét thử 1 khoảng cách
+            res, lay = sc._read_any(img, self.calib, sc._four_layouts(self.calib), kw)
+            if lay is not self.calib:
+                found = (res, lay)
+                break
+        self.assertIsNotNone(found)
+        with mock.patch.object(scanner.diag, "save") as save, \
+                mock.patch.object(scanner.game_window, "rect", return_value=(0, 0, 1920, 1080)):
+            sc._seen_four(found[0], img, (0, 0), found[1], self.calib, (1920, 1080))
+        save.assert_called_once()                            # lưu ảnh lượt 4 lõi đầu tiên để đo lại
+        snap = sc.snapshot()
+        self.assertEqual(snap["cards"], 4)
+        self.assertEqual(len(snap["offer"]["calib"]["centers"]), 4)
+        self.assertAlmostEqual(sc._four_k, 0.9, delta=0.02)
+        self.assertEqual(sc._four_layouts(self.calib)[0].centers, found[1].centers)   # lần sau thử đúng kiểu này
 
     def test_detects_offers_with_names(self):
         bank = ss.bank_for(self.icons)

@@ -109,7 +109,7 @@ class AugmentsMixin:
         wcol = GOOD if wr >= base + 2 else OKC if wr >= base - 1 else BAD
         self.label(stats, f"{wr:.2f}%", 9, wcol, True, mono=True).pack(side="left")
         low = a.get("pickrate") is not None and a["pickrate"] < LOW_PICK
-        self.label(stats, f"{a.get('pickrate', '?')}%{'*' if low else ''}", 8, MUTED, mono=True).pack(side="left", padx=self.S(6))
+        self.label(stats, f"{'?' if a.get('pickrate') is None else a['pickrate']}%{'*' if low else ''}", 8, MUTED, mono=True).pack(side="left", padx=self.S(6))
         roomy = self._name_w >= self.S(150)        # thẻ hẹp: nhãn combo rút gọn còn "◆A"
         if any_tier:
             self.badge(stats, T("combo {t}", t=any_tier) if roomy else f"◆{any_tier}",

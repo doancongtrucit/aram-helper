@@ -8,6 +8,11 @@ from i18n import T
 from theme import BG, PANEL, LINE, TEXT, MUTED, GOOD, OKC
 
 
+
+def _n(v) -> str:
+    """Số liệu thiếu (trang nguồn ghi "—") hiện là "?" thay vì "None"."""
+    return "?" if v is None else str(v)
+
 class ItemsMixin:
     """Cột trang bị: đồ theo đội địch, lối lên đồ, trang bị khác, giày, phép."""
 
@@ -59,9 +64,9 @@ class ItemsMixin:
             card.pack(fill="x", padx=(0, self.S(6)), pady=(self.S(4), 0))
             top = tk.Frame(card, bg=PANEL)
             top.pack(fill="x")
-            self.label(top, T("Thắng {wr}%", wr=b.get("winrate", "?")), 9, GOOD, True).pack(side="right")
+            self.label(top, T("Thắng {wr}%", wr=_n(b.get("winrate"))), 9, GOOD, True).pack(side="right")
             self.label(top, self._fit(b.get("name", ""), pane_w - self.S(120), 9, True), 9, TEXT, True).pack(side="left")
-            sub = T("Chọn {pr}%  ·  {n} trận đủ đồ", pr=b.get("pickrate", "?"), n=b.get("games", "?")) \
+            sub = T("Chọn {pr}%  ·  {n} trận đủ đồ", pr=_n(b.get("pickrate")), n=_n(b.get("games"))) \
                 + (f"  ·  {b['style']}" if b.get("style") else "")
             self.label(card, self._fit(sub, pane_w - self.S(30), 8), 8, MUTED).pack(anchor="w")
             row = tk.Frame(card, bg=PANEL)
@@ -80,7 +85,7 @@ class ItemsMixin:
                 self.label(w, T("Hay lên cùng:"), 8, MUTED).pack(side="left")
                 for x in b["with"]:
                     self.icon(w, x.get("icon"), 18, tip=x["name"]).pack(side="left", padx=(self.S(5), self.S(2)))
-                    self.label(w, f"{x.get('winrate') or ''}%", 8, MUTED).pack(side="left")
+                    self.label(w, f"{_n(x.get('winrate'))}%", 8, MUTED).pack(side="left")
         if not c.get("builds"):
             self.label(root, T("Chưa có build."), 10, MUTED).pack(anchor="w")
 
@@ -100,8 +105,8 @@ class ItemsMixin:
                 line.pack(fill="x")
                 for src in r.get("icons", []):
                     self.icon(line, src, 18, tip=r["name"]).pack(side="left", padx=(0, self.S(2)))
-                self.label(line, f"{r.get('pickrate', '?')}%", 7, MUTED, mono=True).pack(side="right")
-                self.label(line, f"{r.get('winrate', '?')}%", 8, TEXT, True, mono=True).pack(side="right", padx=self.S(4))
+                self.label(line, f"{_n(r.get('pickrate'))}%", 7, MUTED, mono=True).pack(side="right")
+                self.label(line, f"{_n(r.get('winrate'))}%", 8, TEXT, True, mono=True).pack(side="right", padx=self.S(4))
                 self.label(line, self._fit(r["name"], col_w - self.S(110), 8), 8, TEXT, anchor="w").pack(side="left", padx=self.S(4))
             tk.Frame(box, bg=PANEL, height=self.S(4)).pack()
 

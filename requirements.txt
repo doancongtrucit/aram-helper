@@ -1,14 +1,15 @@
+# Thư viện của app (khoá đúng phiên bản: bản build lại sau vẫn giống hệt, thư viện ra bản mới không làm hỏng app).
+# Nâng phiên bản: đổi số ở đây, chạy  python tools/run_tests.py  rồi build thử trước khi phát hành.
 # Cửa sổ chính (Windows + macOS): tkinter có sẵn trong Python, chỉ cần Pillow để hiện icon.
-pillow
+pillow==13.0.0
 
-# Tự đọc lõi trên màn hình + overlay + phím tắt: chỉ Windows
-numpy; sys_platform == "win32"
-opencv-python-headless; sys_platform == "win32"
+# Tự đọc lõi trên màn hình + overlay + phím tắt: chỉ Windows (xử lý ảnh bằng numpy + Pillow, xem src/cvlite.py)
+numpy==2.2.5; sys_platform == "win32"
 # OCR có sẵn của Windows, dùng để phân biệt các lõi dùng chung icon
-winrt-runtime; sys_platform == "win32"
-winrt-Windows.Media.Ocr; sys_platform == "win32"
-winrt-Windows.Graphics.Imaging; sys_platform == "win32"
-winrt-Windows.Storage.Streams; sys_platform == "win32"
-winrt-Windows.Foundation; sys_platform == "win32"
-winrt-Windows.Foundation.Collections; sys_platform == "win32"
-winrt-Windows.Globalization; sys_platform == "win32"
+winrt-runtime==4.1.0; sys_platform == "win32"
+winrt-Windows.Media.Ocr==4!10.0.28000.2957; sys_platform == "win32"
+winrt-Windows.Graphics.Imaging==4!10.0.28000.2957; sys_platform == "win32"
+winrt-Windows.Storage.Streams==4!10.0.28000.2957; sys_platform == "win32"
+winrt-Windows.Foundation==4!10.0.28000.2957; sys_platform == "win32"
+winrt-Windows.Foundation.Collections==4!10.0.28000.2957; sys_platform == "win32"
+winrt-Windows.Globalization==4!10.0.28000.2957; sys_platform == "win32"

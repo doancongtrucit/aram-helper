@@ -24,23 +24,57 @@ MIN_INTERVAL = 2.0             # giây giữa 2 request tới playaram.gg
 SCHEMA = 2                     # tăng khi đổi cấu trúc JSON để bỏ cache cũ
 
 
+TIMEOUT = 10                   # giây chờ mỗi trang
+BACKOFF_MIN, BACKOFF_MAX = 30.0, 600.0   # trang lỗi: chờ 30 s, 60 s, 120 s… (tối đa 10 phút) mới thử lại
+
+
+class Unavailable(OSError):
+    """Trang vừa lỗi, đang trong thời gian chờ thử lại – không gửi request (dùng cache cũ nếu có)."""
+
+
 _lock = threading.Lock()
 _last_request = 0.0
+_fails: dict[str, tuple[float, int]] = {}     # path → (thử lại sau thời điểm này, số lần lỗi liên tiếp)
 
 
 def _get(path: str) -> str:
-    """GET một trang playaram.gg, có giãn cách giữa các request."""
+    """GET một trang playaram.gg, có giãn cách giữa các request.
+
+    Trang lỗi (mạng / trang sập) thì không hỏi lại ngay: luồng nền hỏi mỗi 1,5 giây, mỗi lần có thể treo tới
+    TIMEOUT giây và giữ khoá chung → các trang khác (và việc nhận biết vào trận) bị chậm theo."""
     global _last_request
+    until, _n = _fails.get(path, (0.0, 0))
+    if time.time() < until:
+        raise Unavailable(f"{path}: lỗi gần đây, thử lại sau {until - time.time():.0f} giây")
     with _lock:
         wait = MIN_INTERVAL - (time.time() - _last_request)
         if wait > 0:
             time.sleep(wait)
         req = urllib.request.Request(BASE + path, headers={"User-Agent": USER_AGENT})
         try:
-            with urllib.request.urlopen(req, timeout=15) as r:
-                return r.read().decode("utf-8")
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
+                page = r.read().decode("utf-8")
+        except Exception:
+            n = _fails.get(path, (0.0, 0))[1] + 1
+            _fails[path] = (time.time() + min(BACKOFF_MAX, BACKOFF_MIN * 2 ** (n - 1)), n)
+            raise
         finally:
             _last_request = time.time()
+    _fails.pop(path, None)
+    return page
+
+
+def describe_error(e: Exception) -> str:
+    """Lỗi cho người dùng đọc: mất mạng / trang lỗi thay vì chuỗi kỹ thuật (chi tiết vẫn ghi ở app.log)."""
+    import urllib.error
+    if isinstance(e, (urllib.error.URLError, TimeoutError, ConnectionError, Unavailable)):
+        return "không tải được dữ liệu (kiểm tra mạng)"
+    return str(e)[:160]
+
+
+def reset_backoff():
+    """Bấm "tải lại" thì thử ngay, không chờ hết thời gian chờ."""
+    _fails.clear()
 
 
 def slugify(raw: str) -> str:
@@ -49,8 +83,37 @@ def slugify(raw: str) -> str:
     return re.sub(r"[^a-z0-9]", "", raw.lower())
 
 
-def _pct(s: str) -> float:
-    return float(s.replace("%", "").strip())
+# Tướng biến hình: Live Client API báo tên dạng biến hình (Gnar Khổng Lồ = "GnarBig"…) – không có trang riêng
+FORM_ALIASES = {"gnarbig": "gnar", "kledrider": "kled", "kledmount": "kled", "elisespider": "elise",
+                "nidaleecougar": "nidalee", "shyvanadragon": "shyvana", "jaycecannon": "jayce",
+                "jaycehammer": "jayce"}
+
+
+def game_slug(raw: str) -> str:
+    """Tên tướng từ trận (Live Client API) → slug trang tướng; dạng biến hình về tướng gốc.
+
+    Ngoài danh sách FORM_ALIASES: slug không có trong danh sách tướng (cache, không tải mạng) mà bắt đầu bằng tên
+    một tướng (vd. "gnarbig") thì lấy tướng đó."""
+    s = slugify(raw)
+    if s in FORM_ALIASES:
+        return FORM_ALIASES[s]
+    try:
+        known = (_stale_cache("_champions") or {}).get("slugs") or []
+    except Exception:
+        known = []
+    if known and s not in known:
+        base = max((k for k in known if len(k) >= 3 and s.startswith(k)), key=len, default=None)
+        if base:
+            return base
+    return s
+
+
+def _pct(s: str | None, default: float | None = None) -> float | None:
+    """'52.3%' / '52,3 %' → 52.3; ô lạ ('—', 'N/A', trống) → default thay vì làm hỏng cả trang tướng."""
+    try:
+        return float(str(s).replace("%", "").replace(",", ".").strip())
+    except (TypeError, ValueError):
+        return default
 
 
 def _text(s: str) -> str:
@@ -74,7 +137,7 @@ def parse_champion_page(page: str, slug: str) -> dict:
         "name": find(r'class="crumbs__current">([^<]+)<', slug),
         "icon": BASE + head_icon.group(1) if head_icon else None,
         "tier": find(r'class="cb-tier[^"]*">([^<]+)<'),
-        "winrate": _pct(find(r'class="sp-stat cb-head__wr">([^<]+)<', "0")),
+        "winrate": _pct(find(r'class="sp-stat cb-head__wr">([^<]+)<', "")),
         "games": int(games) if games.isdigit() else 0,
         "patch": find(r"<dt>Phiên bản</dt><dd>([^<]+)</dd>"),
         "updated": (re.search(r'<time datetime="([^"]+)"', page) or [None, None])[1],
@@ -261,6 +324,7 @@ MEM_CHAMPS = 12                # giữ tối đa chừng này tướng trong RAM
 
 
 _mem_lock = threading.Lock()   # luồng nền + luồng giao diện cùng đọc / ghi
+_write_lock = threading.Lock()
 
 
 def _remember(name: str, obj: dict) -> None:
@@ -279,7 +343,17 @@ def _read_cache(name: str, ttl: float) -> dict | None:
         p = _cache_path(name)
         if not p.exists():
             return None
-        obj = json.loads(p.read_text(encoding="utf-8"))
+        try:
+            obj = json.loads(p.read_text(encoding="utf-8"))
+            if not isinstance(obj, dict):
+                raise ValueError("không phải object")
+        except (OSError, ValueError) as e:     # file hỏng (vd. bản cũ ghi dở): bỏ, tải lại
+            print(f"cache {name} hỏng ({e!r}) – bỏ qua, sẽ tải lại", flush=True)
+            try:
+                p.unlink()
+            except OSError:
+                pass
+            return None
         _remember(name, obj)
     elif name.startswith("champ_"):
         _remember(name, obj)
@@ -289,9 +363,9 @@ def _read_cache(name: str, ttl: float) -> dict | None:
 
 
 def _write_cache(name: str, obj: dict) -> None:
-    CACHE_DIR.mkdir(parents=True, exist_ok=True)
     obj["fetched_at"] = time.time()
-    _cache_path(name).write_text(json.dumps(obj, ensure_ascii=False, indent=1), encoding="utf-8")
+    with _write_lock:
+        paths.write_atomic(_cache_path(name), json.dumps(obj, ensure_ascii=False, indent=1))
     _remember(name, obj)
 
 

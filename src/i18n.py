@@ -26,6 +26,21 @@ EN = {
     "Bản {v}": "Patch {v}",
     "Dữ liệu {n} phút trước": "Data {n} min ago",
     " (cũ, mạng lỗi)": " (old, network error)",
+    "Tải lại": "Reload",
+    "Tải lại dữ liệu tướng này ngay": "Download this champion's data again now",
+    "Không lấy được dữ liệu cho {slug}: {e}": "Could not load data for {slug}: {e}",
+    "không tải được dữ liệu (kiểm tra mạng)": "could not download data (check your connection)",
+    "⚠ Dữ liệu bản {p}, game đã lên bản {g}": "⚠ Data from patch {p}, the game is on {g}",
+    "Nguồn dữ liệu chưa cập nhật bản mới – số liệu có thể lệch. Bấm Tải lại sau ít giờ.":
+        "The data source has not caught up with the new patch yet – numbers may be off. Reload in a few hours.",
+    "Phím tắt trong game: {cal} định vị lõi · {pick}/2/3/4 đánh dấu lõi đã chọn · {ov} ẩn/hiện overlay":
+        "In-game hotkeys: {cal} locate augments · {pick}/2/3/4 mark the picked augment · {ov} show/hide overlay",
+    "Đánh dấu lõi ở thẻ 4": "Mark card 4 as taken",
+    "Phím tắt: {k}": "Hotkey: {k}",
+    "Đúng lõi nào?": "Which one is it?",
+    "1 trong {n} · chuột phải để chọn": "1 of {n} · right-click to choose",
+    "Định vị lại lõi": "Locate augments again",
+    "(không có)": "(none)",
     "Lõi & trang bị": "Augments & items",
     "Combo lõi ({n})": "Augment combos ({n})",
     "Đang tải dữ liệu {name}…": "Loading {name}…",
@@ -126,6 +141,7 @@ EN = {
     "bản phát hành không có mã băm của bộ cài": "the release has no checksum for the installer",
     "tải bộ cài lỗi – kiểm tra mạng rồi thử lại": "installer download failed – check your connection and retry",
     "mã băm bộ cài không khớp – đã huỷ": "installer checksum mismatch – cancelled",
+    "chữ ký bản phát hành không hợp lệ – đã huỷ": "the release signature is invalid – cancelled",
     "số phiên bản không hợp lệ": "invalid version number",
     "đường tải không dùng HTTPS – đã huỷ": "download was not over HTTPS – cancelled",
     "Đang tải bản cập nhật…": "Downloading the update…", "Đang tải… {p}%": "Downloading… {p}%",
@@ -175,8 +191,12 @@ EN = {
     "Mở mẫu báo lỗi trên GitHub Issues.": "Opens the issue form on GitHub.",
     "Tạo gói báo lỗi": "Create bug report",
     "Gom log + ảnh chẩn đoán vào 1 file zip để đính kèm khi báo lỗi": "Bundle logs + diagnostic images into a zip to attach to an issue",
-    "Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (ảnh màn hình game lúc chọn lõi), vị trí bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy và địa chỉ IP được che.\n\nTạo file zip ra Desktop?":
-        "The bundle contains the app log, up to 12 recent diagnostic images (game screenshots taken during augment picks), the augment card position, settings and system info.\n\nFolder paths and IP addresses are masked.\n\nCreate the zip on your Desktop?",
+    "Gói gồm: log của app, tối đa 12 ảnh chẩn đoán gần nhất (chỉ vùng 3 thẻ lõi, đã cắt bỏ phần còn lại "
+    "của màn hình), vị trí bảng lõi, cài đặt và thông tin hệ thống.\n\nĐường dẫn thư mục máy "
+    "và địa chỉ IP được che.\n\nTạo file zip ra Desktop?":
+        "The bundle has: the app log, up to 12 recent diagnostic images (only the 3 augment cards, the rest "
+        "of the screen is cut off), the augment position, settings and system info.\n\nFolder paths and IP "
+        "addresses are masked.\n\nCreate the zip on the Desktop?",
     "Đã tạo {f} – đính kèm file này khi báo lỗi.": "Created {f} – attach it to your issue.", "Phiên bản {v}": "Version {v}", "Developer": "Developer",
     "Trang dự án": "Project page", "Báo lỗi / góp ý": "Report an issue", "Giấy phép": "License",
     "Thành phần mã nguồn mở": "Open-source components", "Nguồn dữ liệu": "Data sources",
@@ -222,11 +242,21 @@ STATUS = {
     "Đã định vị bảng lõi – app sẽ tự đọc lõi mỗi khi bảng chọn hiện ra.":
         "Augments located – the app now reads them whenever the choice shows.",
     "Đã thấy bảng chọn lõi.": "Augment choice found.",
+    "Đã thấy bảng chọn 4 lõi.": "Augment choice found (4 cards).",
     "Đang quét… (chưa thấy bảng chọn lõi · khớp tốt nhất {best})": "Scanning… (no augment choice yet · best match {best})",
+    "Đang quét… (chưa thấy bảng chọn lõi)": "Scanning… (no augment choice yet)",
+    "Đang tải danh sách lõi…": "Loading the augment list…",
+    "Đang tải icon lõi {done}/{total}…": "Downloading augment icons {done}/{total}…",
+    "Không khởi động được bộ quét: {e} – tự thử lại sau {n} giây": "Could not start the scanner: {e} – retrying in {n} s",
+    "không tải được dữ liệu (kiểm tra mạng)": "could not download data (check your connection)",
     "Đã lưu ảnh chẩn đoán: {name}": "Saved diagnostic image: {name}",
     "Chờ vào trận để quét.": "Waiting for a game to scan.",
     "Không khởi động được bộ quét: {e}": "Could not start the scanner: {e}",
     "Lỗi": "Error",
+    "Tự đọc lõi trên màn hình, overlay và phím tắt hiện chỉ có trên Windows.":
+        "Reading augments from the screen, the overlay and hotkeys are Windows-only for now.",
+    "Không bật được quét màn hình ({e}). Cài: pip install -r requirements.txt":
+        "Could not start screen scanning ({e}). Install: pip install -r requirements.txt",
 }
 _STATUS_RE: list | None = None
 
@@ -259,7 +289,7 @@ def status(text: str) -> str:
     for rx, en in _STATUS_RE:
         m = rx.match(text)
         if m:
-            return en.format(**m.groupdict())
+            return en.format(**{k: STATUS.get(v, v) for k, v in m.groupdict().items()})
     return text
 
 

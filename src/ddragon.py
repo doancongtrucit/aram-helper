@@ -108,8 +108,7 @@ def get(locale: str = "vi_VN") -> dict | None:
                     data = _download(locale)
                 else:
                     data["checked"] = time.time()
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+                paths.write_atomic(path, json.dumps(data, ensure_ascii=False))
             except Exception:
                 pass                       # mạng lỗi: dùng bản cũ nếu có
         if data is not None:

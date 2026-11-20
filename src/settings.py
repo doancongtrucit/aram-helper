@@ -43,6 +43,7 @@ DEFAULTS = {
     "hk_pick1": "ctrl+alt+1",
     "hk_pick2": "ctrl+alt+2",
     "hk_pick3": "ctrl+alt+3",
+    "hk_pick4": "ctrl+alt+4",                # lượt chọn 4 lõi
     "hk_overlay": "ctrl+alt+o",
     "hk_diagnose": "ctrl+alt+d",
     # Cập nhật: hỏi GitHub xem có bản mới không (chỉ báo, không tự tải)
@@ -87,10 +88,12 @@ def set_many(changes: dict, save: bool = True):
         changed = {k: val for k, val in changes.items() if k in DEFAULTS and v.get(k) != val}
         v.update(changed)
         if save and changed:
-            PATH.parent.mkdir(parents=True, exist_ok=True)
             # chỉ lưu giá trị khác mặc định → đổi mặc định ở bản sau vẫn có tác dụng
             keep = {k: val for k, val in v.items() if val != DEFAULTS.get(k)}
-            PATH.write_text(json.dumps({"_v": VERSION, **keep}, ensure_ascii=False, indent=1), encoding="utf-8")
+            try:
+                paths.write_atomic(PATH, json.dumps({"_v": VERSION, **keep}, ensure_ascii=False, indent=1))
+            except OSError as e:
+                print("settings: không lưu được –", repr(e))
     for fn in list(_listeners):
         if changed:
             try:

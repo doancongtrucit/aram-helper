@@ -68,7 +68,17 @@ class UpdaterTest(unittest.TestCase):
         with mock.patch.object(updater.sys, "platform", "darwin"):
             self.assertFalse(updater.can_self_update(str(exe)))
 
-    def _prepare(self, payload: bytes, sums_for: bytes):
+    TEST_SK = bytes(range(32))                       # khoá thử, chỉ dùng trong test
+
+    def _signed(self, sums: str, sk: bytes | None = None):
+        """Giả lập máy chủ: SHA256SUMS.txt (bytes) + chữ ký; khoá công khai của app đổi thành khoá thử."""
+        import ed25519
+        sig = ed25519.sign(sk or self.TEST_SK, sums.encode()).hex()
+        return (mock.patch.object(updater, "SIGNING_KEY", ed25519.public_key(self.TEST_SK).hex()),
+                mock.patch.object(updater, "_read_bytes", return_value=sums.encode()),
+                mock.patch.object(updater, "_read_url", return_value=sig))
+
+    def _prepare(self, payload: bytes, sums_for: bytes, sk: bytes | None = None):
         import hashlib
         sums = f"{hashlib.sha256(sums_for).hexdigest()}  {updater.SETUP}\n"
 
@@ -78,9 +88,9 @@ class UpdaterTest(unittest.TestCase):
             if progress:
                 progress(len(payload), len(payload))
         seen = []
+        key, sums_p, sig_p = self._signed(sums, sk)
         with mock.patch.object(updater, "update_dir", return_value=Path(self.tmp.name) / "upd"), \
-                mock.patch.object(updater, "_read_url", return_value=sums), \
-                mock.patch.object(updater, "_download", side_effect=download):
+                key, sums_p, sig_p, mock.patch.object(updater, "_download", side_effect=download):
             return updater.prepare("v9.9.9", lambda d, t: seen.append(d)), seen
 
     def test_prepare_verifies_hash(self):
@@ -97,9 +107,40 @@ class UpdaterTest(unittest.TestCase):
         self.assertFalse(any((Path(self.tmp.name) / "upd").glob("*.exe")))   # file sai đã bị xoá
 
     def test_prepare_needs_checksum(self):
-        with mock.patch.object(updater, "_read_url", return_value="nothing here"), \
-                self.assertRaises(updater.UpdateError):
+        key, sums_p, sig_p = self._signed("nothing here")
+        with key, sums_p, sig_p, self.assertRaises(updater.UpdateError) as cm:
             updater.prepare("v9.9.9")
+        self.assertEqual(cm.exception.kind, "no_entry")
+
+    def test_prepare_rejects_wrong_signature(self):
+        with self.assertRaises(updater.UpdateError) as cm:
+            self._prepare(b"installer", b"installer", sk=bytes(32))     # ký bằng khoá khác
+        self.assertEqual(cm.exception.kind, "signature")
+        self.assertFalse(any((Path(self.tmp.name) / "upd").glob("*.exe")))
+
+    def test_prepare_rejects_missing_signature(self):
+        key, sums_p, _ = self._signed("x")
+        with key, sums_p, mock.patch.object(updater, "_read_url", side_effect=OSError("404")), \
+                self.assertRaises(updater.UpdateError) as cm:
+            updater.prepare("v9.9.9")
+        self.assertEqual(cm.exception.kind, "signature")
+
+    def test_real_public_key_is_valid(self):
+        import ed25519
+        self.assertEqual(len(bytes.fromhex(updater.SIGNING_KEY)), 32)
+        self.assertIsNotNone(ed25519._decompress(bytes.fromhex(updater.SIGNING_KEY)))
+        self.assertFalse(updater.signature_ok(b"x", "00" * 64))
+
+    def test_ed25519_rfc8032_vector(self):
+        import ed25519
+        sk = bytes.fromhex("9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60")
+        pk = ed25519.public_key(sk)
+        self.assertEqual(pk.hex(), "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a")
+        sig = ed25519.sign(sk, b"")
+        self.assertEqual(sig.hex()[:32], "e5564300c360ac729086e2cc806e828a")
+        self.assertTrue(ed25519.verify(pk, b"", sig))
+        self.assertFalse(ed25519.verify(pk, b"x", sig))
+        self.assertFalse(ed25519.verify(pk, b"", sig[:-1] + bytes([sig[-1] ^ 1])))
 
     def test_failed_check_keeps_cached_release(self):
         with self.fake("v99.0.0"):
