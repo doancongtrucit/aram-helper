@@ -3,6 +3,58 @@
 Định dạng theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/), đánh số theo
 [Semantic Versioning](https://semver.org/lang/vi/).
 
+## [2.0.0] – 2026-11-18
+
+### Thêm
+- **Lượt chọn 4 lõi**: app tự nhận ra khi bảng chọn có 4 thẻ thay vì 3, đọc đủ 4 lõi và hiện % thắng, xếp hạng,
+  nhãn trên từng thẻ như lượt thường. Thêm phím Ctrl+Alt+4 (đánh dấu lõi ở thẻ 4). Lần đầu gặp, app lưu ảnh vùng thẻ
+  (`four-cards`) trong thư mục debug để đo lại vị trí cho chuẩn.
+- **Chọn đúng lõi ngay trên overlay**: thẻ ghi "1 trong N" (nhiều lõi chung icon) → chuột phải vào nhãn trên thẻ để
+  chọn đúng lõi, hoặc "Định vị lại lõi". Lựa chọn giữ tới khi thẻ đổi.
+- Nút **⟳ Tải lại** cạnh "Dữ liệu … phút trước": tải lại dữ liệu tướng ngay (kể cả khi đang chờ thử lại sau lỗi mạng).
+- Cảnh báo khi dữ liệu lõi còn ở bản game cũ hơn bản đang chơi ("⚠ Dữ liệu bản 26.21, game đã lên bản 26.22").
+- Màn hình chào và chú thích nút "Định vị lõi" ghi rõ phím tắt đang dùng (kể cả phím dự phòng).
+- Lần chạy đầu hiện tiến độ tải icon lõi ("Đang tải icon lõi 45/180…").
+
+### Thay đổi
+- **Khởi động cùng Windows chỉ khi bạn tự bật** ở Cài đặt → Chung. Bộ cài bỏ ô "Mở cùng Windows"; cài lần đầu hoặc
+  cài lại đều tắt (kể cả lối tắt Startup của bộ cài ≤ 1.8.3). Tự cập nhật trong app giữ nguyên lựa chọn đã bật.
+- **Chỉ chạy một ARAM Helper**: mở thêm lần nữa (vd. app đã nằm dưới khay) thì cửa sổ đang chạy hiện lên, không
+  thành 2 overlay / 2 bộ quét.
+- **Xếp hạng lõi tính cả số trận**: lõi hiếm, ít trận (tỉ lệ thắng dễ ảo) được kéo về mức kỳ vọng nên không còn đứng
+  trên lõi tốt nhiều trận. Số % hiện trên thẻ vẫn là số gốc.
+- **Bản cài nhỏ hơn hẳn**: bỏ OpenCV (~84 MB), bộ quét dùng phần xử lý ảnh viết lại bằng numpy + Pillow – kết quả
+  đọc lõi như cũ (đã so trên ảnh game thật), định vị bảng lõi còn nhanh hơn. Bỏ thêm phần thừa của Pillow / Tcl.
+- **Tự cập nhật kiểm tra chữ ký số** (Ed25519) của bản phát hành, không chỉ mã băm: bộ cài bị thay bằng bản giả thì
+  không cài.
+- Gói báo lỗi chỉ giữ vùng 3 thẻ lõi trong ảnh chẩn đoán (cắt bỏ khung chat, tên người chơi, bảng điểm).
+- Thông báo bộ quét dễ hiểu hơn (bỏ "khớp tốt nhất 0.31"; điểm khớp vẫn ghi trong app.log để chẩn đoán).
+
+### Đã sửa
+- Tướng chọn tay bị giữ sang trận sau (xem Yasuo rồi ẩn app, hôm sau chơi Lux vẫn gợi ý cho Yasuo).
+- Trận kết thúc khi bảng chọn lõi đang mở: gợi ý cũ còn lại và app vẫn theo dõi cú bấm ngoài sảnh – có thể tự đánh
+  dấu một lõi không hề chọn ở trận sau.
+- Tắt máy / app bị đóng đúng lúc ghi file làm hỏng dữ liệu (cache tướng, cài đặt, vị trí bảng lõi, overlay): mọi file
+  giờ ghi kiểu "tất cả hoặc không"; file hỏng từ bản cũ được bỏ qua và tải lại thay vì làm app lỗi mãi.
+- Bộ quét chết hẳn nếu lần đầu chạy mất mạng – giờ tự thử lại (30 giây, 1 phút… tối đa 10 phút).
+- Để app chạy nhiều ngày dưới khay: danh sách lõi và icon tự cập nhật khi có bản game mới; kiểm tra bản mới của app
+  định kỳ; app.log tự xoay vòng khi quá 1 MB (trước chỉ xoay lúc mở app).
+- playaram.gg chậm / sập làm app gửi lại yêu cầu mỗi ~2 giây (mỗi lần treo tới 15 giây) và có lúc đơ cửa sổ chính –
+  giờ chờ thưa dần, không tải mạng trên luồng giao diện.
+- Gnar biến thành Gnar Khổng Lồ (Live API báo "GnarBig") làm mất dữ liệu tướng và lõi đã chọn tới khi biến lại;
+  tướng biến hình khác (Kled, Elise, Nidalee, Shyvana, Jayce) cũng được quy về tướng gốc.
+- Một ô số liệu lạ ("—", "N/A") làm hỏng cả trang tướng.
+- Icon có thể trắng tới hết phiên sau một lỗi hiện ảnh.
+- Overlay không theo khi kéo cửa sổ game sang chỗ khác hoặc sang màn hình có tỉ lệ phóng to khác.
+- Có lúc mất nút "Cập nhật" nếu kiểm tra bản mới xong trước khi cửa sổ sẵn sàng.
+- Một số câu chưa dịch sang tiếng Anh (lỗi tải dữ liệu, lỗi bộ quét trên overlay, "(không có)" ở trang phím tắt).
+
+### Phát triển
+- Thư viện khoá đúng phiên bản (`requirements.txt`, `requirements-dev.txt`), GitHub Actions khoá theo mã commit; icon
+  lõi lưu cache trên CI (CommunityDragon sập vẫn build được). Bản phát hành phải được ký (`RELEASE_SIGNING_KEY`).
+- Tách công tắc / thanh trượt của Cài đặt sang `controls.py`; cắt chữ "…" dùng chung cho cửa sổ chính và overlay.
+- Thêm test cho quản lý trận, vòng đời bộ quét, cache khi mất mạng, ghi file an toàn, chữ ký, `cvlite`.
+
 ## [1.9.0] – 2026-11-18
 
 ### Thêm
@@ -193,6 +245,7 @@ Không phát hành riêng (bản build bị lỗi vì máy chủ icon CommunityD
 - Gợi ý đồ theo đội hình và trang bị của đội địch.
 - Màn ARAM trên ESP32 (PC Control Deck).
 
+[2.0.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.9.0...v2.0.0
 [1.9.0]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.3...v1.9.0
 [1.8.3]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.2...v1.8.3
 [1.8.2]: https://github.com/doancongtrucit/aram-helper/compare/v1.8.1...v1.8.2
