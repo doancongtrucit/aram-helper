@@ -1,7 +1,7 @@
 import {
   detectPlatform, primaryDownload, chooseLang, redirectTarget, parseLatestTag, shouldAutoRedirect, shareAction,
   feedbackMailto, scrollState,
-} from "./logic.mjs?v=73dd3af8";
+} from "./logic.mjs?v=d9d22673";
 
 const RELEASES_API = "https://api.github.com/repos/doancongtrucit/aram-helper/releases/latest";
 
@@ -105,9 +105,26 @@ if (lightbox && lightImg && typeof lightbox.showModal === "function") {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(img); }
     });
   });
-  // Click anywhere (image or backdrop) closes it; the × button and Esc work natively.
+  // Demo video plays in the same dialog; without JS the button still jumps to #features.
+  const demoBtn = document.getElementById("demo-btn");
+  const demoVideo = document.getElementById("demo-video");
+  if (demoBtn && demoVideo) {
+    demoBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      lightImg.hidden = true;
+      demoVideo.hidden = false;
+      lightbox.showModal();
+      demoVideo.currentTime = 0;
+      demoVideo.play().catch(() => {});
+    });
+  }
+  // Click the image or the backdrop to close; the × button and Esc work natively.
   lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target === lightImg) lightbox.close(); });
-  lightbox.addEventListener("close", () => { lightImg.removeAttribute("src"); });
+  lightbox.addEventListener("close", () => {
+    lightImg.removeAttribute("src");
+    lightImg.hidden = false;
+    if (demoVideo) { demoVideo.pause(); demoVideo.hidden = true; }
+  });
 }
 
 // Donate QR: hidden until the visitor asks for it.

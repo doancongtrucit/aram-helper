@@ -24,8 +24,8 @@
 <meta name="twitter:description" content="Tự đọc các lõi trên màn hình, gợi ý lõi + trang bị ngay trong game ARAM Hỗn Loạn. Miễn phí, chỉ xem không can thiệp, không cần đăng nhập.">
 <meta name="twitter:image" content="https://aramhelper.com/assets/img/og-vi.png">
 <link rel="preload" href="assets/fonts/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="assets/style.css?v=73dd3af8">
-<script type="module" src="assets/app.mjs?v=73dd3af8"></script>
+<link rel="stylesheet" href="assets/style.css?v=d9d22673">
+<script type="module" src="assets/app.mjs?v=d9d22673"></script>
 </head>
 <body data-lang="vi">
 <div class="scroll-progress" aria-hidden="true"></div>
@@ -55,7 +55,7 @@
   </ul>
   <div class="cta">
     <a id="primary-dl" class="btn btn-primary" data-dl-win="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe" data-dl-mac="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe">⬇ Tải cho Windows</a>
-    <a id="demo-btn" class="btn btn-ghost" href="#features">▶ Xem tính năng</a>
+    <a id="demo-btn" class="btn btn-ghost" href="#features" aria-haspopup="dialog">▶ Xem video demo</a>
   </div>
   <p class="muted hero-note">Nút tải tự đổi theo máy của bạn (Windows / Mac). <span data-version hidden></span></p>
   <img class="shot hero-shot zoomable" fetchpriority="high" src="assets/img/overlay-ingame.webp" srcset="assets/img/overlay-ingame-800.webp 800w, assets/img/overlay-ingame.webp 1500w" sizes="(min-width: 1000px) 640px, 100vw" alt="Overlay của ARAM Helper trong một trận ARAM Hỗn Loạn thật: nhãn % trên thẻ, huy hiệu tier, khung gợi ý" width="1500" height="814">
@@ -224,9 +224,9 @@
 </main>
 
 <dialog id="lightbox" class="lightbox" aria-label="Bấm để phóng to">
-  <form method="dialog"><button class="lightbox-close" aria-label="Đóng ảnh">&times;</button></form>
+  <form method="dialog"><button class="lightbox-close" aria-label="Đóng">&times;</button></form>
   <img id="lightbox-img" alt="">
-  <!-- Demo video slot: <video src="assets/video/demo.mp4" controls playsinline></video> -->
+  <video id="demo-video" src="assets/video/demo-vi.mp4" poster="assets/video/demo-vi.webp" aria-label="Video demo ARAM Helper (38 giây, không tiếng)" width="1920" height="1080" preload="none" controls muted playsinline hidden></video>
 </dialog>
 
 <button id="scroll-fab" class="scroll-fab" type="button" hidden aria-label="Xuống cuối trang" title="Xuống cuối trang" data-end="Xuống cuối trang" data-top="Lên đầu trang">

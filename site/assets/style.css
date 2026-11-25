@@ -248,6 +248,11 @@ main > section + section { border-top: 1px solid #ffffff0d; }
   max-width: min(1500px, calc(100vw - 24px)); max-height: calc(100vh - 40px); width: auto; height: auto;
   border-radius: 12px; border: 1px solid #ffffff2e; box-shadow: 0 30px 90px #000; cursor: zoom-out;
 }
+.lightbox video {
+  display: block; width: min(1280px, calc(100vw - 24px), calc((100vh - 40px) * 16 / 9)); height: auto;
+  aspect-ratio: 16 / 9; border-radius: 12px; border: 1px solid #ffffff2e; box-shadow: 0 30px 90px #000; background: #000;
+}
+.lightbox img[hidden], .lightbox video[hidden] { display: none; }
 .lightbox form { position: fixed; top: 14px; right: 14px; margin: 0; z-index: 2; }
 .lightbox-close {
   width: 44px; height: 44px; border: 1px solid #ffffff40; border-radius: 50%;
