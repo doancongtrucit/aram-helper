@@ -662,6 +662,76 @@ h1 .h1-sub { display: block; margin-top: .4em; font-size: .52em; line-height: 1.
 }
 .fx .reveal.in { opacity: 1; translate: 0 0; }
 
+/* ---------- Augment-card deal: flip from the card back, rim flash, sparkle burst ---------- */
+.aug { position: relative; }
+.fx .reveal.aug { translate: none; }
+.fx .reveal.aug:not(.in) { transform: perspective(900px) rotateY(-95deg) scale(.9); }
+.fx .reveal.aug.in {
+  animation: augFlip .95s cubic-bezier(.2,.75,.25,1) backwards;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+@keyframes augFlip {
+  0%   { opacity: 0; transform: perspective(900px) rotateY(-95deg) scale(.9); box-shadow: none; }
+  15%  { opacity: 1; }
+  48%  { transform: perspective(900px) rotateY(10deg) scale(1.03); box-shadow: 0 0 0 1px #ffb458cc, 0 0 42px #ffb45870, 0 0 90px #f36a7840; }
+  72%  { transform: perspective(900px) rotateY(-3deg) scale(1); }
+  100% { opacity: 1; transform: none; }
+}
+.aug-back, .aug-shine { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2; }
+.aug-back {
+  background:
+    radial-gradient(circle at 50% 50%, #ffb45855 0 14%, transparent 15%),
+    repeating-linear-gradient(45deg, #ffffff0d 0 2px, transparent 2px 12px),
+    linear-gradient(160deg, var(--purple), #2a1238 55%, var(--magenta));
+  box-shadow: inset 0 0 0 1px #ffb45866;
+  opacity: 0;
+}
+.in > .aug-back { animation: augBack .95s linear backwards; animation-delay: calc(var(--i, 0) * 110ms); }
+@keyframes augBack { 0%, 30% { opacity: 1; } 40%, 100% { opacity: 0; } }
+.aug-shine {
+  background: linear-gradient(115deg, transparent 30%, #fff8 48%, #ffd9a0aa 52%, transparent 70%) no-repeat;
+  background-size: 250% 100%; background-position: 150% 0;
+  mix-blend-mode: overlay; opacity: 0;
+}
+.in > .aug-shine { animation: augShine 1.3s ease-out backwards; animation-delay: calc(var(--i, 0) * 110ms + 380ms); }
+@keyframes augShine { 0% { opacity: 1; background-position: 150% 0; } 100% { opacity: 0; background-position: -60% 0; } }
+.aug-spark {
+  position: absolute; z-index: 3; width: var(--sz); height: var(--sz); margin: calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2);
+  pointer-events: none;
+  background: radial-gradient(circle, #fff 0 18%, #ffd27a 30%, transparent 70%);
+  clip-path: polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%);
+  filter: drop-shadow(0 0 4px #ffb458);
+  animation: augSpark .8s cubic-bezier(.15,.8,.3,1) backwards;
+}
+@keyframes augSpark {
+  0%   { opacity: 0; transform: translate(0, 0) scale(.2) rotate(0deg); }
+  20%  { opacity: 1; transform: translate(calc(var(--dx) * .3), calc(var(--dy) * .3)) scale(1.2) rotate(45deg); }
+  100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(.3) rotate(160deg); }
+}
+
+/* ---------- Nav: donate pill with a beating heart ---------- */
+.site-links > a.nav-donate {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px;
+  color: var(--text); border: 1px solid #f36a7880; background: #f36a7814;
+  transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.site-links > a.nav-donate::after { display: none; }
+.site-links > a.nav-donate:hover { background: #f36a7833; border-color: var(--coral-pink); box-shadow: 0 0 18px #f36a7855; }
+.nav-donate .heart { width: 15px; height: 15px; fill: var(--coral-pink); animation: beat 1.6s ease-in-out infinite; }
+@keyframes beat { 0%, 40%, 100% { transform: scale(1); } 20% { transform: scale(1.25); } }
+@media (max-width: 640px) {
+  .site-nav .site-links > a.nav-donate { justify-content: center; margin: 8px 0 4px; padding: 10px 12px; border: 1px solid #f36a7880; }
+}
+/* Tablets: the pill shrinks to a heart so the nav stays on one line */
+@media (min-width: 641px) and (max-width: 900px) {
+  .site-links { gap: 18px; }
+  .brand span, .lang-switch, .nav-cta { white-space: nowrap; }
+  .site-links > a.nav-donate { padding: 7px 9px; }
+  .nav-donate .nd-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+}
+@media (min-width: 641px) and (max-width: 760px) { .site-links { gap: 13px; } }
+@media (prefers-reduced-motion: reduce) { .nav-donate .heart { animation: none; } }
+
 @media (max-width: 640px) {
   .blob { filter: blur(56px); }
   .floor { opacity: .32; }

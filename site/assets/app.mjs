@@ -1,7 +1,7 @@
 import {
   detectPlatform, primaryDownload, chooseLang, redirectTarget, parseLatestTag, shouldAutoRedirect, shareAction,
   feedbackMailto, scrollState,
-} from "./logic.mjs?v=0f0a29ba";
+} from "./logic.mjs?v=73dd3af8";
 
 const RELEASES_API = "https://api.github.com/repos/doancongtrucit/aram-helper/releases/latest";
 
@@ -120,6 +120,9 @@ if (qrToggle && qrPanel) {
     qrToggle.setAttribute("aria-expanded", String(show));
     qrToggle.textContent = show ? qrToggle.dataset.hide : qrToggle.dataset.show;
   });
+  // "Ủng hộ" in the nav: jump to the donate card and open the QR right away.
+  document.querySelectorAll("[data-open-qr]").forEach((a) =>
+    a.addEventListener("click", () => { if (qrPanel.hidden) qrToggle.click(); }));
 }
 
 // Feedback form: no server, so it composes an email in the visitor's own mail app.
@@ -205,9 +208,45 @@ try {
         targets.push(el);
       });
     });
+    // Cards flip in like augment cards being dealt: card back -> flip -> rim flash + sparkle burst.
+    const augCards = new Set();
+    document.querySelectorAll(".box.hl, .box.step, .mini, .download .box").forEach((card) => {
+      if (!card.classList.contains("reveal")) return;
+      augCards.add(card);
+      card.classList.add("aug");
+      for (const cls of ["aug-back", "aug-shine"]) {
+        const s = document.createElement("span");
+        s.className = cls;
+        s.setAttribute("aria-hidden", "true");
+        card.append(s);
+        s.addEventListener("animationend", () => s.remove(), { once: true });
+      }
+    });
+    const sparkle = (card) => {
+      const n = matchMedia("(max-width: 640px)").matches ? 7 : 11;
+      for (let k = 0; k < n; k++) {
+        const s = document.createElement("span");
+        s.className = "aug-spark";
+        s.setAttribute("aria-hidden", "true");
+        const ang = (k / n) * Math.PI * 2 + Math.random() * 0.5;
+        const dist = 40 + Math.random() * 50;
+        s.style.cssText = `left:${10 + Math.random() * 80}%;top:${15 + Math.random() * 70}%;` +
+          `--dx:${Math.cos(ang) * dist}px;--dy:${Math.sin(ang) * dist - 20}px;` +
+          `--sz:${9 + Math.random() * 9}px;animation-delay:${Math.random() * 120}ms`;
+        card.append(s);
+        s.addEventListener("animationend", () => s.remove(), { once: true });
+      }
+    };
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => {
-        if (en.isIntersecting) { en.target.classList.add("in"); io.unobserve(en.target); }
+        if (!en.isIntersecting) return;
+        const el = en.target;
+        el.classList.add("in");
+        io.unobserve(el);
+        if (augCards.has(el)) {
+          const i = Number(el.style.getPropertyValue("--i")) || 0;
+          setTimeout(() => sparkle(el), 430 + i * 110);       // burst as the card face lands
+        }
       });
     }, { rootMargin: "0px 0px -8% 0px", threshold: 0.12 });
     document.documentElement.classList.add("fx");
