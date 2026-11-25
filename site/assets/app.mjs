@@ -1,7 +1,7 @@
 import {
   detectPlatform, primaryDownload, chooseLang, redirectTarget, parseLatestTag, shouldAutoRedirect, shareAction,
   feedbackMailto, scrollState,
-} from "./logic.mjs?v=8edf6a30";
+} from "./logic.mjs?v=0f0a29ba";
 
 const RELEASES_API = "https://api.github.com/repos/doancongtrucit/aram-helper/releases/latest";
 

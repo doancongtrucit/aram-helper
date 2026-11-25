@@ -84,7 +84,7 @@ h1, h2 {
 }
 h1 {
   width: fit-content;
-  max-width: 14ch;
+  max-width: 16ch;
   padding-top: .12em;                 /* room for stacked Vietnamese marks inside the gradient clip */
   font-size: clamp(2.3rem, 1.4rem + 3.8vw, 3.75rem);
   line-height: 1.08;
@@ -561,6 +561,9 @@ main > section + section { border-top: 1px solid #ffffff0d; }
 /* Headline: slow sunset shimmer + warm glow */
 h1 { animation: shimmer 10s linear infinite; filter: drop-shadow(0 4px 24px #f36a7840); }
 @keyframes shimmer { to { background-position: -200% 0; } }
+/* Second headline line: same sunset gradient, smaller */
+.hero h1 { max-width: none; font-size: clamp(2.1rem, 1.2rem + 3vw, 3.25rem); text-wrap: wrap; }   /* two-phrase headline: one phrase per line */
+h1 .h1-sub { display: block; margin-top: .4em; font-size: .52em; line-height: 1.2; letter-spacing: -.01em; }
 
 /* Hero screenshot floats; JS adds a 3D tilt */
 .hero-shot {
