@@ -1,7 +1,7 @@
 import {
   detectPlatform, primaryDownload, chooseLang, redirectTarget, parseLatestTag, shouldAutoRedirect, shareAction,
   feedbackMailto, scrollState,
-} from "./logic.mjs?v=d9d22673";
+} from "./logic.mjs?v=607a60d9";
 
 const RELEASES_API = "https://api.github.com/repos/doancongtrucit/aram-helper/releases/latest";
 
@@ -105,26 +105,38 @@ if (lightbox && lightImg && typeof lightbox.showModal === "function") {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(img); }
     });
   });
-  // Demo video plays in the same dialog; without JS the button still jumps to #features.
+  // Click anywhere (image or backdrop) closes it; the × button and Esc work natively.
+  lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target === lightImg) lightbox.close(); });
+  lightbox.addEventListener("close", () => { lightImg.removeAttribute("src"); });
+}
+
+// Hero demo video: poster + big play button; plays inline. Without JS it keeps native controls.
+const demoVideo = document.getElementById("demo-video");
+const demoPlay = document.getElementById("demo-play");
+const demoFig = demoVideo && demoVideo.closest(".hero-video");
+if (demoVideo && demoPlay && demoFig) {
+  demoVideo.controls = false;
+  demoPlay.hidden = false;
+  const start = () => {
+    demoFig.classList.add("playing");
+    demoFig.style.transform = "";
+    demoVideo.controls = true;
+    demoVideo.play().catch(() => {});
+  };
+  demoPlay.addEventListener("click", start);
+  demoVideo.addEventListener("ended", () => {
+    demoFig.classList.remove("playing");
+    demoVideo.controls = false;
+    demoVideo.load();                       // back to the poster
+  });
   const demoBtn = document.getElementById("demo-btn");
-  const demoVideo = document.getElementById("demo-video");
-  if (demoBtn && demoVideo) {
+  if (demoBtn) {
     demoBtn.addEventListener("click", (e) => {
       e.preventDefault();
-      lightImg.hidden = true;
-      demoVideo.hidden = false;
-      lightbox.showModal();
-      demoVideo.currentTime = 0;
-      demoVideo.play().catch(() => {});
+      demoFig.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+      start();
     });
   }
-  // Click the image or the backdrop to close; the × button and Esc work natively.
-  lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target === lightImg) lightbox.close(); });
-  lightbox.addEventListener("close", () => {
-    lightImg.removeAttribute("src");
-    lightImg.hidden = false;
-    if (demoVideo) { demoVideo.pause(); demoVideo.hidden = true; }
-  });
 }
 
 // Donate QR: hidden until the visitor asks for it.
@@ -273,6 +285,7 @@ try {
     const shot = document.querySelector(".hero-shot");
     if (shot && finePointer) {
       shot.addEventListener("pointermove", (e) => {
+        if (shot.classList.contains("playing")) return;
         const r = shot.getBoundingClientRect();
         const x = (e.clientX - r.left) / r.width - 0.5;
         const y = (e.clientY - r.top) / r.height - 0.5;

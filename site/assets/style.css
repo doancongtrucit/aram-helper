@@ -578,6 +578,28 @@ h1 .h1-sub { display: block; margin-top: .4em; font-size: .52em; line-height: 1.
 }
 @keyframes float { 50% { translate: 0 -12px; } }
 
+/* Hero demo video: poster with a pulsing play button, plays inline */
+.hero-video { position: relative; margin-inline: 0; margin-bottom: 0; box-shadow: none; }
+.hero-video video {
+  display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; background: #120a1c;
+  box-shadow: 0 30px 90px #000000a6, 0 0 60px #c9349b40, 0 0 120px #ff9b5526;
+}
+.hero-video.playing { animation-play-state: paused; }
+.hero-video.playing video { rotate: 0deg; scale: 1; }
+.play-btn {
+  position: absolute; inset: 0; margin: auto; width: 92px; height: 92px; padding: 0;
+  display: grid; place-items: center; border: 0; border-radius: 50%; cursor: pointer; color: #fff;
+  background: linear-gradient(135deg, var(--magenta), var(--coral-pink) 55%, var(--orange));
+  box-shadow: 0 14px 40px #c9349b99, 0 0 0 0 #ffb45899; animation: playPulse 2.2s ease-out infinite;
+  transition: scale .2s ease;
+}
+.play-btn svg { width: 40px; height: 40px; fill: currentColor; translate: 3px 0; }
+.play-btn:hover { scale: 1.08; }
+.play-btn:focus-visible { outline: 3px solid var(--yellow); outline-offset: 5px; }
+.play-btn[hidden], .hero-video.playing .play-btn { display: none; }
+@keyframes playPulse { 70%, 100% { box-shadow: 0 14px 40px #c9349b99, 0 0 0 22px #ffb45800; } }
+@media (prefers-reduced-motion: reduce) { .play-btn { animation: none; transition: none; } }
+
 /* ---------- Buttons: shine sweep + breathing glow ---------- */
 .btn { position: relative; overflow: hidden; isolation: isolate; cursor: pointer; }
 .btn-primary::after {

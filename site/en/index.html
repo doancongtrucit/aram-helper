@@ -24,8 +24,8 @@
 <meta name="twitter:description" content="Reads your augments on screen and recommends augments + items in-game for ARAM Mayhem. Free, read-only, no login.">
 <meta name="twitter:image" content="https://aramhelper.com/assets/img/og-en.png">
 <link rel="preload" href="../assets/fonts/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="../assets/style.css?v=d9d22673">
-<script type="module" src="../assets/app.mjs?v=d9d22673"></script>
+<link rel="stylesheet" href="../assets/style.css?v=607a60d9">
+<script type="module" src="../assets/app.mjs?v=607a60d9"></script>
 </head>
 <body data-lang="en">
 <div class="scroll-progress" aria-hidden="true"></div>
@@ -58,7 +58,10 @@
     <a id="demo-btn" class="btn btn-ghost" href="#features" aria-haspopup="dialog">▶ Watch the demo</a>
   </div>
   <p class="muted hero-note">The download button adapts to your computer (Windows / Mac). <span data-version hidden></span></p>
-  <img class="shot hero-shot zoomable" fetchpriority="high" src="../assets/img/overlay-ingame.webp" srcset="../assets/img/overlay-ingame-800.webp 800w, ../assets/img/overlay-ingame.webp 1500w" sizes="(min-width: 1000px) 640px, 100vw" alt="ARAM Helper overlay in a real ARAM Mayhem game: win rates on the cards, tier badges and the suggestion panel" width="1500" height="814">
+  <figure class="hero-shot hero-video">
+    <video id="demo-video" class="shot" src="../assets/video/demo-en.mp4" poster="../assets/video/demo-en.webp" aria-label="ARAM Helper demo video (38 seconds, no sound)" width="1920" height="1080" preload="none" controls muted playsinline></video>
+    <button id="demo-play" class="play-btn" type="button" aria-label="▶ Watch the demo" hidden><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8 5.5v13l11-6.5z"/></svg></button>
+  </figure>
 </section>
 
 <div class="ticker" aria-hidden="true"><div class="ticker-track"><span>Auto champion detect · Reads every augment · S+ → D tier on every card · Augment combos with reasons · Counter-item tips · Champ select advice · Transparent overlay</span><span>Auto champion detect · Reads every augment · S+ → D tier on every card · Augment combos with reasons · Counter-item tips · Champ select advice · Transparent overlay</span></div></div>
@@ -226,7 +229,6 @@
 <dialog id="lightbox" class="lightbox" aria-label="Click to zoom">
   <form method="dialog"><button class="lightbox-close" aria-label="Close">&times;</button></form>
   <img id="lightbox-img" alt="">
-  <video id="demo-video" src="../assets/video/demo-en.mp4" poster="../assets/video/demo-en.webp" aria-label="ARAM Helper demo video (38 seconds, no sound)" width="1920" height="1080" preload="none" controls muted playsinline hidden></video>
 </dialog>
 
 <button id="scroll-fab" class="scroll-fab" type="button" hidden aria-label="Jump to the end" title="Jump to the end" data-end="Jump to the end" data-top="Back to top">
