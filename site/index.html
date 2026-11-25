@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARAM Helper – Gợi ý lõi và trang bị cho ARAM Hỗn Loạn</title>
+<meta name="description" content="ARAM Helper tự nhận tướng, tự đọc 3 lõi trên màn hình và gợi ý lõi + trang bị ngay trong game ARAM Hỗn Loạn. Miễn phí, chỉ xem không can thiệp, không cần đăng nhập.">
+<meta name="keywords" content="ARAM Mayhem augment helper, lõi ARAM Hỗn Loạn, lõi ARAM, gợi ý lõi, ARAM Helper, augment, overlay">
+<meta name="theme-color" content="#120a1c">
+<link rel="canonical" href="https://aramhelper.com/">
+<link rel="alternate" hreflang="vi" href="https://aramhelper.com/">
+<link rel="alternate" hreflang="en" href="https://aramhelper.com/en/">
+<link rel="alternate" hreflang="x-default" href="https://aramhelper.com/">
+<link rel="icon" type="image/png" href="assets/img/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ARAM Helper">
+<meta property="og:title" content="ARAM Helper – Hỗn loạn? Có lõi xịn là thắng.">
+<meta property="og:description" content="Tự đọc 3 lõi trên màn hình, gợi ý lõi + trang bị ngay trong game ARAM Hỗn Loạn. Miễn phí, chỉ xem không can thiệp, không cần đăng nhập.">
+<meta property="og:url" content="https://aramhelper.com/">
+<meta property="og:image" content="https://aramhelper.com/assets/img/og-vi.png">
+<meta property="og:locale" content="vi_VN">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ARAM Helper – Hỗn loạn? Có lõi xịn là thắng.">
+<meta name="twitter:description" content="Tự đọc 3 lõi trên màn hình, gợi ý lõi + trang bị ngay trong game ARAM Hỗn Loạn. Miễn phí, chỉ xem không can thiệp, không cần đăng nhập.">
+<meta name="twitter:image" content="https://aramhelper.com/assets/img/og-vi.png">
+<link rel="preload" href="assets/fonts/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/style.css?v=8edf6a30">
+<script type="module" src="assets/app.mjs?v=8edf6a30"></script>
+</head>
+<body data-lang="vi">
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<header class="site-nav">
+  <a class="brand" href="#hero"><img src="assets/img/icon.png" alt="" width="28" height="28"><span>ARAM Helper</span></a>
+  <button class="nav-toggle" type="button" aria-label="Mở menu" aria-controls="site-links">&#9776;</button>
+  <nav id="site-links" class="site-links">
+    <a href="#features">Tính năng</a>
+    <a href="#download">Tải về</a>
+    <a href="#faq">Hỏi đáp</a>
+    <span class="lang-switch"><a data-set-lang="vi" hreflang="vi" href="./">VI</a> | <a data-set-lang="en" hreflang="en" href="en/">EN</a></span>
+  </nav>
+  <a class="btn btn-primary btn-sm nav-cta" href="#download">Tải về</a>
+</header>
+
+<main>
+
+<section id="hero" class="hero glow">
+  <div class="hero-fx" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><div class="floor"></div><canvas id="sparks"></canvas></div>
+  <p class="badge"><span class="dot"></span>Dành cho ARAM Hỗn Loạn</p>
+  <h1>Hỗn loạn? Có lõi xịn là thắng.</h1>
+  <p class="lead">Trợ lý ARAM Hỗn Loạn cho Liên Minh Huyền Thoại: tự nhận tướng, tự đọc 3 lõi đang được đưa ra và chấm tier <b>S+ → D</b> ngay trên từng thẻ. Bạn chỉ việc bấm chọn.</p>
+  <ul class="hero-points">
+    <li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Miễn phí 100%</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Không cần đăng nhập</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Nhẹ ~80 MB RAM</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Tiếng Việt | English</li>
+  </ul>
+  <div class="cta">
+    <a id="primary-dl" class="btn btn-primary" data-dl-win="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe" data-dl-mac="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe">⬇ Tải cho Windows</a>
+    <a id="demo-btn" class="btn btn-ghost" href="#features">▶ Xem tính năng</a>
+  </div>
+  <p class="muted hero-note">Nút tải tự đổi theo máy của bạn (Windows / Mac). <span data-version hidden></span></p>
+  <img class="shot hero-shot zoomable" fetchpriority="high" src="assets/img/overlay-ingame.webp" srcset="assets/img/overlay-ingame-800.webp 800w, assets/img/overlay-ingame.webp 1500w" sizes="(min-width: 1000px) 640px, 100vw" alt="Overlay của ARAM Helper trong một trận ARAM Hỗn Loạn thật: nhãn % trên thẻ, huy hiệu tier, khung gợi ý" width="1500" height="814">
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track"><span>Tự nhận tướng · Tự đọc 3 lõi · Tier S+ → D trên thẻ · Combo lõi kèm lý do · Gợi ý đồ khắc chế · Gợi ý ở màn chọn tướng · Overlay trong suốt</span><span>Tự nhận tướng · Tự đọc 3 lõi · Tier S+ → D trên thẻ · Combo lõi kèm lý do · Gợi ý đồ khắc chế · Gợi ý ở màn chọn tướng · Overlay trong suốt</span></div></div>
+
+<section id="highlights" class="highlights">
+  <h2>Chọn lõi trong 3 giây, không cần tra cứu</h2>
+  <p class="section-sub">Mọi thứ bạn cần để quyết định nằm ngay trên màn hình game, đúng lúc 3 thẻ lõi hiện ra.</p>
+  <div class="hl-grid">
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="hl-k">Tự động</span><b>Không phải gõ tìm gì</b><p>Vào trận là app nhận tướng; thẻ lõi hiện ra là app tự đọc, kể cả lõi dùng chung icon.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg><span class="hl-k">S+ → D</span><b>Tier ngay dưới từng thẻ</b><p>Huy hiệu tier theo màu và % thắng trên mỗi thẻ; lõi nên chọn được đánh dấu ★.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span class="hl-k">Combo</span><b>Biết lõi nào đi với lõi nào</b><p>Thanh combo nằm ngay trên các thẻ; giữa các lượt app nhắc lõi còn thiếu để đủ combo.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span class="hl-k">Khắc chế</span><b>Đồ theo đội địch</b><p>Địch nhiều hồi máu, nhiều sát thương phép? App gợi ý đồ khắc chế và bộ đồ hợp lõi bạn vừa lấy.</p></div>
+  </div>
+</section>
+
+<section id="how" class="how">
+  <h2>3 bước, không cần chỉnh gì</h2>
+  <ol class="steps">
+    <li class="box step"><i aria-hidden="true">1</i><div><b>Vào trận</b>App tự nhận tướng bạn đang chơi.</div></li>
+    <li class="box step"><i aria-hidden="true">2</i><div><b>3 lõi hiện ra</b>App tự đọc lõi trên màn hình.</div></li>
+    <li class="box step"><i aria-hidden="true">3</i><div><b>Chọn lõi mạnh nhất</b>Overlay đánh dấu lõi nên chọn, kèm tier S+ → D ngay dưới thẻ. Bấm chọn là gợi ý tắt ngay.</div></li>
+  </ol>
+</section>
+
+<section id="features" class="features">
+  <h2>Tính năng</h2>
+  <p class="section-sub">Từ màn chọn tướng tới lúc chọn lõi cuối cùng, ARAM Helper đi cùng bạn cả trận. Bấm vào ảnh để phóng to.</p>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Overlay</span>
+      <h3>Gợi ý nằm ngay trên thẻ lõi</h3>
+      <p>Overlay trong suốt, mép mịn, đặt đúng lên 3 thẻ lõi của game. Không che thông tin, không giành phím của game.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Nhãn % thắng và huy hiệu tier S+ → D trên từng thẻ</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Thanh combo ngay phía trên các thẻ</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Bấm chọn lõi là gợi ý tắt ngay (~0,1 giây)</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="assets/img/overlay-combo.webp" alt="Overlay trên 3 thẻ lõi: % thắng, huy hiệu tier và thanh combo" width="1200" height="714" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Tự đọc màn hình</span>
+      <h3>Tự tìm thẻ lõi, không cần căn chỉnh</h3>
+      <p>App tự tìm thẻ lõi trên màn hình và bám theo cửa sổ game, kể cả khi bạn chơi trên màn hình phụ.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Đọc được cả tên lõi dùng chung icon và lõi kỹ năng tướng</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Khung gợi ý thu gọn ở góc, không vướng tầm nhìn</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Lỡ lệch? Bấm Ctrl+Alt+A để app tìm lại thẻ</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="assets/img/overlay-collapsed.webp" alt="Khung gợi ý thu gọn ở góc màn hình khi đang chọn lõi" width="1500" height="705" loading="lazy"></figure>
+  </article>
+  <article class="frow frow-tall">
+    <div class="frow-text">
+      <span class="chip">Giữa trận</span>
+      <h3>Biết trước nên nhắm gì tiếp</h3>
+      <p>Giữa các lượt chọn, khung nhỏ cho biết lõi còn thiếu của combo, lối lên đồ theo lõi đã lấy và đồ nên lên theo đội địch.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Lõi còn thiếu để đủ combo</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>3 lối lên đồ, ưu tiên bộ hợp lõi bạn vừa chọn</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Đồ khắc chế theo đội hình + trang bị của địch</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="assets/img/overlay-between.webp" alt="Khung giữa trận: lõi còn thiếu của combo, lối lên đồ và đồ theo đội địch" width="344" height="420" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Chọn tướng</span>
+      <h3>Tướng nào đáng đổi, app chỉ cho bạn</h3>
+      <p>Vào màn chọn tướng, app so tỉ lệ thắng tướng của bạn với từng tướng trên thanh chọn tướng và gợi ý combo nên nhắm.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Tướng đáng đổi kèm % thắng cao hơn bao nhiêu</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Combo lõi nên nhắm cho tướng đang cầm</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Tier của tướng hiện ngay cạnh tên</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="assets/img/champ-select.webp" alt="Khung gợi ý ở màn chọn tướng: tướng nên đổi và combo nên nhắm" width="500" height="360" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Cửa sổ chính</span>
+      <h3>Toàn bộ thống kê trên một màn hình</h3>
+      <p>Ngoài trận vẫn tra được hết: lõi, trang bị, giày, phép bổ trợ của từng tướng, tự xếp bố cục theo cỡ cửa sổ.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Lõi Kim Cương / Vàng / Bạc: 6 lõi mạnh nhất mỗi bậc, xem thêm tới 16</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>3 lối lên đồ, giày và phép bổ trợ</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Tìm nhanh tướng hoặc lõi theo tên</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="assets/img/main-window.webp" alt="Cửa sổ chính của ARAM Helper với lõi, trang bị và combo" width="1400" height="897" loading="lazy"></figure>
+  </article>
+  <h3 class="more-title">Và còn nữa</h3>
+  <div class="mini-grid">
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7 17 2.5-7.5L21 11z"/></svg><div><b>Không giành phím</b><p>Bấm lên overlay để đánh dấu lõi mà game vẫn nhận phím.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div><b>Bám màn hình phụ</b><p>Overlay đi theo cửa sổ game trên mọi màn hình.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><div><b>Tự báo bản mới</b><p>Có bản mới là báo; bản cập nhật có chữ ký, chống giả mạo.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><div><b>VN | EN tức thì</b><p>Công tắc ngôn ngữ ngay trên thanh trên cùng, không cần vào Cài đặt.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><div><b>Số liệu luôn mới</b><p>Thống kê playaram.gg, tên và icon Riot tự làm mới.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><div><b>Tuỳ chỉnh overlay</b><p>Bật/tắt tier, chỉnh độ đậm khung, nhiều tuỳ chọn hiển thị.</p></div></div>
+  </div>
+</section>
+
+<section id="safety" class="safety">
+  <h2>Chỉ nhìn, không chạm vào game</h2>
+  <div class="row">
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><b>Chỉ xem dữ liệu</b><p>Dùng Live Client API chính thức của Riot và ảnh chụp màn hình.</p></div>
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg><b>Không can thiệp</b><p>Không đọc/ghi bộ nhớ game, không gửi phím, không tự chọn lõi.</p></div>
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><b>Không cần đăng nhập</b><p>Không hỏi tài khoản Riot, không thu thập dữ liệu cá nhân.</p></div>
+  </div>
+</section>
+
+<section id="download" class="download glow">
+  <h2>Tải về – miễn phí</h2>
+  <div class="row">
+    <div class="box featured">
+      <b>Windows 10/11</b>
+      <a class="btn btn-primary" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe">⬇ Bộ cài .exe</a>
+      <p class="muted">Khuyên dùng. <a href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-win64-portable.zip">Hoặc bản portable (.zip), giải nén là chạy.</a></p>
+    </div>
+    <div class="box">
+      <b>macOS 11+</b>
+      <a class="btn btn-ghost" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip">⬇ Bản macOS (.zip)</a>
+      <p class="muted">Chỉ có cửa sổ chính, chưa có overlay.</p>
+    </div>
+  </div>
+  <div id="mobile-note" class="note mobile-note">
+    <p>ARAM Helper chạy trên máy tính Windows/Mac – hãy mở link này trên PC.</p>
+    <button id="share-link" class="btn btn-ghost" type="button" data-copied="Đã sao chép link">Chia sẻ / sao chép link</button>
+    <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+  </div>
+  <div class="note smartscreen">
+    <b>Windows báo “Windows protected your PC”? Làm 2 bước:</b>
+    <ol>
+      <li>Bấm <b>More info</b> (Thông tin thêm).</li>
+      <li>Bấm <b>Run anyway</b> (Vẫn chạy).</li>
+    </ol>
+    <p>Lý do: app chưa có chữ ký số trả phí nên Windows chưa quen với nó. File tải về là bản chính thức.</p>
+  </div>
+</section>
+
+<section id="faq" class="faq narrow">
+  <h2>Hỏi nhanh</h2>
+  <details><summary>Dùng có bị khoá tài khoản không?</summary><p>App chỉ dùng Live Client API chính thức mà Riot mở cho các app hỗ trợ (cùng cách các app quen thuộc khác đang dùng) và ảnh chụp màn hình. App không đọc/ghi bộ nhớ game, không gửi phím, không tự chọn lõi thay bạn. Dù vậy, đây là công cụ bên thứ ba – bạn tự cân nhắc theo chính sách hiện hành của Riot.</p></details>
+  <details><summary>Có tốn RAM / làm giật game không?</summary><p>Nhẹ: RAM khi chạy khoảng 70–90 MB, overlay chỉ là một cửa sổ trong suốt nên không ảnh hưởng FPS đáng kể.</p></details>
+  <details><summary>Số liệu lấy từ đâu, cập nhật khi nào?</summary><p>Thống kê lõi và trang bị lấy từ playaram.gg; tên và icon từ Riot Data Dragon và CommunityDragon. App tự làm mới dữ liệu khi bạn mở.</p></details>
+  <details><summary>Không tự đọc được lõi thì làm sao?</summary><p>Bạn vẫn tìm thủ công được: gõ tên tướng hoặc tên lõi vào ô tìm kiếm là thấy ngay thống kê và gợi ý. Lúc bảng lõi đang hiện, bấm Ctrl+Alt+A để app tìm lại vị trí thẻ lõi.</p></details>
+</section>
+
+<section id="donate" class="donate">
+  <div class="donate-grid">
+    <div class="box donate-card">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>
+      <h2>Mời tác giả ly cà phê <span class="emoji" aria-hidden="true">☕</span></h2>
+      <p>ARAM Helper miễn phí và sẽ luôn miễn phí. Nếu app giúp bạn thắng thêm vài trận, một ly cà phê là động lực để tác giả cập nhật tiếp.</p>
+      <button id="qr-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="qr-panel" data-show="Hiện mã QR ủng hộ" data-hide="Ẩn mã QR">Hiện mã QR ủng hộ</button>
+      <noscript><style>#qr-toggle { display: none; } #qr-panel { display: block; }</style></noscript>
+      <div id="qr-panel" class="qr-panel" hidden>
+        <figure class="donate-figure">
+          <img id="donate-qr" class="donate-qr" src="assets/img/donate-qr.png" alt="Mã QR chuyển khoản ủng hộ tác giả" width="240" height="240">
+          <figcaption>Chuyển khoản ngân hàng Việt Nam (VietQR)</figcaption>
+        </figure>
+        <p id="donate-fallback" class="muted">Mã QR đang được cập nhật. Liên hệ qua email: <a href="mailto:doancongtrucit@gmail.com">doancongtrucit@gmail.com</a></p>
+      </div>
+    </div>
+    <div id="feedback" class="box feedback-card">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      <h2>Góp ý cho ARAM Helper</h2>
+      <p>Gặp lỗi, muốn thêm tính năng hay chỉ muốn nói gì đó? Viết vào đây, thư sẽ mở trong ứng dụng email của bạn để gửi cho tác giả.</p>
+      <form id="fb-form" class="fb-form" novalidate data-email="doancongtrucit@gmail.com" data-err="Bạn hãy viết vài dòng nội dung trước khi gửi nhé." data-ok="Đã mở ứng dụng email. Nếu không thấy gì, hãy gửi trực tiếp tới">
+        <div class="field-row">
+          <label class="field"><span>Tên của bạn (không bắt buộc)</span><input name="name" type="text" maxlength="60" autocomplete="nickname"></label>
+          <label class="field"><span>Chủ đề</span><select name="topic"><option>Góp ý</option><option>Báo lỗi</option><option>Đề xuất tính năng</option></select></label>
+        </div>
+        <label class="field"><span>Nội dung</span><textarea name="message" rows="5" maxlength="1500" placeholder="Ví dụ: app không đọc được lõi khi mình chơi ở độ phân giải 2560×1440…" required></textarea></label>
+        <button class="btn btn-primary" type="submit"><svg class="btn-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Gửi góp ý</button>
+        <p id="fb-status" class="fb-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<dialog id="lightbox" class="lightbox" aria-label="Bấm để phóng to">
+  <form method="dialog"><button class="lightbox-close" aria-label="Đóng ảnh">&times;</button></form>
+  <img id="lightbox-img" alt="">
+  <!-- Demo video slot: <video src="assets/video/demo.mp4" controls playsinline></video> -->
+</dialog>
+
+<button id="scroll-fab" class="scroll-fab" type="button" hidden aria-label="Xuống cuối trang" title="Xuống cuối trang" data-end="Xuống cuối trang" data-top="Lên đầu trang">
+  <svg class="fab-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21"/><circle class="fab-progress" cx="24" cy="24" r="21" pathLength="100"/></svg>
+  <svg class="fab-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+</button>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="#hero"><img src="assets/img/icon.png" alt="" width="32" height="32" loading="lazy"><span>ARAM Helper</span></a>
+      <p>Trợ lý chọn lõi và trang bị cho ARAM Hỗn Loạn. Miễn phí, chỉ xem không can thiệp, không cần đăng nhập.</p>
+      <a class="btn btn-primary btn-sm" href="#download">Tải về</a>
+    </div>
+    <nav class="footer-col" aria-label="Sản phẩm">
+      <h3>Sản phẩm</h3>
+      <ul>
+        <li><a href="#features">Tính năng</a></li>
+        <li><a href="#download">Tải về</a></li>
+        <li><a href="#safety">An toàn</a></li>
+        <li><a href="changelog.html">Có gì mới</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-col" aria-label="Hỗ trợ">
+      <h3>Hỗ trợ</h3>
+      <ul>
+        <li><a href="#faq">Hỏi đáp</a></li>
+        <li><a href="#feedback">Góp ý</a></li>
+        <li><a href="#donate">Ủng hộ tác giả</a></li>
+        <li><a href="mailto:doancongtrucit@gmail.com">doancongtrucit@gmail.com</a></li>
+      </ul>
+    </nav>
+    <div class="footer-col">
+      <h3>Nguồn dữ liệu</h3>
+      <ul>
+        <li><a href="https://playaram.gg" rel="noopener">playaram.gg</a></li>
+        <li>Riot Data Dragon</li>
+        <li>CommunityDragon</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 ARAM Helper. Bảo lưu mọi quyền. · Làm tại Việt Nam</p>
+    <p class="footer-meta"><span class="lang-switch"><a data-set-lang="vi" hreflang="vi" href="./">VI</a> | <a data-set-lang="en" hreflang="en" href="en/">EN</a></span><a href="#hero">Lên đầu trang &uarr;</a></p>
+  </div>
+  <p class="disclaimer"><i>ARAM Helper isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</i></p>
+</footer>
+
+</body>
+</html>

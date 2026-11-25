@@ -1,0 +1,55 @@
+# Đăng trang web (thư mục site/, được repo phát triển đẩy sang) lên GitHub Pages – aramhelper.com.
+# Ảnh QR ủng hộ không nằm trong repo: tạo từ secret DONATE_QR_B64 lúc đăng (không có thì trang hiện email thay QR).
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["site/**", ".github/workflows/pages.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # Upload và deploy tách 2 job: deploy-pages không thấy artifact upload trong cùng job ("Found 0 artifact(s)").
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.13"
+      - name: Ảnh QR ủng hộ (từ secret, không in nội dung)
+        env:
+          DONATE_QR_B64: ${{ secrets.DONATE_QR_B64 }}
+        run: |
+          if [ -z "$DONATE_QR_B64" ]; then echo "Không có secret DONATE_QR_B64 – trang hiện email thay QR"; exit 0; fi
+          python -m pip install --disable-pip-version-check -q pillow==13.0.0
+          python - <<'PY'
+          import base64, io, os
+          from PIL import Image
+          im = Image.open(io.BytesIO(base64.b64decode(os.environ["DONATE_QR_B64"].strip(), validate=True)))
+          im.convert("RGB").save("site/assets/img/donate-qr.png", optimize=True)
+          print("đã tạo ảnh QR")
+          PY
+      - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -1,0 +1,15 @@
+name: Góp ý tính năng / Feature request
+description: Đề xuất tính năng hoặc cải tiến / Suggest an idea
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Ý tưởng / Idea
+      description: Bạn muốn app làm gì, dùng trong tình huống nào / What and when
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Vì sao hữu ích / Why it helps

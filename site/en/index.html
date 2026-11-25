@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ARAM Helper – Augment and item picks for ARAM Mayhem</title>
+<meta name="description" content="ARAM Helper detects your champion, reads the 3 augments on screen and recommends augments + items right in the game, for ARAM Mayhem. Free, read-only, no login.">
+<meta name="keywords" content="ARAM Mayhem augment helper, ARAM Mayhem augments, ARAM augment tier list, augment overlay, ARAM Helper, LoL ARAM">
+<meta name="theme-color" content="#120a1c">
+<link rel="canonical" href="https://aramhelper.com/en/">
+<link rel="alternate" hreflang="vi" href="https://aramhelper.com/">
+<link rel="alternate" hreflang="en" href="https://aramhelper.com/en/">
+<link rel="alternate" hreflang="x-default" href="https://aramhelper.com/">
+<link rel="icon" type="image/png" href="../assets/img/icon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ARAM Helper">
+<meta property="og:title" content="ARAM Helper – Chaos? Pick the right augment and win.">
+<meta property="og:description" content="Reads your 3 augments on screen and recommends augments + items in-game for ARAM Mayhem. Free, read-only, no login.">
+<meta property="og:url" content="https://aramhelper.com/en/">
+<meta property="og:image" content="https://aramhelper.com/assets/img/og-en.png">
+<meta property="og:locale" content="en_US">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="ARAM Helper – Chaos? Pick the right augment and win.">
+<meta name="twitter:description" content="Reads your 3 augments on screen and recommends augments + items in-game for ARAM Mayhem. Free, read-only, no login.">
+<meta name="twitter:image" content="https://aramhelper.com/assets/img/og-en.png">
+<link rel="preload" href="../assets/fonts/InterDisplay-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../assets/style.css?v=8edf6a30">
+<script type="module" src="../assets/app.mjs?v=8edf6a30"></script>
+</head>
+<body data-lang="en">
+<div class="scroll-progress" aria-hidden="true"></div>
+
+<header class="site-nav">
+  <a class="brand" href="#hero"><img src="../assets/img/icon.png" alt="" width="28" height="28"><span>ARAM Helper</span></a>
+  <button class="nav-toggle" type="button" aria-label="Open menu" aria-controls="site-links">&#9776;</button>
+  <nav id="site-links" class="site-links">
+    <a href="#features">Features</a>
+    <a href="#download">Download</a>
+    <a href="#faq">FAQ</a>
+    <span class="lang-switch"><a data-set-lang="vi" hreflang="vi" href="../">VI</a> | <a data-set-lang="en" hreflang="en" href="./">EN</a></span>
+  </nav>
+  <a class="btn btn-primary btn-sm nav-cta" href="#download">Download</a>
+</header>
+
+<main>
+
+<section id="hero" class="hero glow">
+  <div class="hero-fx" aria-hidden="true"><span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span><div class="floor"></div><canvas id="sparks"></canvas></div>
+  <p class="badge"><span class="dot"></span>Built for ARAM Mayhem</p>
+  <h1>Chaos? The right augment wins.</h1>
+  <p class="lead">Your ARAM Mayhem sidekick for League of Legends: it detects your champion, reads the 3 augments on offer and rates each one <b>S+ → D</b> right on the card. You just click.</p>
+  <ul class="hero-points">
+    <li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>100% free</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>No login</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Light, ~80 MB RAM</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>English | Tiếng Việt</li>
+  </ul>
+  <div class="cta">
+    <a id="primary-dl" class="btn btn-primary" data-dl-win="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe" data-dl-mac="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe">⬇ Download for Windows</a>
+    <a id="demo-btn" class="btn btn-ghost" href="#features">▶ See features</a>
+  </div>
+  <p class="muted hero-note">The download button adapts to your computer (Windows / Mac). <span data-version hidden></span></p>
+  <img class="shot hero-shot zoomable" fetchpriority="high" src="../assets/img/overlay-ingame.webp" srcset="../assets/img/overlay-ingame-800.webp 800w, ../assets/img/overlay-ingame.webp 1500w" sizes="(min-width: 1000px) 640px, 100vw" alt="ARAM Helper overlay in a real ARAM Mayhem game: win rates on the cards, tier badges and the suggestion panel" width="1500" height="814">
+</section>
+
+<div class="ticker" aria-hidden="true"><div class="ticker-track"><span>Auto champion detect · Reads all 3 augments · S+ → D tier on every card · Augment combos with reasons · Counter-item tips · Champ select advice · Transparent overlay</span><span>Auto champion detect · Reads all 3 augments · S+ → D tier on every card · Augment combos with reasons · Counter-item tips · Champ select advice · Transparent overlay</span></div></div>
+
+<section id="highlights" class="highlights">
+  <h2>Pick augments in 3 seconds, no tabbing out</h2>
+  <p class="section-sub">Everything you need to decide sits on your game screen the moment the 3 augment cards appear.</p>
+  <div class="hl-grid">
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg><span class="hl-k">Automatic</span><b>Nothing to type</b><p>It detects your champion when the game starts and reads the cards as they appear, even augments that share an icon.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="8" r="6"/><path d="M15.5 13.5 17 22l-5-3-5 3 1.5-8.5"/></svg><span class="hl-k">S+ → D</span><b>A tier under every card</b><p>A colour-coded tier badge and win rate on each card; the pick to take gets a ★.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg><span class="hl-k">Combos</span><b>Know what goes together</b><p>A combo bar sits right above the cards; between picks it reminds you which piece is still missing.</p></div>
+    <div class="box hl"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg><span class="hl-k">Counters</span><b>Items for the enemy team</b><p>Enemy full of healing or magic damage? Get counter items, plus the build that fits the augment you just took.</p></div>
+  </div>
+</section>
+
+<section id="how" class="how">
+  <h2>3 steps, zero setup</h2>
+  <ol class="steps">
+    <li class="box step"><i aria-hidden="true">1</i><div><b>Start a match</b>The app detects the champion you are playing.</div></li>
+    <li class="box step"><i aria-hidden="true">2</i><div><b>3 augments appear</b>The app reads them straight from your screen.</div></li>
+    <li class="box step"><i aria-hidden="true">3</i><div><b>Pick the strongest</b>The overlay marks the augment to pick, with its S+ → D tier right under the card. Click a card and the hint disappears at once.</div></li>
+  </ol>
+</section>
+
+<section id="features" class="features">
+  <h2>Features</h2>
+  <p class="section-sub">From champ select to your last augment pick, ARAM Helper stays with you all game. Click any screenshot to zoom in.</p>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Overlay</span>
+      <h3>Advice right on the augment cards</h3>
+      <p>A smooth, transparent overlay placed exactly on the game's 3 augment cards. It hides nothing and never steals your keys from the game.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Win rate label and S+ → D tier badge on every card</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Combo bar right above the cards</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Pick a card and the hint disappears at once (~0.1 s)</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="../assets/img/overlay-combo.webp" alt="Overlay on the 3 augment cards: win rates, tier badges and the combo bar" width="1200" height="714" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Screen reading</span>
+      <h3>Finds the cards, no calibration</h3>
+      <p>The app finds the augment cards by itself and follows the game window, even on a second monitor.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Reads names even for augments that share an icon and champion-skill augments</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>A compact panel in the corner that stays out of your way</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Off by a bit? Press Ctrl+Alt+A to find the cards again</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="../assets/img/overlay-collapsed.webp" alt="Compact suggestion panel in the corner while picking an augment" width="1500" height="705" loading="lazy"></figure>
+  </article>
+  <article class="frow frow-tall">
+    <div class="frow-text">
+      <span class="chip">Mid-game</span>
+      <h3>Know what to aim for next</h3>
+      <p>Between picks a small panel shows the missing combo piece, the build for the augments you took and items for the enemy team.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>The augment you still need to complete a combo</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>3 item builds, led by the one that fits your augment</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Counter items for the enemy comp and their items</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="../assets/img/overlay-between.webp" alt="Mid-game panel: missing combo piece, item builds and counter items" width="344" height="420" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Champ select</span>
+      <h3>Which champion is worth swapping? The app tells you</h3>
+      <p>In champ select, the app compares your champion's win rate with each champion on the selection bar and suggests combos to aim for.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Champions worth swapping to, with how much higher they win</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Augment combos to aim for with your current champion</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Your champion's tier right next to its name</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="../assets/img/champ-select.webp" alt="Champ select panel: champions worth swapping to and combos to aim for" width="500" height="360" loading="lazy"></figure>
+  </article>
+  <article class="frow">
+    <div class="frow-text">
+      <span class="chip">Main window</span>
+      <h3>All the stats on one screen</h3>
+      <p>Look anything up outside a game too: augments, items, boots and summoner spells for every champion, laid out to fit your window.</p>
+      <ul class="checks"><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Prismatic / Gold / Silver: top 6 per tier, expand to 16</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>3 item builds, boots and summoner spells</li><li><svg class="tick" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 6 9 17l-5-5"/></svg>Quick search by champion or augment name</li></ul>
+    </div>
+    <figure class="frow-media"><img class="shot zoomable" src="../assets/img/main-window.webp" alt="ARAM Helper main window with augments, items and combos" width="1400" height="897" loading="lazy"></figure>
+  </article>
+  <h3 class="more-title">And more</h3>
+  <div class="mini-grid">
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m4 4 7 17 2.5-7.5L21 11z"/></svg><div><b>Never steals your keys</b><p>Click the overlay to mark a pick; the game keeps your keys.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg><div><b>Second monitor ready</b><p>The overlay follows the game window on any screen.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><div><b>Update alerts</b><p>Tells you about new versions; updates are signed and tamper-proof.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg><div><b>EN | VN in one click</b><p>Language switch right in the top bar, no settings needed.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg><div><b>Always-fresh data</b><p>playaram.gg stats, Riot names and icons refresh on their own.</p></div></div>
+    <div class="mini"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><div><b>Tune the overlay</b><p>Toggle tiers, adjust panel opacity and many display options.</p></div></div>
+  </div>
+</section>
+
+<section id="safety" class="safety">
+  <h2>It only looks, it never touches the game</h2>
+  <div class="row">
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><b>View-only</b><p>Uses Riot's official Live Client API plus screenshots.</p></div>
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg><b>No interference</b><p>No game memory reads or writes, no key presses, no auto-picking.</p></div>
+    <div class="box"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><b>No login needed</b><p>Never asks for your Riot account and collects no personal data.</p></div>
+  </div>
+</section>
+
+<section id="download" class="download glow">
+  <h2>Download – free</h2>
+  <div class="row">
+    <div class="box featured">
+      <b>Windows 10/11</b>
+      <a class="btn btn-primary" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-Setup.exe">⬇ Installer .exe</a>
+      <p class="muted">Recommended. <a href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-win64-portable.zip">Or the portable build (.zip): unzip and run.</a></p>
+    </div>
+    <div class="box">
+      <b>macOS 11+</b>
+      <a class="btn btn-ghost" href="https://github.com/doancongtrucit/aram-helper/releases/latest/download/ARAM-Helper-macos.zip">⬇ macOS build (.zip)</a>
+      <p class="muted">Main window only, no overlay yet.</p>
+    </div>
+  </div>
+  <div id="mobile-note" class="note mobile-note">
+    <p>ARAM Helper runs on Windows/Mac computers – open this link on a PC.</p>
+    <button id="share-link" class="btn btn-ghost" type="button" data-copied="Link copied">Share / copy link</button>
+    <p id="share-status" class="share-status" role="status" aria-live="polite"></p>
+  </div>
+  <div class="note smartscreen">
+    <b>Windows says “Windows protected your PC”? Two quick steps:</b>
+    <ol>
+      <li>Click <b>More info</b>.</li>
+      <li>Click <b>Run anyway</b>.</li>
+    </ol>
+    <p>Why: the app does not have a paid code-signing certificate yet, so Windows does not know it. The file you downloaded is the official build.</p>
+  </div>
+</section>
+
+<section id="faq" class="faq narrow">
+  <h2>Quick answers</h2>
+  <details><summary>Can I get banned for using it?</summary><p>The app only uses the official Live Client API that Riot provides for companion apps (the same way other well-known apps work) plus screenshots. It never reads or writes game memory, never sends key presses and never picks augments for you. Still, it is a third-party tool – use it at your own discretion under Riot's current policies.</p></details>
+  <details><summary>Does it eat RAM or hurt my FPS?</summary><p>It is light: about 70–90 MB of RAM while running, and the overlay is a single transparent window, so FPS is not noticeably affected.</p></details>
+  <details><summary>Where do the stats come from, and how fresh are they?</summary><p>Augment and item stats come from playaram.gg; names and icons from Riot Data Dragon and CommunityDragon. The app refreshes its data when you open it.</p></details>
+  <details><summary>What if it does not read my augments automatically?</summary><p>You can still look things up: type a champion or augment name in the search box to see stats and advice. While the augment cards are open, press Ctrl+Alt+A to make the app find the cards again.</p></details>
+</section>
+
+<section id="donate" class="donate">
+  <div class="donate-grid">
+    <div class="box donate-card">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M17 8h1a4 4 0 0 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4z"/><path d="M6 2v2M10 2v2M14 2v2"/></svg>
+      <h2>Buy the author a coffee <span class="emoji" aria-hidden="true">☕</span></h2>
+      <p>ARAM Helper is free and will stay free. If it helped you win a few more games, a coffee keeps the updates coming.</p>
+      <button id="qr-toggle" class="btn btn-primary" type="button" aria-expanded="false" aria-controls="qr-panel" data-show="Show the support QR code" data-hide="Hide the QR code">Show the support QR code</button>
+      <noscript><style>#qr-toggle { display: none; } #qr-panel { display: block; }</style></noscript>
+      <div id="qr-panel" class="qr-panel" hidden>
+        <figure class="donate-figure">
+          <img id="donate-qr" class="donate-qr" src="../assets/img/donate-qr.png" alt="VietQR code for a Vietnamese bank transfer to support the author" width="240" height="240">
+          <figcaption>Vietnamese bank transfer (VietQR)</figcaption>
+        </figure>
+        <p id="donate-fallback" class="muted">The QR code is being updated. Contact me by email: <a href="mailto:doancongtrucit@gmail.com">doancongtrucit@gmail.com</a></p>
+      </div>
+    </div>
+    <div id="feedback" class="box feedback-card">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>
+      <h2>Send feedback</h2>
+      <p>Found a bug, want a feature or just want to say hi? Write it here and it opens in your email app, addressed to the author.</p>
+      <form id="fb-form" class="fb-form" novalidate data-email="doancongtrucit@gmail.com" data-err="Please write a few words before sending." data-ok="Your email app should be open. If nothing happened, write directly to">
+        <div class="field-row">
+          <label class="field"><span>Your name (optional)</span><input name="name" type="text" maxlength="60" autocomplete="nickname"></label>
+          <label class="field"><span>Topic</span><select name="topic"><option>Feedback</option><option>Bug report</option><option>Feature request</option></select></label>
+        </div>
+        <label class="field"><span>Message</span><textarea name="message" rows="5" maxlength="1500" placeholder="For example: the app doesn't read my augments at 2560×1440…" required></textarea></label>
+        <button class="btn btn-primary" type="submit"><svg class="btn-ico" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>Send feedback</button>
+        <p id="fb-status" class="fb-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<dialog id="lightbox" class="lightbox" aria-label="Click to zoom">
+  <form method="dialog"><button class="lightbox-close" aria-label="Close image">&times;</button></form>
+  <img id="lightbox-img" alt="">
+  <!-- Demo video slot: <video src="../assets/video/demo.mp4" controls playsinline></video> -->
+</dialog>
+
+<button id="scroll-fab" class="scroll-fab" type="button" hidden aria-label="Jump to the end" title="Jump to the end" data-end="Jump to the end" data-top="Back to top">
+  <svg class="fab-ring" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="21"/><circle class="fab-progress" cx="24" cy="24" r="21" pathLength="100"/></svg>
+  <svg class="fab-arrow" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+</button>
+
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a class="brand" href="#hero"><img src="../assets/img/icon.png" alt="" width="32" height="32" loading="lazy"><span>ARAM Helper</span></a>
+      <p>Augment and item picks for ARAM Mayhem. Free, read-only, no login.</p>
+      <a class="btn btn-primary btn-sm" href="#download">Download</a>
+    </div>
+    <nav class="footer-col" aria-label="Product">
+      <h3>Product</h3>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#download">Download</a></li>
+        <li><a href="#safety">Safety</a></li>
+        <li><a href="changelog.html">What's new</a></li>
+      </ul>
+    </nav>
+    <nav class="footer-col" aria-label="Support">
+      <h3>Support</h3>
+      <ul>
+        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#feedback">Feedback</a></li>
+        <li><a href="#donate">Support the author</a></li>
+        <li><a href="mailto:doancongtrucit@gmail.com">doancongtrucit@gmail.com</a></li>
+      </ul>
+    </nav>
+    <div class="footer-col">
+      <h3>Data sources</h3>
+      <ul>
+        <li><a href="https://playaram.gg" rel="noopener">playaram.gg</a></li>
+        <li>Riot Data Dragon</li>
+        <li>CommunityDragon</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; 2026 ARAM Helper. All rights reserved. · Made in Vietnam</p>
+    <p class="footer-meta"><span class="lang-switch"><a data-set-lang="vi" hreflang="vi" href="../">VI</a> | <a data-set-lang="en" hreflang="en" href="./">EN</a></span><a href="#hero">Back to top &uarr;</a></p>
+  </div>
+  <p class="disclaimer"><i>ARAM Helper isn't endorsed by Riot Games and doesn't reflect the views or opinions of Riot Games or anyone officially involved in producing or managing Riot Games properties. Riot Games, and all associated properties are trademarks or registered trademarks of Riot Games, Inc.</i></p>
+</footer>
+
+</body>
+</html>
