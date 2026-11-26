@@ -1,7 +1,7 @@
 import {
   detectPlatform, primaryDownload, chooseLang, redirectTarget, parseLatestTag, shouldAutoRedirect, shareAction,
   feedbackMailto, scrollState,
-} from "./logic.mjs?v=607a60d9";
+} from "./logic.mjs?v=0eca7738";
 
 const RELEASES_API = "https://api.github.com/repos/doancongtrucit/aram-helper/releases/latest";
 
@@ -61,7 +61,8 @@ if (shareBtn) {
   });
 }
 
-// Donate QR: show it only when it actually loads.
+// Donate QR: loaded only when the visitor opens it (so link previews never pick the QR as the page image);
+// the figure stays hidden if the image is missing.
 const qr = document.getElementById("donate-qr");
 const donate = document.getElementById("donate");
 if (qr && donate) {
@@ -72,8 +73,8 @@ if (qr && donate) {
     fig.style.display = "none";
     donate.classList.remove("qr-ok");
   };
-  if (qr.complete) (qr.naturalWidth > 0 ? ok : fail)();
-  else { qr.addEventListener("load", ok); qr.addEventListener("error", fail); }
+  qr.addEventListener("load", ok);
+  qr.addEventListener("error", fail);
 }
 
 // Mobile menu.
@@ -145,6 +146,7 @@ const qrPanel = document.getElementById("qr-panel");
 if (qrToggle && qrPanel) {
   qrToggle.addEventListener("click", () => {
     const show = qrPanel.hidden;
+    if (show && qr && !qr.getAttribute("src") && qr.dataset.src) qr.src = qr.dataset.src;
     qrPanel.hidden = !show;
     qrToggle.setAttribute("aria-expanded", String(show));
     qrToggle.textContent = show ? qrToggle.dataset.hide : qrToggle.dataset.show;
